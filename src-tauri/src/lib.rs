@@ -1,0 +1,575 @@
+mod activity_stats;
+mod agent_cost;
+mod agent_events;
+mod agent_library;
+mod ai_memory;
+mod antigravity_sessions;
+mod antigravity_usage;
+mod backup;
+mod claude_sessions;
+mod claude_usage;
+mod cli_launch;
+mod cli_resolver;
+mod cli_shim;
+mod codex_app_server;
+mod codex_sessions;
+mod codex_usage;
+mod contract_check;
+mod crash_watch;
+mod diagnostics;
+mod discord_presence;
+mod economy_agents;
+mod event_bus;
+mod filesystem;
+mod ghostty_bridge;
+#[cfg(all(target_os = "macos", ghostty_linked))]
+mod ghostty_ffi;
+mod git_control;
+mod github_sync;
+mod graphify;
+mod handoff;
+mod health_probe;
+mod logging;
+mod mcp_agents;
+mod mcp_catalog;
+mod mcp_health;
+mod mcp_model;
+mod mcp_store;
+mod opencode_bridge;
+mod opencode_gsd_plugin;
+mod opencode_sessions;
+mod paths;
+mod planning;
+mod planning_gate;
+mod plugins;
+mod process_tree;
+mod profiles;
+mod project_detector;
+mod projects;
+mod provider_common;
+mod pty;
+mod remote;
+mod resource_manager;
+mod resources;
+mod scheduler;
+mod session_watcher;
+mod skills;
+mod spotify;
+mod stats;
+mod supervisor;
+mod system_metrics;
+mod telemetry;
+mod validation;
+mod window_style;
+#[cfg(windows)]
+mod windows_webview;
+mod worktrees;
+
+use crate::pty::{PtySession, PtySessions};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+#[cfg(windows)]
+#[tauri::command]
+fn set_window_opacity(window: tauri::WebviewWindow, opacity: f64) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongW, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
+        WS_EX_LAYERED,
+    };
+
+    let opacity = opacity.clamp(0.6, 1.0);
+    let alpha = (opacity * 255.0).round() as u8;
+    let hwnd = window.hwnd().map_err(|error| error.to_string())?.0;
+
+    unsafe {
+        let style = GetWindowLongW(hwnd, GWL_EXSTYLE);
+        SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED as i32);
+        if SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA) == 0 {
+            return Err(std::io::Error::last_os_error().to_string());
+        }
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+fn set_window_opacity(_window: tauri::WebviewWindow, _opacity: f64) -> Result<(), String> {
+    Err("Window opacity is currently supported on Windows only".into())
+}
+
+#[cfg(any(debug_assertions, desktop))]
+use tauri::Manager;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    // bugs conhecidos no Wayland — escala fracionada quebrando layout,
+
+    // ("Error 71") em alguns drivers de GPU — documentados oficialmente em
+    // https://v2.tauri.app/develop/debug/linux-graphics/. Desligar o
+
+    #[cfg(target_os = "linux")]
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+
+    // Chromium's native window occlusion detection stalls when the window is
+    // minimized or the whole session is minimized over Remote Desktop: the
+    // calculation runs in the WebView2 browser process and, with no live
+    // display surface, blocks the UI pipeline so the window stops responding
+    // until it is restored (seen as a 20-60s freeze on minimize over RDP).
+    // Disabling the feature keeps the webview responsive; the only cost is that
+    // a fully hidden webview is not throttled, which is negligible here.
+    // Merge with any value already set so we never clobber other flags.
+    #[cfg(target_os = "windows")]
+    {
+        const DISABLE_OCCLUSION: &str = "--disable-features=CalculateNativeWinOcclusion";
+        let merged = match std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS") {
+            Ok(existing) if existing.contains("CalculateNativeWinOcclusion") => existing,
+            Ok(existing) if existing.trim().is_empty() => DISABLE_OCCLUSION.to_string(),
+            Ok(existing) => format!("{existing} {DISABLE_OCCLUSION}"),
+            Err(_) => DISABLE_OCCLUSION.to_string(),
+        };
+        std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", merged);
+    }
+
+    let _ = dotenvy::dotenv();
+    // `npm run app` (dev) injeta EDITOR=vi e GIT_EDITOR=true no ambiente do
+
+    // o vi-mode (Ctrl+R vira "redisplay", Ctrl+A/E viram self-insert — bug real
+
+    // npm (rodando sob npm run + valores exatos que o npm injeta); o ambiente
+
+    if std::env::var_os("npm_lifecycle_event").is_some() {
+        if std::env::var("EDITOR").as_deref() == Ok("vi") {
+            std::env::remove_var("EDITOR");
+        }
+        if std::env::var("GIT_EDITOR").as_deref() == Ok("true") {
+            std::env::remove_var("GIT_EDITOR");
+        }
+    }
+
+    logging::install_panic_hook();
+
+    pty::install_kill_on_close_guard();
+    let sessions: PtySessions = Arc::new(Mutex::new(HashMap::<String, PtySession>::new()));
+    let codex_app_server_state = codex_app_server::CodexAppServerState::default();
+    let sessions_for_exit = Arc::clone(&sessions);
+    let sessions_for_resources = Arc::clone(&sessions);
+    let resource_supervisor = Arc::new(resources::ResourceSupervisor::default());
+    let resource_supervisor_for_setup = Arc::clone(&resource_supervisor);
+
+    let mut builder = tauri::Builder::default()
+        .manage(sessions.clone())
+        .manage(codex_app_server_state)
+        .manage(remote::hub())
+        .manage(resource_supervisor)
+        .manage(ghostty_bridge::GhosttySurfaces::default())
+        .manage(filesystem::FileWatchers::default())
+        .manage(discord_presence::DiscordPresence::new())
+        .manage(planning::PlanningWatchers::default())
+        .manage(cli_launch::PendingOpen::default())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            cli_launch::handle_second_instance(app, argv, cwd);
+        }));
+        // A janela nasce no estado em que fechou (tamanho, posicao, maximizada).
+        // Sem isso todo boot abre em 1280x800: os panes restaurados spawnam o PTY a
+        // ~74 colunas e o maximize que vem logo depois redimensiona o ConPTY no meio
+        // do primeiro quadro do agente (`claude --resume` repintando o historico),
+        // deixando quadros velhos na tela. Restaurar antes do webview montar os
+        // panes faz o spawn ja acontecer na geometria final.
+        builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
+    }
+
+    builder
+        .setup(move |app| {
+            #[cfg(debug_assertions)]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title("(DEV) Alethe");
+            }
+
+            #[cfg(target_os = "linux")]
+            if let Some(window) = app.get_webview_window("main") {
+                match image::load_from_memory(include_bytes!("../icons/128x128.png")) {
+                    Ok(decoded) => {
+                        let rgba = decoded.to_rgba8();
+                        let (width, height) = rgba.dimensions();
+                        let icon = tauri::image::Image::new_owned(rgba.into_raw(), width, height);
+                        if let Err(error) = window.set_icon(icon) {
+                            eprintln!("[icon] falha ao aplicar ícone da janela: {error}");
+                        }
+                    }
+                    Err(error) => eprintln!("[icon] falha ao decodificar ícone embutido: {error}"),
+                }
+            }
+            logging::set_logs_dir(app.handle());
+            // Keep the terminal launcher available after installation.
+            #[cfg(not(debug_assertions))]
+            let _ = cli_shim::cli_shim_install();
+            // `alethe <path>` com o app fechado: guarda o alvo agora, o
+
+            cli_launch::capture_cold_start(app.handle());
+            event_bus::set_app_handle(app.handle().clone());
+            // Cantos arredondados no macOS (no-op nas outras plataformas). A
+
+            window_style::apply_rounded_corners(app.handle());
+
+            crash_watch::start(app.handle().clone());
+            resources::start(
+                app.handle().clone(),
+                Arc::clone(&sessions_for_resources),
+                Arc::clone(&resource_supervisor_for_setup),
+            );
+
+            pty::cleanup_orphan_scrollback(app.handle());
+            agent_events::start_listener(app.handle().clone());
+
+            // reporta working/idle real de volta pro Alethe (ver opencode_bridge.rs).
+            opencode_bridge::ensure_installed();
+            session_watcher::start_watcher(app.handle().clone());
+
+            // Multi-Agent & Telemetry Event Loops
+            telemetry::start_telemetry_watcher(app.handle().clone());
+            planning::start_planning_autocommit_loop();
+            scheduler::start_scheduler_event_loop();
+            supervisor::start_supervisor_event_loop();
+
+            // Resource Manager (memory pressure, policy engine, task scheduler)
+            resource_manager::start(app.handle().clone());
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            agent_events::agent_hooks_settings_path,
+            agent_events::agent_hooks_endpoint,
+            agent_events::agent_hooks_token,
+            codex_app_server::codex_app_server_start,
+            codex_app_server::codex_app_server_send,
+            codex_app_server::codex_app_server_stop,
+            activity_stats::record_activity_samples,
+            activity_stats::get_activity_summary,
+            activity_stats::clear_activity_stats,
+            agent_library::list_installed_agents,
+            agent_library::install_agent,
+            agent_library::uninstall_agent,
+            economy_agents::set_economy_agents,
+            economy_agents::economy_agents_enabled,
+            filesystem::list_directory,
+            filesystem::read_text_file,
+            filesystem::write_text_file,
+            filesystem::rename_filesystem_entry,
+            filesystem::delete_filesystem_entry,
+            filesystem::ensure_todo_template,
+            filesystem::watch_file,
+            filesystem::unwatch_file,
+            pty::pty_exists,
+            pty::spawn_pty,
+            pty::attach_pty,
+            pty::clear_pty_scrollback,
+            pty::restart_pty,
+            pty::write_pty,
+            remote::remote_control_connected_devices,
+            remote::remote_control_info,
+            remote::remote_control_open_pairing,
+            remote::remote_control_close_pairing,
+            remote::remote_control_revoke,
+            remote::remote_control_revoke_device,
+            remote::remote_control_set_max_devices,
+            remote::remote_control_set_session_expiry,
+            remote::remote_control_set_read_only,
+            remote::remote_control_set_shell_input,
+            remote::remote_control_set_enabled,
+            pty::resize_pty,
+            pty::kill_pty,
+            pty::suspend_pty,
+            pty::get_pty_cwd,
+            pty::set_pty_read_state,
+            pty::set_pty_visible,
+            pty::default_pty_cwd,
+            pty::set_pty_priority,
+            ghostty_bridge::ghostty_spawn,
+            ghostty_bridge::ghostty_sync_frame,
+            ghostty_bridge::ghostty_set_hidden,
+            ghostty_bridge::ghostty_kill,
+            ghostty_bridge::ghostty_kill_all,
+            ghostty_bridge::ghostty_debug_send_read,
+            pty::list_pty_processes,
+            resource_manager::get_resource_metrics,
+            process_tree::get_pty_tree_info,
+            process_tree::kill_pty_tree_cmd,
+            projects::load_projects,
+            projects::save_projects,
+            projects::clone_github_repo,
+            cli_resolver::discover_provider_models,
+            profiles::list_profiles,
+            profiles::list_profile_summaries,
+            profiles::get_active_profile,
+            profiles::set_active_profile,
+            profiles::create_profile,
+            profiles::rename_profile,
+            profiles::delete_profile,
+            cli_resolver::find_cli_launcher,
+            cli_resolver::probe_install_toolchain,
+            cli_resolver::agent_cli_version,
+            cli_launch::cli_take_pending_open,
+            cli_shim::cli_shim_status,
+            cli_shim::cli_shim_install,
+            cli_shim::cli_shim_uninstall,
+            backup::export_backup,
+            backup::export_profile_backup,
+            backup::import_backup,
+            github_sync::github_sync_status,
+            github_sync::github_sync_set_token,
+            github_sync::github_sync_logout,
+            github_sync::github_sync_push,
+            github_sync::github_sync_pull,
+            git_control::git_init,
+            git_control::git_status,
+            git_control::git_diff,
+            git_control::git_stage,
+            git_control::git_unstage,
+            git_control::git_discard,
+            git_control::git_commit,
+            git_control::git_push,
+            git_control::git_pull,
+            git_control::git_list_branches,
+            git_control::git_diff_summary,
+            diagnostics::open_data_folder,
+            diagnostics::open_spawn_log,
+            diagnostics::open_in_file_explorer,
+            diagnostics::open_in_vscode,
+            diagnostics::open_in_browser,
+            diagnostics::read_clipboard_text,
+            diagnostics::write_clipboard_text,
+            diagnostics::read_clipboard_payload,
+            diagnostics::reset_app_data,
+            diagnostics::wipe_all_app_data,
+            diagnostics::open_logs_folder,
+            diagnostics::export_logs,
+            logging::record_frontend_error,
+            logging::record_app_event,
+            discord_presence::set_discord_presence,
+            discord_presence::clear_discord_presence,
+            stats::get_memory_stats,
+            resources::get_runtime_snapshot,
+            resources::set_resource_policy,
+            resources::update_pty_runtime_meta,
+            spotify::spotify_login,
+            spotify::spotify_logout,
+            spotify::spotify_status,
+            spotify::spotify_get_current,
+            claude_sessions::snapshot_claude_sessions,
+            claude_sessions::list_claude_sessions,
+            claude_sessions::get_claude_session_title,
+            claude_sessions::get_claude_session_title,
+            claude_sessions::get_claude_activity,
+            claude_sessions::get_multi_agent_activity,
+            codex_sessions::snapshot_codex_sessions,
+            handoff::prepare_agent_handoff,
+            handoff::materialize_agent_handoff,
+            handoff::complete_agent_handoff,
+            antigravity_sessions::snapshot_antigravity_sessions,
+            claude_usage::get_claude_usage,
+            claude_usage::get_claude_usage_for,
+            claude_usage::get_all_accounts_usage,
+            codex_usage::get_codex_usage,
+            antigravity_usage::get_antigravity_usage,
+            agent_cost::get_session_cost,
+            agent_cost::get_transcript_cost,
+            agent_cost::get_model_pricing,
+            agent_cost::get_opencode_usage_summary,
+            crash_watch::get_last_crash_report,
+            crash_watch::get_job_guard_status,
+            set_window_opacity,
+            quit_app,
+            worktrees::worktree_provision,
+            worktrees::worktree_list,
+            worktrees::worktree_remove,
+            worktrees::worktree_cleanup,
+            worktrees::worktree_fetch_branch,
+            worktrees::worktree_lock,
+            worktrees::worktree_unlock,
+            event_bus::publish_event,
+            telemetry::get_telemetry_metrics,
+            telemetry::get_telemetry_traces,
+            validation::run_validation,
+            planning::start_gsd_watcher,
+            planning::stop_gsd_watcher,
+            planning::planning_audit_record,
+            planning::planning_audit_history,
+            planning::set_planning_autocommit,
+            planning::get_planning_autocommit,
+            planning_gate::read_planning_status,
+            planning_gate::read_gsd_child_session,
+            planning_gate::read_gsd_child_state,
+            planning_gate::read_gsd_child_busy,
+            planning_gate::read_gsd_child_error,
+            planning_gate::read_gsd_procedure,
+            opencode_gsd_plugin::gsd_opencode_plugin_write,
+            scheduler::get_scheduler_tasks,
+            scheduler::trigger_scheduler_tick,
+            scheduler::cancel_task,
+            project_detector::detect_project_stack,
+            contract_check::contract_check,
+            health_probe::health_probe,
+            graphify::graphify_ensure_graph,
+            graphify::graphify_detect,
+            graphify::graphify_mcp_config_path,
+            graphify::graphify_opencode_config_write,
+            graphify::graphify_codex_config_write,
+            graphify::graphify_read_graph,
+            graphify::graphify_snapshot,
+            graphify::graphify_list_snapshots,
+            graphify::graphify_diff_snapshot,
+            graphify::graphify_rollback,
+            graphify::graphify_prune_snapshots,
+            ai_memory::ai_memory_detect,
+            ai_memory::ai_memory_mcp_config_path,
+            ai_memory::ai_memory_opencode_config_write,
+            ai_memory::ai_memory_codex_config_write,
+            plugins::plugins_list,
+            plugins::plugin_install,
+            plugins::plugin_uninstall,
+            mcp_store::mcp_scan,
+            mcp_store::mcp_config_paths,
+            mcp_store::mcp_capabilities,
+            mcp_store::mcp_upsert,
+            mcp_store::mcp_remove,
+            mcp_store::mcp_set_enabled,
+            mcp_store::mcp_reveal_env,
+            mcp_store::mcp_sync,
+            mcp_catalog::mcp_registry_search,
+            mcp_health::mcp_health_check,
+            skills::skills_scan,
+            skills::skills_detail,
+            skills::skills_uninstall,
+            opencode_sessions::snapshot_opencode_sessions,
+            system_metrics::get_system_metrics,
+            open_dashboard_window,
+            set_dashboard_always_on_top,
+            ping,
+        ])
+        .on_window_event(|window, event| {
+            // The monitor window is a companion of the main window: closing the
+            // main window closes the monitor too, so the app can exit instead of
+            // lingering with only the monitor open.
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { .. } = event {
+                    if let Some(dashboard) = window.app_handle().get_webview_window("dashboard") {
+                        let _ = dashboard.close();
+                    }
+                }
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building alethe")
+        .run(move |_app_handle, event| {
+            // emitir `Exit`; esperar esse evento deixa shells/agentes vivos
+
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                pty::kill_all_sessions_background(&sessions_for_exit);
+            }
+
+            if let tauri::RunEvent::Exit = event {
+                crash_watch::mark_clean_exit();
+            }
+        });
+}
+
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle, sessions: tauri::State<'_, PtySessions>) {
+    // The Windows job object remains the hard guarantee that descendants die with the app. The
+    // best-effort explicit teardown runs in the background so a slow process tree cannot block exit.
+    pty::kill_all_sessions_background(sessions.inner());
+    // O X da barra propria chega aqui sem `CloseRequested`, entao o plugin de
+    // window-state ainda nao viu se a janela esta maximizada. Gravar agora, com a
+    // janela viva, garante que o proximo boot abre na mesma geometria.
+    #[cfg(desktop)]
+    {
+        use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+        let _ = app.save_window_state(StateFlags::all());
+    }
+    crash_watch::mark_clean_exit();
+    app.exit(0);
+}
+
+#[tauri::command]
+fn ping() -> &'static str {
+    "pong"
+}
+
+/// Open (or focus, if already open) the external monitor window. It reuses the
+/// same frontend bundle; `main.tsx` renders the monitor HUD when the current
+/// window label is `dashboard`.
+#[cfg(desktop)]
+#[tauri::command]
+fn open_dashboard_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(existing) = app.get_webview_window("dashboard") {
+        let _ = existing.show();
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+    // A window created at runtime does not inherit the main window's dev-server
+    // URL: `WebviewUrl::App` resolves to the embedded assets, which are stale (or
+    // absent) during `tauri dev`. Point the monitor at the Vite dev server in
+    // debug, and at the bundled assets in release.
+    #[cfg(debug_assertions)]
+    let url = tauri::WebviewUrl::External(
+        "http://localhost:1422/index.html"
+            .parse()
+            .map_err(|_| "invalid dev url".to_string())?,
+    );
+    #[cfg(not(debug_assertions))]
+    let url = tauri::WebviewUrl::App("index.html".into());
+
+    tauri::WebviewWindowBuilder::new(&app, "dashboard", url)
+        .title("Alethe — Monitor")
+        .inner_size(420.0, 640.0)
+        .min_inner_size(320.0, 420.0)
+        .decorations(false)
+        .resizable(true)
+        .build()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[cfg(not(desktop))]
+#[tauri::command]
+fn open_dashboard_window(_app: tauri::AppHandle) -> Result<(), String> {
+    Err("The monitor window is desktop-only".into())
+}
+
+/// Toggle always-on-top for the monitor window.
+#[cfg(desktop)]
+#[tauri::command]
+fn set_dashboard_always_on_top(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("dashboard") {
+        window
+            .set_always_on_top(enabled)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+#[cfg(not(desktop))]
+#[tauri::command]
+fn set_dashboard_always_on_top(_app: tauri::AppHandle, _enabled: bool) -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rebuilt_path_is_non_empty_on_windows() {
+        if !cfg!(windows) {
+            return;
+        }
+        assert!(!cli_resolver::build_rebuilt_path().is_empty());
+    }
+}

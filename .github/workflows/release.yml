@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  # Tag NÃO dispara release. `npm run release` só marca a versão no git;
+  # publicar instaladores é uma ação deliberada via `npm run release:publish`
+  # (gh workflow run) ou pela aba Actions -> Release -> Run workflow.
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            label: Windows x64
+            args: ''
+          - platform: ubuntu-22.04
+            label: Linux x64
+            args: ''
+          - platform: macos-latest
+            label: macOS Apple Silicon
+            args: '--target aarch64-apple-darwin'
+          - platform: macos-latest
+            label: macOS Intel
+            args: '--target x86_64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and upload Tauri bundles
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Assinatura do updater (minisign). Sem estes secrets o build FALHA,
+          # porque bundle.createUpdaterArtifacts está ligado. Gere o par com
+          # `npm run tauri signer generate` e cadastre nos secrets do repo.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'Alethe v__VERSION__'
+          releaseBody: 'Free desktop build of Alethe for Windows, macOS and Linux. Local app is free; cloud/sync services may be offered separately.'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

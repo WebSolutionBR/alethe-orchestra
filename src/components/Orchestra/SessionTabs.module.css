@@ -1,0 +1,298 @@
+/* One tab per running orchestration, above the session panes or the start screen. */
+.strip {
+  container: orchestra-tabs / inline-size;
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 34px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  min-width: 132px;
+  max-width: 320px;
+  border-right: 1px solid var(--border);
+  color: var(--fg-muted);
+  transition: background-color var(--anim-slow);
+}
+
+.tab:hover,
+.tab[data-shown] {
+  background: var(--bg-sunken);
+}
+
+.tab[data-focused] {
+  color: var(--fg);
+}
+
+/* Top edge: the focused session in the Orchestra color, the other side-by-side one quieter. */
+.tab[data-shown]::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--border-strong);
+}
+
+.tab[data-focused]::before {
+  background: var(--agent-claude);
+}
+
+/* Off screen and blocked or finished since the user last saw it: tinted until it is shown. */
+.tab[data-attention][data-status='blocked'] {
+  background: var(--status-waiting-soft);
+}
+
+.tab[data-attention][data-status='done'] {
+  background: var(--status-working-soft);
+}
+
+.tab[data-attention][data-status='error'] {
+  background: var(--status-offline-soft);
+}
+
+.tab[data-attention] .name {
+  color: var(--fg);
+}
+
+.tabMain {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: 12px var(--font-sans);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tabMain:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Status: working breathes, blocked waits, done is a check. */
+.marker {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-working);
+  font: 600 11px/1 var(--font-mono);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.tab[data-status='blocked'] .marker,
+.tab[data-status='error'] .marker {
+  width: 10px;
+  background: transparent;
+  color: var(--status-waiting);
+  animation: none;
+}
+
+.tab[data-status='error'] .marker {
+  color: var(--status-offline);
+}
+
+/* Stopped: read-only history, greyed until it is closed. */
+.tab[data-status='stopped'] .marker {
+  width: 10px;
+  background: transparent;
+  color: var(--fg-faint);
+  font-size: 8px;
+  animation: none;
+}
+
+.tab[data-status='stopped'] .tabMain {
+  opacity: 0.65;
+}
+
+.tab[data-status='done'] .marker {
+  width: 10px;
+  background: transparent;
+  color: var(--status-working);
+  animation: none;
+}
+
+.tab[data-attention] .marker {
+  animation: attention 1.4s ease-in-out infinite;
+}
+
+.name {
+  flex: 0 1 auto;
+  min-width: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.goal {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 11.5px var(--font-mono);
+  color: var(--fg-faint);
+}
+
+.pct {
+  flex: none;
+  font: 11px var(--font-mono);
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--status-waiting-soft);
+  color: var(--status-waiting);
+  font: 600 10.5px var(--font-mono);
+}
+
+.badgeFailed {
+  background: var(--status-offline-soft);
+  color: var(--status-offline);
+}
+
+.close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 6px 0 2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-faint);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--anim-fast);
+}
+
+.tab:hover .close,
+.tab[data-focused] .close,
+.close:focus-visible {
+  opacity: 1;
+}
+
+.close:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  margin: auto 6px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-faint);
+  font: 500 12px var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.actionOn {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+
+.spacer {
+  flex: 1;
+}
+
+@container orchestra-tabs (max-width: 720px) {
+  .actionText {
+    display: none;
+  }
+
+  .goal {
+    display: none;
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes attention {
+  50% {
+    transform: scale(1.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker,
+  .tab[data-attention] .marker {
+    animation: none;
+  }
+
+  .tab,
+  .close {
+    transition: none;
+  }
+}

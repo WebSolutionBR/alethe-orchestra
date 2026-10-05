@@ -17,6 +17,7 @@ import {
   GitBranch,
   Home,
   MoreHorizontal,
+  Orbit,
   Plus,
   RefreshCw,
   Search,
@@ -38,6 +39,8 @@ import { type Group, type Project } from '../../lib/types'
 import { useProjectsStore } from '../../stores/projectsStore'
 import { useUiStore } from '../../stores/uiStore'
 import { EmptyState } from '../EmptyState'
+import { AttentionIcon } from '../Orchestra/attention/AttentionBadge'
+import { useAttentionLabel } from '../Orchestra/attention/useAttention'
 import { SidebarNowPlaying } from '../SidebarNowPlaying'
 import { UserProfile } from '../UserProfile'
 import { ContextMenu, type MenuItem } from './ContextMenu'
@@ -45,6 +48,7 @@ import { FileExplorer } from './FileExplorer'
 import { GitControl } from './GitControl'
 import { GroupNode } from './GroupNode'
 import { NormalProjectSidebar } from './NormalProjectSidebar'
+import { LegacyResync } from './LegacyResync'
 import { LayoutFooter, WorkspaceLayoutFooter } from './LayoutFooter'
 import { ProjectNode } from './ProjectNode'
 import styles from './ProjectSidebar.module.css'
@@ -111,6 +115,7 @@ export function ProjectSidebar() {
 
 function CleanProjectSidebar() {
   const t = useT()
+  const orchestraLabel = useAttentionLabel(t('orchestra.open'))
   // --- data selectors (reactive) ---
   const { projects, groups, ungroupedOrder, containers, activeProjectId, showGitControl, preferences } = useProjectsStore(
     useShallow((s) => ({
@@ -475,6 +480,8 @@ function CleanProjectSidebar() {
     )
   }
 
+  const workspaceTabActive = activeView !== 'home' && activeView !== 'orchestra'
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.sidebarToolbar} aria-label={t('ui.sidebar.navigation')}>
@@ -496,7 +503,7 @@ function CleanProjectSidebar() {
           type="button"
           aria-label={t('ui.sidebar.projects')}
           title={t('ui.sidebar.projects')}
-          className={`${styles.toolbarButton} ${activeView !== 'home' && sidebarTab === 'projects' ? styles.toolbarButtonActive : ''}`}
+          className={`${styles.toolbarButton} ${workspaceTabActive && sidebarTab === 'projects' ? styles.toolbarButtonActive : ''}`}
           onClick={() => {
             setSidebarTab('projects')
             setActiveView('workspace')
@@ -508,7 +515,7 @@ function CleanProjectSidebar() {
           type="button"
           aria-label={t('ui.sidebar.files')}
           title={t('ui.sidebar.files')}
-          className={`${styles.toolbarButton} ${activeView !== 'home' && sidebarTab === 'files' ? styles.toolbarButtonActive : ''}`}
+          className={`${styles.toolbarButton} ${workspaceTabActive && sidebarTab === 'files' ? styles.toolbarButtonActive : ''}`}
           onClick={() => {
             setSidebarTab('files')
             setActiveView('workspace')
@@ -521,7 +528,7 @@ function CleanProjectSidebar() {
             type="button"
             aria-label={t('ui.sidebar.git')}
             title={t('ui.sidebar.git')}
-            className={`${styles.toolbarButton} ${activeView !== 'home' && sidebarTab === 'git' ? styles.toolbarButtonActive : ''}`}
+            className={`${styles.toolbarButton} ${workspaceTabActive && sidebarTab === 'git' ? styles.toolbarButtonActive : ''}`}
             onClick={() => {
               setSidebarTab('git')
               setActiveView('workspace')
@@ -530,6 +537,18 @@ function CleanProjectSidebar() {
             <GitBranch size={14} />
           </button>
         ) : null}
+        <span className={styles.toolbarDivider} />
+        <button
+          type="button"
+          aria-label={orchestraLabel}
+          title={t('orchestra.openTitle')}
+          className={`${styles.toolbarButton} ${activeView === 'orchestra' ? styles.toolbarButtonActive : ''}`}
+          onClick={() => setActiveView('orchestra')}
+        >
+          <AttentionIcon>
+            <Orbit size={14} />
+          </AttentionIcon>
+        </button>
         <span className={styles.toolbarSpacer} />
         <button
           type="button"
@@ -689,6 +708,7 @@ function CleanProjectSidebar() {
       {menu ? (
         <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />
       ) : null}
+      <LegacyResync />
       <WorkspaceLayoutFooter />
       <LayoutFooter />
       {preferences.topbarStyle === 'three-areas' ? (

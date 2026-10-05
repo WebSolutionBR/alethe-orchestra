@@ -5,6 +5,7 @@ import {
   Globe2,
   Layout,
   MoveRight,
+  Orbit,
   PanelTopOpen,
   Pencil,
   Plus,
@@ -114,6 +115,16 @@ export function createSidebarMenus(deps: SidebarMenuDeps) {
       onClick: () => {
         actions.addProjectToWorkspace(project.id)
         setActiveView('workspace')
+      },
+    },
+    {
+      kind: 'item',
+      label: t('orchestra.project.openHere'),
+      icon: <Orbit size={14} />,
+      onClick: () => {
+        // Orchestra lives inside the project: its folder is the session cwd.
+        useProjectsStore.getState().setActiveProjectOnly(project.id)
+        setActiveView('orchestra')
       },
     },
     { kind: 'separator' },

@@ -1,3 +1,6 @@
+import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
+import { projectPtBR } from '../../../components/Orchestra/i18n/project'
+import { sessionsPtBR } from '../../../components/Orchestra/i18n/sessions'
 import type { MessageKey } from './en'
 
 export const ptBR: Record<MessageKey, string> = {
@@ -119,8 +122,7 @@ export const ptBR: Record<MessageKey, string> = {
   'claudeAccounts.remove': 'Remover',
   'claudeAccounts.namePlaceholder': 'Nome da conta',
   'claudeAccounts.profilePlaceholder': 'Perfil do Chrome (opcional)',
-  'claudeAccounts.signedOut':
-    'Não logada — abra um terminal Claude com esta conta para logar.',
+  'claudeAccounts.signedOut': 'Não logada — abra um terminal Claude com esta conta para logar.',
   'claudeAccounts.usageError': 'Uso indisponível.',
   'claudeAccounts.loginExpired':
     'Login expirado — clique em Conectar e entre de novo (necessário a cada ~4 semanas).',
@@ -728,7 +730,8 @@ export const ptBR: Record<MessageKey, string> = {
   'theme.ember.desc':
     'Carvão frio, divisores de fio de cabelo e um acento laranja brasa no que está ativo.',
   'theme.golden-premium.label': 'Dourado Premium',
-  'theme.golden-premium.desc': 'Luxuoso marrom escuro e pretos profundos com elegantes detalhes dourados.',
+  'theme.golden-premium.desc':
+    'Luxuoso marrom escuro e pretos profundos com elegantes detalhes dourados.',
   'todo.tagsPlaceholder': 'Tags: docs, fix',
   'todo.linkProject': 'Vincular tarefa a um projeto',
   'todo.noProject': 'Nenhum projeto',
@@ -755,18 +758,30 @@ export const ptBR: Record<MessageKey, string> = {
   'whatsNew.close': 'Entendi',
   'whatsNew.update': 'Ver atualização',
   'whatsNew.releaseHeading': 'v{version} — {date}',
-  'whatsNew.v150.note1': 'O export de backup de perfil agora arquiva o perfil inteiro (todos, histórico, preferências, tokens, scrollback) em vez de uma lista curta fixa.',
-  'whatsNew.v150.note2': 'Nova ação de menu “Erase all data (fresh install)” apaga todos os perfis, contas, projetos, scrollback, configurações e logs.',
-  'whatsNew.v150.note3': 'Tela de carregamento inicial reformulada para compartilhar o fundo e o ASCII art da Home.',
-  'whatsNew.v150.note4': 'Corrigido o travamento ao trocar de conta em “PTY reader flush barrier timed out”, fechando os pseudoconsoles dos terminais estacionados antes da espera final.',
-  'whatsNew.v150.note5': 'Corrigida a criação de conta presa em loading quebrado, e detecção de CLI com timeout para o onboarding não congelar em “Detecting installed CLIs…”.',
-  'whatsNew.v150.note6': 'Controle remoto via LAN: visão web móvel autenticada para ver chats, acompanhar o terminal ao vivo e enviar uma mensagem por vez.',
-  'whatsNew.v141.note1': 'Corrigidas as notas de versão mostradas aqui e no GitHub — elas vinham de uma cópia solta e desatualizada do changelog.',
-  'whatsNew.v140.note1': 'Graphify agora é opcional: ligue ou desligue o painel de grafo em Preferências sem mexer na config MCP dos agentes.',
-  'whatsNew.v140.note2': 'O comando `alethe` no terminal abre a pasta atual como projeto — ou foca o app, se já estiver aberto.',
-  'whatsNew.v140.note3': 'File Explorer: duplo-clique em qualquer arquivo para abri-lo como pane no workspace.',
-  'whatsNew.v140.note4': 'Git Control: duplo-clique num arquivo em Changes ou Staged abre o diff como pane.',
-  'whatsNew.v140.note5': 'Nova tela "Sobre & Atualizações" nas Preferências, com progresso e erros visíveis ao atualizar.',
+  'whatsNew.v150.note1':
+    'O export de backup de perfil agora arquiva o perfil inteiro (todos, histórico, preferências, tokens, scrollback) em vez de uma lista curta fixa.',
+  'whatsNew.v150.note2':
+    'Nova ação de menu “Erase all data (fresh install)” apaga todos os perfis, contas, projetos, scrollback, configurações e logs.',
+  'whatsNew.v150.note3':
+    'Tela de carregamento inicial reformulada para compartilhar o fundo e o ASCII art da Home.',
+  'whatsNew.v150.note4':
+    'Corrigido o travamento ao trocar de conta em “PTY reader flush barrier timed out”, fechando os pseudoconsoles dos terminais estacionados antes da espera final.',
+  'whatsNew.v150.note5':
+    'Corrigida a criação de conta presa em loading quebrado, e detecção de CLI com timeout para o onboarding não congelar em “Detecting installed CLIs…”.',
+  'whatsNew.v150.note6':
+    'Controle remoto via LAN: visão web móvel autenticada para ver chats, acompanhar o terminal ao vivo e enviar uma mensagem por vez.',
+  'whatsNew.v141.note1':
+    'Corrigidas as notas de versão mostradas aqui e no GitHub — elas vinham de uma cópia solta e desatualizada do changelog.',
+  'whatsNew.v140.note1':
+    'Graphify agora é opcional: ligue ou desligue o painel de grafo em Preferências sem mexer na config MCP dos agentes.',
+  'whatsNew.v140.note2':
+    'O comando `alethe` no terminal abre a pasta atual como projeto — ou foca o app, se já estiver aberto.',
+  'whatsNew.v140.note3':
+    'File Explorer: duplo-clique em qualquer arquivo para abri-lo como pane no workspace.',
+  'whatsNew.v140.note4':
+    'Git Control: duplo-clique num arquivo em Changes ou Staged abre o diff como pane.',
+  'whatsNew.v140.note5':
+    'Nova tela "Sobre & Atualizações" nas Preferências, com progresso e erros visíveis ao atualizar.',
   'whatsNew.v140.note6': 'A versão instalada agora aparece sempre no rodapé da sidebar.',
   'whatsNew.v140.note7':
     'Segurança: o listener HTTP interno do AgentCanvas agora exige token secreto, e o corpo da requisição é limitado a 1 MB.',
@@ -1989,7 +2004,8 @@ export const ptBR: Record<MessageKey, string> = {
   'mcp.errGeneric': 'A operação falhou.',
   'mcp.healthCheck': 'Testar',
   'mcp.healthChecking': 'Testando…',
-  'mcp.healthCheckHint': 'Pergunta ao agente se ele consegue mesmo alcançar os servidores. O Claude conecta em cada um, então leva alguns segundos.',
+  'mcp.healthCheckHint':
+    'Pergunta ao agente se ele consegue mesmo alcançar os servidores. O Claude conecta em cada um, então leva alguns segundos.',
   'mcp.health.connected': 'conectado',
   'mcp.health.failed': 'falhou',
   'mcp.health.needsAuth': 'precisa autenticar',
@@ -2091,4 +2107,78 @@ export const ptBR: Record<MessageKey, string> = {
   'skills.removeFailed': 'Não deu para remover a skill',
   'skills.errBundled': 'Essa skill vem com o agente e não pode ser removida pelo Alethe.',
 
+  /* ---- orchestra ---- */
+  'orchestra.open': 'Orquestra',
+  'orchestra.openTitle': 'Orquestra: um orquestrador delegando para workers Claude',
+  'orchestra.menuItem': 'Orquestra',
+  'orchestra.start.title': 'Orquestra',
+  'orchestra.start.subtitle':
+    'Uma sessão Claude orquestradora divide seu objetivo em tarefas e as delega para sessões Claude workers. Os workers reportam progresso e conversam entre si num message bus compartilhado.',
+  'orchestra.start.folder': 'Pasta de trabalho',
+  'orchestra.start.folderHint':
+    'Todos os agentes rodam neste diretório e compartilham seus arquivos.',
+  'orchestra.start.noProjects':
+    'Nenhum projeto ainda. Um projeto dá aos agentes uma pasta de trabalho.',
+  'orchestra.start.chooseFolder': 'Escolher pasta…',
+  'orchestra.start.selectedFolder': 'Pasta selecionada',
+  'orchestra.start.goal': 'Objetivo',
+  'orchestra.start.goalOptional': 'opcional',
+  'orchestra.start.goalPlaceholder':
+    'Descreva o que os agentes devem entregar. Você também pode deixar vazio e digitar depois no terminal do orquestrador.',
+  'orchestra.start.autonomous': 'Modo autônomo',
+  'orchestra.start.autonomousWarning':
+    'Passa --dangerously-skip-permissions para todos os agentes: eles editam arquivos e rodam comandos sem pedir aprovação.',
+  'orchestra.start.supervisedHint':
+    'Os agentes pedem permissão antes de editar arquivos ou rodar comandos. Abra o terminal do agente para aprovar.',
+  'orchestra.start.submit': 'Iniciar orquestra',
+  'orchestra.start.starting': 'Iniciando…',
+  'orchestra.start.needFolder': 'Escolha uma pasta de trabalho para iniciar.',
+  'orchestra.goal': 'objetivo',
+  'orchestra.noGoal': 'sem objetivo ainda, fale com o orquestrador',
+  'orchestra.elapsed': 'decorrido',
+  'orchestra.overall': 'geral',
+  'orchestra.workerCount': '{count} workers',
+  'orchestra.workerCountOne': '1 worker',
+  'orchestra.autonomousTag': 'autônomo',
+  'orchestra.supervisedTag': 'supervisionado',
+  'orchestra.modes': 'Visualização',
+  'orchestra.modeShortcut': '{label} (Alt+{n})',
+  'orchestra.mode.constellation': 'Constelação',
+  'orchestra.mode.mission': 'Mission control',
+  'orchestra.mode.flow': 'Fluxo',
+  'orchestra.mode.terminals': 'Terminais',
+  'orchestra.mode.timeline': 'Linha do tempo',
+  'orchestra.mode.hive': 'Colmeia',
+  'orchestra.orchestrator': 'Orquestrador',
+  'orchestra.orchestratorTitle': 'Abrir o terminal do orquestrador',
+  'orchestra.stop': 'Parar',
+  'orchestra.confirmStop':
+    'Parar esta orquestração? O orquestrador e os workers dela serão encerrados; as outras orquestrações continuam rodando.',
+  'orchestra.footer.agents': '{count} agentes',
+  'orchestra.footer.agentsOne': '1 agente',
+  'orchestra.footer.messages': '{count} mensagens no bus',
+  'orchestra.footer.allDone': 'todos os workers concluídos',
+  'orchestra.footer.blocked': '{count} bloqueados',
+  'orchestra.footer.shortcuts': 'Alt+1-6: trocar visualização · Esc: limpar seleção',
+  'orchestra.state.starting': 'iniciando',
+  'orchestra.state.waiting': 'aguardando',
+  'orchestra.state.thinking': 'pensando',
+  'orchestra.state.editing': 'editando',
+  'orchestra.state.testing': 'testando',
+  'orchestra.state.blocked': 'bloqueado',
+  'orchestra.state.done': 'concluído',
+  'orchestra.state.idle': 'ocioso',
+  'orchestra.state.exited': 'falhou',
+  'orchestra.drawer.close': 'Fechar painel',
+  'orchestra.drawer.resize': 'Redimensionar painel',
+  'orchestra.drawer.task': 'tarefa',
+  'orchestra.drawer.waitingFor': 'Aguardando {deps} terminar antes de iniciar.',
+  'orchestra.drawer.starting': 'Iniciando a sessão Claude…',
+  'orchestra.drawer.exited': 'Este agente terminou. Última atividade:',
+  'orchestra.drawer.noActivity': 'Nenhuma atividade registrada.',
+  'orchestra.drawer.sendPlaceholder': 'Mensagem para {id}… (Enter envia)',
+  'orchestra.drawer.send': 'Enviar',
+  ...usagePtBR,
+  ...projectPtBR,
+  ...sessionsPtBR,
 }

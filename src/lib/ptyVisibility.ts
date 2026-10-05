@@ -1,5 +1,11 @@
 import { useSyncExternalStore } from 'react'
 
+import {
+  type OrchestraSession,
+  type OrchestraState,
+  shownSessionIds,
+  useOrchestraStore,
+} from '../stores/orchestraStore'
 import { useProjectsStore } from '../stores/projectsStore'
 import { useUiStore } from '../stores/uiStore'
 
@@ -71,7 +77,34 @@ export function computeVisibleFocusedPtyIds(): PtyVisibilitySets {
     focused.add(canvasId)
   }
 
+  // Orchestra agents are not workspace panes. While the view is open every agent PTY of the
+  // sessions on screen counts as visible (the terminals mode and the side drawer mount them);
+  // their selected agents are focused.
+  if (ui.activeView === 'orchestra') {
+    for (const session of shownOrchestraSessions(useOrchestraStore.getState())) {
+      for (const agent of session.agents) {
+        if (!agent.ptyId) continue
+        visible.add(agent.ptyId)
+        if (agent.id === session.selectedId) focused.add(agent.ptyId)
+      }
+    }
+  }
+
   return { visible, focused }
+}
+
+/** Orchestra sessions on screen: the active one, and the other one side by side. */
+function shownOrchestraSessions(state: OrchestraState): OrchestraSession[] {
+  return shownSessionIds(state)
+    .map((id) => state.sessions[id])
+    .filter((session): session is OrchestraSession => Boolean(session))
+}
+
+/** The orchestra fields the visibility sets depend on, as one comparable string. */
+function orchestraVisibilityKey(state: OrchestraState): string {
+  return shownOrchestraSessions(state)
+    .map((s) => [s.id, s.selectedId ?? '', ...s.agents.map((a) => a.ptyId ?? '')].join('|'))
+    .join('/')
 }
 
 function subscribePtyVisibility(callback: () => void): () => void {
@@ -83,9 +116,16 @@ function subscribePtyVisibility(callback: () => void): () => void {
     cached = null
     callback()
   })
+  // Only the fields that change the result invalidate the cache; hook events stream fast.
+  const unsubOrchestra = useOrchestraStore.subscribe((state, prev) => {
+    if (orchestraVisibilityKey(state) === orchestraVisibilityKey(prev)) return
+    cached = null
+    callback()
+  })
   return () => {
     unsubProjects()
     unsubUi()
+    unsubOrchestra()
   }
 }
 

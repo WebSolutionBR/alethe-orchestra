@@ -1,0 +1,347 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fade 0.12s ease-out;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(820px, 100%);
+  height: min(640px, 100%);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog[data-dragging] {
+  border-color: var(--agent-codex);
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mark {
+  color: var(--agent-codex);
+}
+
+.title {
+  margin: 0;
+  font: 600 13px var(--font-sans);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.faint {
+  color: var(--fg-faint);
+}
+
+.label {
+  flex: none;
+  color: var(--fg-faint);
+  font: 11px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.targets {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.target {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 12px var(--font-mono);
+  cursor: pointer;
+}
+
+.target i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-offline);
+}
+
+.target[data-live] i {
+  background: var(--status-working);
+}
+
+.target:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.target[aria-checked='true'] {
+  border-color: var(--agent-codex);
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+.tabs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px 0;
+}
+
+.tab {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--fg-faint);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  border-bottom-color: var(--fg);
+  color: var(--fg);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font: 500 12px var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 14px;
+}
+
+.text,
+.preview {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.55 var(--font-mono);
+}
+
+.text {
+  resize: none;
+  outline: none;
+}
+
+.text:focus {
+  border-color: var(--accent-border);
+}
+
+/* The dialog is portaled out of the Orchestra view, so it repeats the view's focus ring. */
+.dialog :where(button):focus-visible,
+.text:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.text::placeholder {
+  color: var(--fg-faint);
+}
+
+.preview {
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.drop {
+  position: absolute;
+  inset: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed var(--agent-codex);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  color: var(--fg);
+  font: 500 13px var(--font-sans);
+  pointer-events: none;
+}
+
+.attachments {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 140px;
+  margin: 0;
+  padding: 0 14px 8px;
+  overflow: auto;
+  list-style: none;
+}
+
+.att {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.thumb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  object-fit: cover;
+}
+
+.thumb[data-kind='image'] {
+  color: var(--agent-codex);
+}
+
+.thumb[data-kind='video'],
+.thumb[data-kind='audio'] {
+  color: var(--agent-claude);
+}
+
+.attText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font: 11.5px var(--font-mono);
+}
+
+.attName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.iconBtn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.error {
+  flex: none;
+  margin: 0 14px 8px;
+  color: var(--status-offline);
+  font: 12px var(--font-mono);
+}
+
+.warn {
+  color: var(--status-waiting);
+  font: 12px var(--font-mono);
+}
+
+.foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  font: 11.5px var(--font-mono);
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-on);
+  font: 500 12.5px var(--font-sans);
+  cursor: pointer;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop {
+    animation: none;
+  }
+}

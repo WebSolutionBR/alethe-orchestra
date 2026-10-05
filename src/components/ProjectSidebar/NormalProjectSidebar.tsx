@@ -17,6 +17,7 @@ import {
   Grid3x3,
   Home,
   MoreHorizontal,
+  Orbit,
   Plus,
   RefreshCw,
   Search,
@@ -36,12 +37,15 @@ import { type Group, type Project } from '../../lib/types'
 import { useProjectsStore } from '../../stores/projectsStore'
 import { useUiStore } from '../../stores/uiStore'
 import { EmptyState } from '../EmptyState'
+import { AttentionIcon } from '../Orchestra/attention/AttentionBadge'
+import { useAttentionLabel } from '../Orchestra/attention/useAttention'
 import { SidebarNowPlaying } from '../SidebarNowPlaying'
 import { UserProfile } from '../UserProfile'
 import { ContextMenu, type MenuItem } from './ContextMenu'
 import { FileExplorer } from './FileExplorer'
 import { GitControl } from './GitControl'
 import { NormalGroupNode as GroupNode } from './NormalGroupNode'
+import { LegacyResync } from './LegacyResync'
 import { LayoutFooter, WorkspaceLayoutFooter } from './LayoutFooter'
 import { NormalProjectNode as ProjectNode } from './NormalProjectNode'
 import styles from './NormalProjectSidebar.module.css'
@@ -103,6 +107,7 @@ function dropIndicatorForEvent(event: DragMoveEvent | DragEndEvent): SidebarDrop
 
 export function NormalProjectSidebar() {
   const t = useT()
+  const orchestraLabel = useAttentionLabel(t('orchestra.open'))
   // --- data selectors (reactive) ---
   const projects = useProjectsStore((s) => s.projects)
   const groups = useProjectsStore((s) => s.groups)
@@ -531,6 +536,20 @@ export function NormalProjectSidebar() {
             <span>{t('ui.sidebar.git')}</span>
           </button>
         ) : null}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeView === 'orchestra'}
+          aria-label={orchestraLabel}
+          title={t('orchestra.openTitle')}
+          className={`${styles.sidebarTab} ${activeView === 'orchestra' ? styles.sidebarTabActive : ''}`}
+          onClick={() => setActiveView('orchestra')}
+        >
+          <AttentionIcon>
+            <Orbit size={14} />
+          </AttentionIcon>
+          <span>{t('orchestra.open')}</span>
+        </button>
       </div>
 
       <div className={styles.quickNavList}>
@@ -684,6 +703,7 @@ export function NormalProjectSidebar() {
       {menu ? (
         <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />
       ) : null}
+      <LegacyResync />
       <WorkspaceLayoutFooter />
       <LayoutFooter />
       {preferences.topbarStyle === 'three-areas' ? (

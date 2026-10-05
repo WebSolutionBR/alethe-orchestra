@@ -1,0 +1,37 @@
+/* Session panes of the Orchestra view: one session, or two side by side. */
+.panes {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* A flex row, so the session inside (`flex: 1`) fills it. No stacking context: the composer's
+   fixed backdrop must still cover the whole window. */
+.pane {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.divider + .pane {
+  border-left: 1px solid var(--border);
+}
+
+/* Above the views' own layers (up to 5) and the focus outline; two classes so it beats the
+   splitter's own z-index whatever order the stylesheets load in. */
+.panes > .divider {
+  z-index: 7;
+}
+
+/* The pane that owns the keyboard. */
+.pane[data-focused]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border: 1px solid var(--accent-border);
+  pointer-events: none;
+}

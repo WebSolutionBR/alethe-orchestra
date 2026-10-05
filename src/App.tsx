@@ -72,6 +72,9 @@ import { type InAppToast, useUiStore } from './stores/uiStore'
 const AgentCanvasPOC = lazy(() =>
   import('./components/AgentCanvasPOC').then((module) => ({ default: module.AgentCanvasPOC })),
 )
+const OrchestraView = lazy(() =>
+  import('./components/Orchestra').then((module) => ({ default: module.OrchestraView })),
+)
 const HomeView = lazy(() =>
   import('./components/HomeView').then((module) => ({ default: module.HomeView })),
 )
@@ -625,6 +628,8 @@ export default function App() {
                     <AgentSandbox />
                   ) : activeView === 'agentCanvas' ? (
                     <AgentCanvasPOC />
+                  ) : activeView === 'orchestra' ? (
+                    <OrchestraView />
                   ) : (
                     <WorkspaceView />
                   )}

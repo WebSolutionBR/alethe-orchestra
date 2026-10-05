@@ -1,3 +1,7 @@
+import { usageEn } from '../../../components/Orchestra/usage/i18n'
+import { projectEn } from '../../../components/Orchestra/i18n/project'
+import { sessionsEn } from '../../../components/Orchestra/i18n/sessions'
+
 export const en = {
   /* ---- loading ---- */
   'loading.initializing': 'Initializing workspace',
@@ -134,7 +138,8 @@ export const en = {
   'claudeAccounts.switchHere': 'Switch here',
   'claudeAccounts.switchedTo': 'Switched to {name}',
   'claudeAccounts.switchAccount': 'Switch Claude account',
-  'claudeAccounts.switchHereHint': 'Switch the focused terminal to this account (restarts it fresh).',
+  'claudeAccounts.switchHereHint':
+    'Switch the focused terminal to this account (restarts it fresh).',
   'claudeAccounts.noActiveTerminal': 'Focus a Claude terminal first, then switch.',
   'claudeAccounts.noProject': 'Open a project first, then connect the account.',
   'claudeAccounts.signInHint':
@@ -292,7 +297,7 @@ export const en = {
   'onboarding.agentsStatInstallable': 'installable',
   'onboarding.agentsNoMatch': 'No agent matches this filter.',
   'onboarding.agentsMissing':
-    "Alethe uses your own provider accounts and subscriptions. Missing a CLI or selected the wrong executable? Scan again or change it later in Preferences > Terminal > CLI paths.",
+    'Alethe uses your own provider accounts and subscriptions. Missing a CLI or selected the wrong executable? Scan again or change it later in Preferences > Terminal > CLI paths.',
   'onboarding.agentsRescan': 'Scan again',
   'agentInstall.needsNode':
     'This agent installs through npm, and Node.js was not found on this machine.',
@@ -745,18 +750,30 @@ export const en = {
   'whatsNew.close': 'Got it',
   'whatsNew.update': 'View update',
   'whatsNew.releaseHeading': 'v{version} — {date}',
-  'whatsNew.v150.note1': 'Full-profile backup export now archives the entire profile (todos, history, preferences, tokens, scrollback) instead of a fixed short list.',
-  'whatsNew.v150.note2': 'New “Erase all data (fresh install)” menu action wipes every profile, account, project, scrollback, setting and log.',
-  'whatsNew.v150.note3': 'Reworked startup loading screen to share Home’s background and ASCII-art treatment.',
-  'whatsNew.v150.note4': 'Fixed account switching hanging on “PTY reader flush barrier timed out” by closing parked terminals’ pseudoconsoles before the final flush wait.',
-  'whatsNew.v150.note5': 'Fixed creating a new account getting stuck on a broken loading state, and time-boxed CLI detection so onboarding can’t freeze on “Detecting installed CLIs…”.',
-  'whatsNew.v150.note6': 'LAN remote control: authenticated mobile web view to browse chats, watch terminal output live and send one message at a time.',
-  'whatsNew.v141.note1': 'Fixed the release notes shown here and on GitHub — they were pulling from a stray, outdated copy of the changelog.',
-  'whatsNew.v140.note1': 'Graphify is now optional: turn the code graph panel on or off from Preferences without touching the agents’ MCP config.',
-  'whatsNew.v140.note2': 'The `alethe` terminal command opens the current folder as a project — or focuses the app if it is already open.',
-  'whatsNew.v140.note3': 'File Explorer: double-click any file to open it as a pane in the workspace.',
-  'whatsNew.v140.note4': 'Git Control: double-click a file under Changes or Staged to open its diff as a pane.',
-  'whatsNew.v140.note5': 'New "About & Updates" screen in Preferences, with visible progress and errors while updating.',
+  'whatsNew.v150.note1':
+    'Full-profile backup export now archives the entire profile (todos, history, preferences, tokens, scrollback) instead of a fixed short list.',
+  'whatsNew.v150.note2':
+    'New “Erase all data (fresh install)” menu action wipes every profile, account, project, scrollback, setting and log.',
+  'whatsNew.v150.note3':
+    'Reworked startup loading screen to share Home’s background and ASCII-art treatment.',
+  'whatsNew.v150.note4':
+    'Fixed account switching hanging on “PTY reader flush barrier timed out” by closing parked terminals’ pseudoconsoles before the final flush wait.',
+  'whatsNew.v150.note5':
+    'Fixed creating a new account getting stuck on a broken loading state, and time-boxed CLI detection so onboarding can’t freeze on “Detecting installed CLIs…”.',
+  'whatsNew.v150.note6':
+    'LAN remote control: authenticated mobile web view to browse chats, watch terminal output live and send one message at a time.',
+  'whatsNew.v141.note1':
+    'Fixed the release notes shown here and on GitHub — they were pulling from a stray, outdated copy of the changelog.',
+  'whatsNew.v140.note1':
+    'Graphify is now optional: turn the code graph panel on or off from Preferences without touching the agents’ MCP config.',
+  'whatsNew.v140.note2':
+    'The `alethe` terminal command opens the current folder as a project — or focuses the app if it is already open.',
+  'whatsNew.v140.note3':
+    'File Explorer: double-click any file to open it as a pane in the workspace.',
+  'whatsNew.v140.note4':
+    'Git Control: double-click a file under Changes or Staged to open its diff as a pane.',
+  'whatsNew.v140.note5':
+    'New "About & Updates" screen in Preferences, with visible progress and errors while updating.',
   'whatsNew.v140.note6': 'The installed version is now always visible in the sidebar footer.',
   'whatsNew.v140.note7':
     'Security: the AgentCanvas internal HTTP listener now requires a secret token, and its request body is capped at 1 MB.',
@@ -1973,7 +1990,8 @@ export const en = {
   'mcp.errGeneric': 'The operation failed.',
   'mcp.healthCheck': 'Check',
   'mcp.healthChecking': 'Checking…',
-  'mcp.healthCheckHint': 'Ask the agent whether it can actually reach its servers. Claude connects to each one, so it takes a few seconds.',
+  'mcp.healthCheckHint':
+    'Ask the agent whether it can actually reach its servers. Claude connects to each one, so it takes a few seconds.',
   'mcp.health.connected': 'connected',
   'mcp.health.failed': 'failed',
   'mcp.health.needsAuth': 'needs auth',
@@ -2013,7 +2031,8 @@ export const en = {
   'mcp.registryCount': '{count} result(s)',
   'mcp.registryLoading': 'Searching the registry…',
   'mcp.registryNoResults': 'No server matched.',
-  'mcp.registryOffline': 'The registry could not be reached and nothing was cached for this search.',
+  'mcp.registryOffline':
+    'The registry could not be reached and nothing was cached for this search.',
   'mcp.registryStale': 'Registry unreachable — showing the copy saved on {date}.',
   'mcp.addWritten': '{count} server(s) added to {agents}',
   'mcp.fieldName': 'Name',
@@ -2053,7 +2072,8 @@ export const en = {
   'mcp.tabSkills': 'Skills',
   'skills.loading': 'Reading the skill folders…',
   'skills.emptyTitle': 'No skill installed',
-  'skills.emptyDescription': 'Alethe looks in the skills folder of each agent and in the shared store.',
+  'skills.emptyDescription':
+    'Alethe looks in the skills folder of each agent and in the shared store.',
   'skills.selectOne': 'Pick a skill to inspect it',
   'skills.sharedStore': 'Shared store',
   'skills.lockSource': 'source',
@@ -2074,6 +2094,78 @@ export const en = {
   'skills.removeFailed': 'Could not remove the skill',
   'skills.errBundled': 'This skill ships with the agent and cannot be removed from Alethe.',
 
+  /* ---- orchestra ---- */
+  'orchestra.open': 'Orchestra',
+  'orchestra.openTitle': 'Orchestra: one orchestrator delegating to Claude workers',
+  'orchestra.menuItem': 'Orchestra',
+  'orchestra.start.title': 'Orchestra',
+  'orchestra.start.subtitle':
+    'One orchestrator Claude session splits your goal into tasks and delegates them to worker Claude sessions. Workers report progress and talk to each other on a shared message bus.',
+  'orchestra.start.folder': 'Working folder',
+  'orchestra.start.folderHint': 'Every agent runs in this directory and shares its files.',
+  'orchestra.start.noProjects': 'No projects yet. A project gives the agents a folder to work in.',
+  'orchestra.start.chooseFolder': 'Choose folder…',
+  'orchestra.start.selectedFolder': 'Selected folder',
+  'orchestra.start.goal': 'Goal',
+  'orchestra.start.goalOptional': 'optional',
+  'orchestra.start.goalPlaceholder':
+    'Describe what the agents should accomplish. You can also leave it empty and type it later in the orchestrator terminal.',
+  'orchestra.start.autonomous': 'Autonomous mode',
+  'orchestra.start.autonomousWarning':
+    'Passes --dangerously-skip-permissions to every agent: they edit files and run commands without asking for approval.',
+  'orchestra.start.supervisedHint':
+    'Agents ask before editing files or running commands. Open an agent terminal to approve.',
+  'orchestra.start.submit': 'Start orchestra',
+  'orchestra.start.starting': 'Starting…',
+  'orchestra.start.needFolder': 'Choose a working folder to start.',
+  'orchestra.goal': 'goal',
+  'orchestra.noGoal': 'no goal yet, tell the orchestrator',
+  'orchestra.elapsed': 'elapsed',
+  'orchestra.overall': 'overall',
+  'orchestra.workerCount': '{count} workers',
+  'orchestra.workerCountOne': '1 worker',
+  'orchestra.autonomousTag': 'autonomous',
+  'orchestra.supervisedTag': 'supervised',
+  'orchestra.modes': 'Visualization',
+  'orchestra.modeShortcut': '{label} (Alt+{n})',
+  'orchestra.mode.constellation': 'Constellation',
+  'orchestra.mode.mission': 'Mission control',
+  'orchestra.mode.flow': 'Flow',
+  'orchestra.mode.terminals': 'Terminals',
+  'orchestra.mode.timeline': 'Timeline',
+  'orchestra.mode.hive': 'Hive',
+  'orchestra.orchestrator': 'Orchestrator',
+  'orchestra.orchestratorTitle': 'Open the orchestrator terminal',
+  'orchestra.stop': 'Stop',
+  'orchestra.confirmStop':
+    'Stop this orchestration? Its orchestrator and workers will be closed; the other orchestrations keep running.',
+  'orchestra.footer.agents': '{count} agents',
+  'orchestra.footer.agentsOne': '1 agent',
+  'orchestra.footer.messages': '{count} messages on the bus',
+  'orchestra.footer.allDone': 'all workers done',
+  'orchestra.footer.blocked': '{count} blocked',
+  'orchestra.footer.shortcuts': 'Alt+1-6: switch view · Esc: clear selection',
+  'orchestra.state.starting': 'starting',
+  'orchestra.state.waiting': 'waiting',
+  'orchestra.state.thinking': 'thinking',
+  'orchestra.state.editing': 'editing',
+  'orchestra.state.testing': 'testing',
+  'orchestra.state.blocked': 'blocked',
+  'orchestra.state.done': 'done',
+  'orchestra.state.idle': 'idle',
+  'orchestra.state.exited': 'failed',
+  'orchestra.drawer.close': 'Close panel',
+  'orchestra.drawer.resize': 'Resize panel',
+  'orchestra.drawer.task': 'task',
+  'orchestra.drawer.waitingFor': 'Waiting for {deps} to finish before starting.',
+  'orchestra.drawer.starting': 'Starting the Claude session…',
+  'orchestra.drawer.exited': 'This agent has ended. Last activity:',
+  'orchestra.drawer.noActivity': 'No activity recorded.',
+  'orchestra.drawer.sendPlaceholder': 'Message {id}… (Enter sends)',
+  'orchestra.drawer.send': 'Send',
+  ...usageEn,
+  ...projectEn,
+  ...sessionsEn,
 } as const
 
 export type MessageKey = keyof typeof en

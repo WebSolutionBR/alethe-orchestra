@@ -10,6 +10,7 @@ import {
   setResourcePolicy,
   updatePtyRuntimeMeta,
 } from '../lib/tauri'
+import { useOrchestraStore } from '../stores/orchestraStore'
 import { useProjectsStore } from '../stores/projectsStore'
 import { useTerminalsStore } from '../stores/terminalsStore'
 import { useUiStore } from '../stores/uiStore'
@@ -84,6 +85,28 @@ function collectRuntimeMetas(): PtyRuntimeMeta[] {
     known.add(canvasId)
   }
 
+  // Orchestra agents work unattended in hidden PTYs; suspending one would silently stall the
+  // whole run, so the agents of every running session stay protected.
+  for (const session of Object.values(useOrchestraStore.getState().sessions)) {
+    for (const agent of session.agents) {
+      if (!agent.ptyId || known.has(agent.ptyId)) continue
+      const runtime = terminalsState.byPtyId[agent.ptyId]
+      metas.push({
+        id: agent.ptyId,
+        kind: 'claude',
+        status: runtime?.status ?? 'waiting',
+        visible: visiblePtys.has(agent.ptyId),
+        focused: focusedPtys.has(agent.ptyId),
+        protected: true,
+        lastIoAtMs: runtime?.lastIoAt ?? now,
+        spawnedAtMs: runtime?.spawnedAt ?? agent.startedAt,
+        lastUsedAtMs: runtime?.lastIoAt ?? now,
+        reportedAtMs: now,
+      })
+      known.add(agent.ptyId)
+    }
+  }
+
   for (const runtime of Object.values(terminalsState.byPtyId)) {
     if (known.has(runtime.ptyId)) continue
     metas.push({
@@ -153,7 +176,7 @@ export function useResourceSupervisor(hydrated: boolean): void {
         useUiStore.getState().addMemorySample(stats)
         useUiStore.getState().setRamMb(stats.total_mb)
       } catch {
-                                                                          
+        // Memory stats are best effort; the next tick tries again.
       }
     }
 

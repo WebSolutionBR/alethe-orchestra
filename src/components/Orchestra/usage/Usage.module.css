@@ -1,0 +1,169 @@
+/* Compact per-account usage strip (top bar) */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font: 11px var(--font-mono);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.accounts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+
+.name {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-muted);
+}
+
+.meter {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 34px;
+}
+
+.track {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.track > i {
+  display: block;
+  height: 100%;
+  background: var(--status-working);
+}
+
+.track.warn > i {
+  background: var(--status-waiting);
+}
+
+.track.hot > i {
+  background: var(--status-offline);
+}
+
+.pct {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pct.hot {
+  color: var(--status-offline);
+}
+
+.muted {
+  color: var(--fg-faint);
+}
+
+.iconBtn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.iconBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.toast {
+  color: var(--fg-muted);
+}
+
+/* Agent identity chip: account · model · effort */
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  font: 10.5px var(--font-mono);
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identity .sep {
+  color: var(--fg-faint);
+}
+
+/* Launch options (account / model / effort selects) */
+.launch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font: 11px var(--font-sans);
+  color: var(--fg-faint);
+}
+
+/* `background-color` keeps the reset's chevron image; the right padding leaves room for it. */
+.select select {
+  height: 28px;
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 26px 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-elevated);
+  color: var(--fg);
+  font: 12px var(--font-sans);
+}
+
+.select select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

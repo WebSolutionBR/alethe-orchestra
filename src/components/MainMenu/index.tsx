@@ -7,6 +7,7 @@ import {
   Globe2,
   Layers,
   Network,
+  Orbit,
   RefreshCw,
   ScrollText,
   Settings,
@@ -113,6 +114,16 @@ export function MainMenu() {
           <Globe2 size={14} /> <span>{t('menu.addBrowser')}</span>
         </button>
       ) : null}
+      <button
+        type="button"
+        className={styles.item}
+        onClick={() => {
+          setActiveView('orchestra')
+          closeMainMenu()
+        }}
+      >
+        <Orbit size={14} /> <span>{t('orchestra.menuItem')}</span>
+      </button>
       {AGENT_SANDBOX_ENABLED ? (
         <button
           type="button"

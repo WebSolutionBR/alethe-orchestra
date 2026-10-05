@@ -11,6 +11,7 @@ import {
   type OpenCodeBridgeStatus,
 } from './tauri'
 import type { AgentType } from './types'
+import { useOrchestraStore } from '../stores/orchestraStore'
 import { useProjectsStore } from '../stores/projectsStore'
 import { useTerminalsStore } from '../stores/terminalsStore'
 import { useUiStore } from '../stores/uiStore'
@@ -85,6 +86,9 @@ function flagAttention(ptyId: string): void {
   }
 }
 
+/** Pseudo project id that groups Orchestra agent time in the activity stats. */
+const ORCHESTRA_PROJECT_ID = '__orchestra__'
+
 function agentMetadata(): Map<string, AgentMeta> {
   const result = new Map<string, AgentMeta>()
   for (const project of useProjectsStore.getState().projects) {
@@ -108,6 +112,17 @@ function agentMetadata(): Map<string, AgentMeta> {
       terminalId: null,
       cwd: canvas.folder,
     })
+  }
+  for (const session of Object.values(useOrchestraStore.getState().sessions)) {
+    for (const agent of session.agents) {
+      if (!agent.ptyId || result.has(agent.ptyId)) continue
+      result.set(agent.ptyId, {
+        agent: 'claude',
+        projectId: ORCHESTRA_PROJECT_ID,
+        terminalId: null,
+        cwd: session.cwd ?? '',
+      })
+    }
   }
   return result
 }
@@ -229,7 +244,9 @@ function sample(): void {
         ? projects.activeProjectId
         : ui.activeView === 'agentCanvas'
           ? '__agent_canvas__'
-          : null,
+          : ui.activeView === 'orchestra'
+            ? ORCHESTRA_PROJECT_ID
+            : null,
     activeTerminalId:
       ui.activeView === 'workspace' ? (ui.activeTerminal?.terminalId ?? null) : null,
     agents: currentAgents(),

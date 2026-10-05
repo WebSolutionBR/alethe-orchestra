@@ -1,5 +1,21 @@
 <a id="readme-top"></a>
 
+> [!NOTE]
+> **Alethe Orchestra** is Web Solution's private fork of [Alethe](https://github.com/Kc1t/alethe-agents)
+> 1.7.8 (AGPL-3.0). It adds the **Orchestra**: an orchestrator Claude Code session splits a goal into
+> tasks and delegates them to worker sessions, which report progress and talk on a shared message
+> bus. Around it: six live views, a live transcript terminal you can scroll, search and copy, Obsidian
+> context before work starts and session notes written by a scribe, a creative agent role, resume
+> after closing the app, reports and per-agent controls. App id `com.websolution.alethe-orchestra`;
+> auto-update is off (this fork has no update channel).
+>
+> - **Windows installer:** release [v1.7.8-orchestra.1](https://github.com/WebSolutionBR/alethe-orchestra/releases/tag/v1.7.8-orchestra.1) (NSIS x64, SHA-256 in the release notes).
+> - **What changed:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md), section `[Unreleased]`. Design prototypes in
+>   [`docs/prototypes/`](docs/prototypes/2026-10-04-colmeia-mission/) and [`docs/concepts/`](docs/concepts/);
+>   sanitized configuration in [`config/`](config/README.md).
+>
+> The upstream README follows unchanged.
+
 <br />
 <div align="center">
   <a href="https://github.com/Kc1t/alethe-agents">

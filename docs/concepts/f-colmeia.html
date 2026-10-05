@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orchestra Colmeia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#101114; --elev:#1f2125; --sunken:#1a1c1f; --panel:#2a2d33;
+  --border:#2a2d33; --border-strong:rgba(243,244,246,.22);
+  --fg:#f3f4f6; --muted:#c8c8d0; --faint:#8b8b95; --accent:#ece9e2;
+  --claude:#d97757; --orch:#5ec8e5; --ok:#4ade80; --warn:#fbbf24;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:4px; --side:360px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.4 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;height:100vh;min-height:600px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:18px;padding:0 16px;height:52px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:8px;font:600 13px var(--mono);white-space:nowrap}
+.brand .mark{width:18px;height:18px;border:1px solid var(--border-strong);border-radius:3px;display:grid;place-items:center;color:var(--claude);font-size:12px}
+.brand .sub{color:var(--faint);font-weight:400}
+.sep{width:1px;height:22px;background:var(--border)}
+.goal{display:flex;flex-direction:column;min-width:0;flex:1;gap:1px}
+.goal .k{font:500 9.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.goal .v{color:var(--fg);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overall{display:flex;align-items:center;gap:10px;font:400 11px var(--mono);color:var(--faint);white-space:nowrap}
+.overall .bar{width:180px;height:4px;background:var(--panel);position:relative;border-radius:1px;overflow:hidden}
+.overall .bar i{position:absolute;inset:0 auto 0 0;background:var(--orch);transition:width .3s linear}
+.overall .pct{font:600 15px var(--mono);color:var(--fg);min-width:44px;text-align:right}
+.overall .meta b{color:var(--muted);font-weight:500}
+.overall .meta .w{color:var(--warn)}
+.btn{height:30px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r);background:var(--elev);display:inline-flex;align-items:center;gap:7px;font:500 12px var(--sans);color:var(--fg);white-space:nowrap}
+.btn:hover{background:var(--panel)}
+.btn .plus{font:600 14px var(--mono);color:var(--claude);line-height:1}
+.btn .cap{font:400 11px var(--mono);color:var(--faint)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* main */
+.main{display:grid;grid-template-columns:minmax(0,1fr) var(--side);min-height:0}
+.stage{position:relative;display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid var(--border)}
+.hivewrap{position:relative;min-height:0}
+#hive{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage-h{position:absolute;left:16px;top:12px;font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em;display:flex;gap:14px;z-index:2}
+.stage-h span{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:11px}
+.stage-h .first{text-transform:uppercase;letter-spacing:.08em;font-size:10px}
+
+/* hex cells */
+.cell{cursor:pointer}
+.cell .bgx{fill:var(--elev);stroke:var(--border);stroke-width:1}
+.cell:hover .bgx{stroke:var(--border-strong)}
+.cell .ring{fill:none;stroke:transparent;stroke-width:1.5}
+.cell.sel .ring{stroke:var(--accent)}
+.cell text{font-family:var(--mono);pointer-events:none}
+.cell .nm{font-size:10.5px;font-weight:500;fill:var(--muted)}
+.cell .ar{font-family:var(--sans);font-size:15.5px;font-weight:600;fill:var(--fg)}
+.cell .pc{font-size:12.5px;font-weight:500;fill:var(--fg)}
+.cell .st{font-size:9.5px;fill:var(--faint)}
+.ghost{fill:none;stroke:rgba(243,244,246,.05);stroke-width:1}
+.slot{cursor:pointer}
+.slot path{fill:transparent;stroke:rgba(243,244,246,.16);stroke-width:1;stroke-dasharray:3 4}
+.slot:hover path{stroke:var(--border-strong);fill:rgba(243,244,246,.02)}
+.slot text{font:500 18px var(--mono);fill:var(--faint);pointer-events:none}
+
+/* bus strip */
+.busstrip{border-top:1px solid var(--border);background:var(--sunken);padding:8px 0 8px;font:400 11.5px/1 var(--mono)}
+.busstrip .h{display:flex;align-items:center;gap:10px;padding:0 16px 6px;font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.bl{display:grid;grid-template-columns:92px 100px 14px 100px minmax(0,1fr);height:20px;align-items:center;padding:0 16px;color:var(--muted)}
+.bl .ts{color:var(--faint)} .bl .o{color:var(--orch)} .bl .w{color:var(--claude)} .bl .ar{color:var(--faint)}
+.bl .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.bl.new{animation:fadein .5s}
+@keyframes fadein{from{background:var(--elev)}}
+
+/* side panel */
+.side{display:flex;flex-direction:column;min-height:0;background:var(--bg)}
+.sp-h{padding:16px 18px 14px;border-bottom:1px solid var(--border)}
+.sp-h .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sp-h .gl{font:600 14px var(--mono);width:16px;text-align:center}
+.sp-h .nm{font:600 14px var(--mono)}
+.chip{white-space:nowrap;font:500 10.5px var(--mono);color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 6px;background:var(--sunken)}
+.status{margin-left:auto;font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.06em;display:inline-flex;align-items:center;gap:6px}
+.status i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.sp-prog{display:flex;align-items:baseline;gap:10px;margin-top:14px}
+.sp-prog .big{font:600 28px/1 var(--mono);letter-spacing:-.02em}
+.sp-prog .sub{font:400 11px var(--mono);color:var(--faint)}
+.sp-bar{height:3px;background:var(--panel);margin-top:10px;position:relative}
+.sp-bar i{position:absolute;inset:0 auto 0 0;background:var(--claude)}
+.sp-body{overflow-y:auto;min-height:0;flex:1;scrollbar-width:thin;scrollbar-color:var(--panel) transparent}
+.sec{padding:14px 18px;border-bottom:1px solid var(--border)}
+.sec .k{font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;justify-content:space-between}
+.task{color:var(--muted);line-height:1.5}
+.task code{font:500 11.5px var(--mono);color:var(--fg);background:var(--sunken);border:1px solid var(--border);border-radius:3px;padding:0 4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.stats div{background:var(--sunken);padding:8px 9px}
+.stats b{display:block;font:600 13px var(--mono);color:var(--fg)}
+.stats span{font:400 9.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.term{background:var(--sunken);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font:400 11px/1.6 var(--mono);color:var(--muted);height:178px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.term div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term .c{color:var(--claude)} .term .g{color:var(--ok)} .term .y{color:var(--warn)} .term .f{color:var(--faint)} .term .o{color:var(--orch)}
+.term .cur::after{content:'▍';color:var(--claude);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.mlist{font:400 11.5px/1.45 var(--mono)}
+.mi{padding:6px 0;border-top:1px solid var(--border)}
+.mi:first-child{border-top:0;padding-top:0}
+.mi .hd{display:flex;gap:6px;color:var(--faint);font-size:10.5px}
+.mi .hd .o{color:var(--orch)} .mi .hd .w{color:var(--claude)}
+.mi .bd{color:var(--fg)}
+.empty{color:var(--faint);font:400 11.5px var(--mono)}
+
+.foot{display:flex;align-items:center;gap:10px;height:30px;padding:0 16px 0 196px;border-top:1px solid var(--border);font:400 11.5px var(--mono);color:var(--faint)}
+.foot .dot{color:var(--ok)}
+.foot b{color:var(--fg);font-weight:500}
+.foot .r{margin-left:auto}
+
+.concept-tag{position:fixed;left:10px;bottom:5px;font:500 10px var(--mono);color:var(--faint);background:var(--bg);border:1px solid var(--border);padding:3px 7px;border-radius:3px;z-index:20}
+
+@media (max-width:1200px){
+  :root{--side:300px}
+  .overall .bar{width:110px}
+  .overall .meta{display:none}
+  .bl{grid-template-columns:86px 90px 14px 90px minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark">✻</span>alethe <span class="sub">orchestra</span></div>
+    <span class="sep"></span>
+    <div class="goal"><span class="k">Meta da sessão</span><span class="v">Portar o compilador TypeScript para Rust (crates/*), mantendo a suíte de testes verde</span></div>
+    <div class="overall">
+      <span class="meta"><b id="mw">8</b> workers · <span class="w" id="mb">0 bloqueados</span></span>
+      <span class="bar"><i id="obar" style="width:0"></i></span>
+      <span class="pct" id="opct">0%</span>
+    </div>
+    <button class="btn" id="add"><span class="plus">+</span>adicionar worker <span class="cap" id="cap">8/12</span></button>
+  </header>
+
+  <div class="main">
+    <section class="stage">
+      <div class="hivewrap">
+        <div class="stage-h"><span class="first">Colmeia</span>
+          <span><svg width="9" height="9"><circle cx="4.5" cy="4.5" r="3.5" fill="#5ec8e5"/></svg>orchestrator → worker</span>
+          <span><svg width="9" height="9"><circle cx="4.5" cy="4.5" r="3.5" fill="#d97757"/></svg>worker → *</span>
+          <span>nível do hexágono = progresso</span>
+        </div>
+        <svg id="hive" preserveAspectRatio="xMidYMid meet">
+          <defs><clipPath id="hexclip" clipPathUnits="userSpaceOnUse"><path id="hexclipPath"/></clipPath></defs>
+          <g id="ghosts"></g><g id="slots"></g><g id="edges"></g><g id="cells"></g><g id="pulses"></g>
+        </svg>
+      </div>
+      <div class="busstrip"><div class="h">message bus <span style="color:var(--muted)" id="bc">0</span></div><div id="bus"></div></div>
+    </section>
+    <aside class="side" id="side"></aside>
+  </div>
+
+  <footer class="foot">
+    <span class="dot">●</span><span><b id="fa">8</b> agents portando para rust · <b id="fm">0</b> mensagens no bus</span>
+    <span class="r">clique em um hexágono para ver detalhes</span>
+  </footer>
+</div>
+<div class="concept-tag">Conceito F — Colmeia</div>
+
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg', $=id=>document.getElementById(id);
+const css=getComputedStyle(document.documentElement), V=k=>css.getPropertyValue(k).trim();
+const C={orch:V('--orch'),cl:V('--claude'),ok:V('--ok'),warn:V('--warn'),fg:V('--fg'),faint:V('--faint'),muted:V('--muted')};
+const rgba=(hex,a)=>{const n=parseInt(hex.replace('#',''),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`};
+const rr=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+
+/* ---------- hex geometry (pointy-top, axial coords) ---------- */
+const SQ3=Math.sqrt(3), R=74, RD=R-5;
+const pos=(q,r)=>({x:R*SQ3*(q+r/2),y:R*1.5*r});
+const key=(q,r)=>q+','+r;
+const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+function hexD(rad){let d='';for(let k=0;k<6;k++){const a=Math.PI/180*(60*k+30);d+=(k?'L':'M')+(rad*Math.cos(a)).toFixed(2)+' '+(rad*Math.sin(a)).toFixed(2)}return d+'Z'}
+const svg=$('hive');
+svg.setAttribute('viewBox',`${-4.55*R} ${-4.15*R} ${9.1*R} ${8.3*R}`);
+$('hexclipPath').setAttribute('d',hexD(RD));
+const gGhost=$('ghosts'),gSlots=$('slots'),gEdges=$('edges'),gCells=$('cells'),gPulses=$('pulses');
+
+// faint ring-2 texture so the hive reads as a grid
+const ring=n=>{const out=[];let q=-n,r=n;for(let d=0;d<6;d++)for(let s=0;s<n;s++){out.push([q,r]);q+=DIRS[d][0];r+=DIRS[d][1]}return out};
+ring(2).concat(ring(3)).forEach(([q,r])=>{const p=pos(q,r);el('path',{d:hexD(RD),class:'ghost',transform:`translate(${p.x},${p.y})`},gGhost)});
+
+/* ---------- agents ---------- */
+const SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+const RING1=[[0,-1],[1,-1],[1,0],[0,1],[-1,1],[-1,0]];
+const EXTRA=[[2,0],[-2,0],[2,-2],[-2,2],[0,-2],[0,2]];
+const AREAS=[
+ {area:'lexer',file:'scanner'},{area:'parser',file:'expr'},{area:'ast',file:'node'},{area:'typecheck',file:'infer'},
+ {area:'codegen',file:'emit'},{area:'runtime',file:'gc'},{area:'stdlib',file:'array'},{area:'e2e',file:'harness'},
+ {area:'lsp',file:'hover'},{area:'cli',file:'args'},{area:'bench',file:'suite'},{area:'docs',file:'rustdoc'}
+];
+const agents=[];
+let clock=59*60+2.1, msgCount=0, selected=0;
+const bus=[];
+
+function makeAgent(def,q,r,orch){
+  const p=pos(q,r);
+  const a={idx:agents.length,q,r,x:p.x,y:p.y,orch,name:orch?'orchestrator':`claude-${agents.length}`,area:orch?'você conduz':def.area,
+    crate:orch?'':(def.crate||def.area),file:def?def.file:'',p:orch?0:rr(.18,.62),speed:1/rr(120,230),status:orch?'work':'work',
+    tokens:orch?18400:Math.round(rr(4000,21000)),start:clock-rr(40,160),lines:[],msgs:[],phase:Math.random()*6,
+    flash:0,flashC:C.cl,spawn:1,born:performance.now()};
+  a.g=el('g',{class:'cell',transform:`translate(${p.x},${p.y})`},gCells);
+  el('path',{d:hexD(RD),class:'bgx'},a.g);
+  const clip=el('g',{'clip-path':'url(#hexclip)'},a.g);
+  a.liq=el('path',{fill:rgba(orch?C.orch:C.cl,.17)},clip);
+  a.surf=el('path',{fill:'none',stroke:orch?C.orch:C.cl,'stroke-width':1.4},clip);
+  if(orch)el('path',{d:hexD(RD-6),fill:'none',stroke:rgba(C.orch,.35),'stroke-width':1},a.g);
+  a.ring=el('path',{d:hexD(RD+.5),class:'ring'},a.g);
+  a.flashEl=el('path',{d:hexD(RD),fill:'none','stroke-width':1.5,stroke:'transparent'},a.g);
+  a.tName=el('text',{class:'nm','text-anchor':'middle',y:-30},a.g);
+  a.tArea=el('text',{class:'ar','text-anchor':'middle',y:0},a.g);
+  a.tPct=el('text',{class:'pc','text-anchor':'middle',y:23},a.g);
+  a.tSt=el('text',{class:'st','text-anchor':'middle',y:40},a.g);
+  a.tArea.textContent=orch?'orchestrator':a.area;
+  if(orch){a.tArea.setAttribute('style','font-size:14px')}
+  a.g.addEventListener('click',()=>{selected=a.idx;renderSide(true)});
+  a.task=orch?'Decompor a meta em áreas, despachar tarefas, responder bloqueios e fazer o merge final do workspace.'
+    :`Portar <code>src/${a.crate}/</code> para <code>crates/${a.crate.replace(' ','-')}</code> com paridade de testes; sem <code>unsafe</code>, clippy limpo.`;
+  agents.push(a);
+  return a;
+}
+makeAgent(null,0,0,true);
+RING1.forEach((c,i)=>makeAgent(AREAS[i],c[0],c[1],false));
+EXTRA.slice(0,2).forEach((c,i)=>makeAgent(AREAS[6+i],c[0],c[1],false));
+agents[0].lines=[
+  {t:'❯ orquestrar: portar compilador TS → Rust',c:'f'},{t:'◆ decompondo meta em 8 áreas',c:'o'},
+  {t:'→ despachou tarefa para claude-1 … claude-8',c:'f'}];
+agents.slice(1).forEach(a=>{a.lines=[{t:`◆ tarefa recebida do orchestrator`,c:'o'},{t:`Read src/${a.crate}/${a.file}.ts`,c:'f'}]});
+
+/* ---------- empty slots (capacity up to 12 workers) ---------- */
+function renderSlots(){
+  gSlots.innerHTML='';
+  const used=new Set(agents.map(a=>key(a.q,a.r)));
+  EXTRA.filter(c=>!used.has(key(c[0],c[1]))).slice(0,1).forEach(c=>{
+    const p=pos(c[0],c[1]);const g=el('g',{class:'slot',transform:`translate(${p.x},${p.y})`},gSlots);
+    el('path',{d:hexD(RD)},g);const t=el('text',{'text-anchor':'middle',y:6},g);t.textContent='+';
+    g.addEventListener('click',spawnWorker);
+  });
+}
+renderSlots();
+
+/* ---------- routing: BFS over occupied hexes ---------- */
+function route(a,b){
+  const occ=new Map(agents.filter(x=>x.spawn>=1).map(x=>[key(x.q,x.r),x]));
+  const start=key(a.q,a.r),goal=key(b.q,b.r),prev=new Map([[start,null]]),qu=[a];
+  while(qu.length){const c=qu.shift();if(key(c.q,c.r)===goal)break;
+    for(const d of DIRS){const k=key(c.q+d[0],c.r+d[1]);if(occ.has(k)&&!prev.has(k)){prev.set(k,c);qu.push(occ.get(k))}}}
+  if(!prev.has(goal))return[a,b];
+  const path=[];let k=goal;while(k){const n=occ.get(k)||a;path.unshift(n);const p=prev.get(k);k=p?key(p.q,p.r):null}
+  return path;
+}
+
+/* ---------- message bus ---------- */
+const pulses=[], edgeFlash=new Map();
+function fmtClock(s){const m=Math.floor(s/60)%60;return String(m).padStart(2,'0')+':'+(s%60).toFixed(3).padStart(6,'0')}
+function send(from,to,text,onArrive){
+  const path=route(from,to), color=from.orch?C.orch:C.cl;
+  const msg={t:clock,from,to,text};
+  bus.push(msg);msgCount++;from.msgs.push(msg);if(to!==from)to.msgs.push(msg);
+  const dots=[0,1,2].map(i=>el('circle',{r:i?2.6-i*.6:3.6,fill:color,opacity:i?.5-i*.15:1},gPulses));
+  pulses.push({path,seg:0,u:0,color,dots,trail:[],onArrive,to,flashed:-1});
+  addBusLine(msg);
+}
+function edgeKey(a,b){return a.idx<b.idx?a.idx+'-'+b.idx:b.idx+'-'+a.idx}
+function flashEdge(a,b,color){
+  const k=edgeKey(a,b);let e=edgeFlash.get(k);
+  if(!e){const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy),px=-dy/l,py=dx/l,h=RD*.46;
+    e={line:el('line',{x1:mx-px*h,y1:my-py*h,x2:mx+px*h,y2:my+py*h,'stroke-width':2.2,'stroke-linecap':'round'},gEdges)};edgeFlash.set(k,e)}
+  e.t=performance.now();e.line.setAttribute('stroke',color);
+}
+
+const busEl=$('bus');
+function addBusLine(m){
+  const d=document.createElement('div');d.className='bl new';
+  d.innerHTML=`<span class="ts">${fmtClock(m.t)}</span><span class="${m.from.orch?'o':'w'}">${m.from.name}</span><span class="ar">→</span><span class="${m.to.orch?'o':'w'}">${m.to.name}</span><span class="tx">${m.text}</span>`;
+  busEl.appendChild(d);while(busEl.children.length>4)busEl.firstChild.remove();
+  $('bc').textContent=msgCount;$('fm').textContent=msgCount;
+  if(selected===m.from.idx||selected===m.to.idx)renderSide();
+}
+
+/* ---------- simulated behaviour ---------- */
+const workers=()=>agents.filter(a=>!a.orch&&a.spawn>=1);
+const active=()=>workers().filter(a=>a.status==='work');
+const neighbors=a=>agents.filter(b=>b!==a&&!b.orch&&b.spawn>=1&&DIRS.some(d=>a.q+d[0]===b.q&&a.r+d[1]===b.r));
+const timers=[];const later=(s,fn)=>timers.push({at:clock+s,fn});
+function line(a,t,c){a.lines.push({t,c});if(a.lines.length>16)a.lines.shift();if(selected===a.idx)renderSide()}
+const Q_O=['preciso do formato de Span antes de seguir','posso mudar a API pública de Token?','conflito em Cargo.toml, quem resolve?','trait Visitor ou enum + match?'];
+const A_O=['use Span { lo, hi } de crates/common','pode, eu atualizo os dependentes','resolvo eu, segura 10s','enum + match, sem dyn'];
+const Q_W=['Expr já expõe span()?','qual o nome do enum de tipos primitivos?','você mexeu em ast::Node? quebrou meu build','NodeId é u32 ou usize?'];
+const A_W=['sim, ast::Expr::span()','PrimTy, em types/prim.rs','foi mal, já reverti','u32, com newtype'];
+
+function event(){
+  const act=active();if(!act.length)return;
+  const w=pick(act), o=agents[0], r=Math.random();
+  if(r<.36){
+    send(w,o,pick([`${w.area} ${Math.round(w.p*100)}%: suite verde`,'borrow checker venceu. fazendo merge',`lifetimes resolvidos em ${w.file}.rs`,'removi 3 clones desnecessários','clippy limpo, 0 warnings']),()=>line(o,`← ${w.name}: relatório recebido`,'f'));
+  }else if(r<.56){
+    send(o,w,pick(['rebase em main antes do próximo commit','prioridade: API estável','rode clippy antes de reportar','claude-3 publicou ast v0.2, atualize']),()=>line(w,'◆ instrução do orchestrator recebida','o'));
+  }else if(r<.78){
+    const nb=neighbors(w).filter(x=>x.status!=='done');const t=nb.length?pick(nb):pick(act.filter(x=>x!==w).concat([o]));
+    if(t===w)return;const i=Math.floor(Math.random()*4);
+    send(w,t,Q_W[i],()=>later(rr(1.2,2.4),()=>send(t,w,A_W[i])));
+  }else{
+    const toO=Math.random()<.6, nb=workers().filter(x=>x!==w), t=toO||!nb.length?o:pick(nb), i=Math.floor(Math.random()*4);
+    w.status='blocked';line(w,`‖ bloqueado: aguardando ${t.name}`,'y');
+    send(w,t,toO?Q_O[i]:Q_W[i],()=>{
+      if(t.orch)line(o,`◆ decidindo resposta para ${w.name}`,'o');
+      later(rr(3.5,7),()=>send(t,w,toO?A_O[i]:A_W[i],()=>{if(w.status==='blocked'){w.status='work';line(w,'▸ desbloqueado, retomando','g')}}));
+    });
+  }
+}
+function outputLine(){
+  const act=active();if(!act.length)return;const a=pick(act);
+  const f=a.file, c=a.crate.replace(' ','-');
+  const opts=[
+    [`Read src/${a.crate}/${f}.ts (${Math.round(rr(120,640))} linhas)`,'f'],
+    [`Edit crates/${c}/src/${f}.rs (+${Math.round(rr(8,90))} −${Math.round(rr(0,30))})`,'c'],
+    [`✻ pensando… ${pick(['lifetimes do iterador','Rc<T> vs arena','enum de erros','trait bounds'])}`,'c'],
+    [`   Compiling ${c} v0.1.0`,'f'],
+    [`✓ cargo test -p ${c} · ${Math.round(a.p*120+4)} passed`,'g'],
+    [`✗ cargo test -p ${c} · 1 failed (${f}::roundtrip)`,'y'],
+  ];
+  const [t,cl]=pick(opts);line(a,t,cl);
+}
+
+/* ---------- spawning ---------- */
+function spawnWorker(){
+  const used=new Set(agents.map(a=>key(a.q,a.r)));
+  const slot=EXTRA.find(c=>!used.has(key(c[0],c[1])));
+  if(!slot||agents.length>12)return;
+  const def=AREAS[agents.length-1];
+  const a=makeAgent(def,slot[0],slot[1],false);
+  a.p=0;a.tokens=0;a.start=clock;a.spawn=0;a.born=performance.now();a.status='spawning';a.lines=[{t:'❯ claude --worker',c:'f'},{t:'aguardando tarefa…',c:'f'}];
+  renderSlots();updateCap();
+  line(agents[0],`+ worker ${a.name} criado (${a.area})`,'o');
+  setTimeout(()=>{a.spawn=1;send(agents[0],a,`tarefa: portar src/${a.crate} → crates/${a.crate}`,()=>{a.status='work';line(a,'◆ tarefa recebida do orchestrator','o')})},900);
+  selected=a.idx;renderSide(true);
+}
+$('add').addEventListener('click',spawnWorker);
+function updateCap(){const n=agents.length-1;$('cap').textContent=`${n}/12`;$('add').disabled=n>=12}
+updateCap();
+
+/* ---------- side panel ---------- */
+const side=$('side');
+const fmtTok=n=>n>=1000?(n/1000).toFixed(1)+'k':String(Math.round(n));
+function statusOf(a){
+  if(a.status==='spawning')return{t:'iniciando',c:C.faint};
+  if(a.status==='done')return{t:'concluído',c:C.ok};
+  if(a.status==='blocked')return{t:'bloqueado',c:C.warn};
+  return{t:a.orch?'orquestrando':'trabalhando',c:a.orch?C.orch:C.cl};
+}
+let sideSig='';
+function renderSide(force){
+  const a=agents[selected];if(!a)return;const st=statusOf(a),pct=Math.round(a.p*100);
+  const mins=Math.max(0,clock-a.start),cost=a.tokens*(a.orch?0.0000185:0.0000105);
+  const sig=[selected,st.t,pct,a.lines.length,a.lines[a.lines.length-1]?.t,a.msgs.length,Math.round(a.tokens/200)].join('|');
+  if(!force&&sig===sideSig)return;sideSig=sig;
+  const prevBody=side.querySelector('.sp-body'),keep=prevBody&&!force?prevBody.scrollTop:0;
+  const msgs=a.msgs.slice(-6).reverse().map(m=>`<div class="mi"><div class="hd"><span>${fmtClock(m.t)}</span><span class="${m.from.orch?'o':'w'}">${m.from.name}</span>→<span class="${m.to.orch?'o':'w'}">${m.to.name}</span></div><div class="bd">${m.text}</div></div>`).join('')||'<div class="empty">nenhuma mensagem ainda</div>';
+  const lines=a.lines.slice(-9).map((l,i,arr)=>`<div class="${l.c||''}${i===arr.length-1&&a.status!=='done'?' cur':''}">${l.t}</div>`).join('');
+  side.innerHTML=`
+    <div class="sp-h">
+      <div class="row"><span class="gl" style="color:${a.orch?C.orch:C.cl}">${a.orch?'◆':'✻'}</span><span class="nm">${a.name}</span><span class="chip">${a.orch?'você conduz':a.area}</span>
+        <span class="status" style="color:${st.c}"><i></i>${st.t}</span></div>
+      <div class="sp-prog"><span class="big">${pct}%</span><span class="sub">${a.orch?'progresso geral da meta':'progresso da tarefa'}</span></div>
+      <div class="sp-bar"><i style="width:${pct}%;background:${a.status==='done'?C.ok:a.orch?C.orch:C.cl}"></i></div>
+    </div>
+    <div class="sp-body">
+      <div class="sec"><div class="k">Tarefa</div><div class="task">${a.task}</div></div>
+      <div class="sec"><div class="stats">
+        <div><b>${fmtTok(a.tokens)}</b><span>tokens</span></div>
+        <div><b>$${cost.toFixed(2)}</b><span>custo</span></div>
+        <div><b>${Math.floor(mins/60)}m${String(Math.floor(mins%60)).padStart(2,'0')}</b><span>ativo</span></div>
+        <div><b>${a.msgs.length}</b><span>msgs</span></div></div></div>
+      <div class="sec"><div class="k"><span>Saída recente</span><span>pty</span></div><div class="term">${lines}</div></div>
+      <div class="sec"><div class="k"><span>Mensagens</span><span>${a.msgs.length}</span></div><div class="mlist">${msgs}</div></div>
+    </div>`;
+  if(keep)side.querySelector('.sp-body').scrollTop=keep;
+  agents.forEach(x=>x.g.classList.toggle('sel',x.idx===selected));
+}
+
+/* ---------- frame loop ---------- */
+let last=performance.now(),nextEvt=.6,nextLine=.3,allDoneAt=null,sideT=0;
+const easeBack=t=>{const c=1.7;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+function liquidPath(a,now){
+  const h=RD*2, lvl=RD-a.p*h, amp=a.status==='work'?2.4:a.status==='blocked'?.8:.4, w=RD*SQ3/2+2;
+  let d='',s='';
+  for(let x=-w;x<=w+.1;x+=7){const y=(lvl+Math.sin(x*.075+now*.0022+a.phase)*amp+Math.sin(x*.13-now*.0017)*amp*.4).toFixed(2);d+=(x===-w?'M':'L')+x.toFixed(1)+' '+y;s+=(x===-w?'M':'L')+x.toFixed(1)+' '+y}
+  d+=`L${w} ${RD+2}L${-w} ${RD+2}Z`;
+  a.liq.setAttribute('d',d);a.surf.setAttribute('d',s);
+}
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;clock+=dt;
+  // progress
+  const ws=workers();
+  ws.forEach(a=>{
+    if(a.status==='work'){a.p=Math.min(1,a.p+a.speed*dt*(.55+.9*Math.abs(Math.sin(now*.0004+a.phase))));a.tokens+=dt*rr(260,620);
+      if(a.p>=1){a.status='done';line(a,`✓ ${a.area} concluído · 0 unsafe`,'g');send(a,agents[0],`${a.area} concluído, pronto para merge`)}}
+    else if(a.status==='blocked')a.tokens+=dt*8;
+  });
+  const o=agents[0];o.p=ws.length?ws.reduce((s,a)=>s+a.p,0)/ws.length:0;o.tokens+=dt*rr(80,240);
+  // events
+  for(let i=timers.length-1;i>=0;i--)if(timers[i].at<=clock){const t=timers.splice(i,1)[0];t.fn()}
+  if((nextEvt-=dt)<=0){event();nextEvt=rr(.7,1.7)}
+  if((nextLine-=dt)<=0){outputLine();nextLine=rr(.35,.9)}
+  if(ws.length&&ws.every(a=>a.status==='done')){
+    if(allDoneAt==null){allDoneAt=now;line(o,'✓ merge final · cargo test --workspace · 412 passed','g')}
+    else if(now-allDoneAt>7000){allDoneAt=null;ws.forEach(a=>{a.p=rr(0,.08);a.status='work';a.speed=1/rr(120,230);line(a,'◆ nova rodada iniciada','o')})}
+  }
+  // cells
+  const sp=SPIN[Math.floor(now/80)%10];
+  agents.forEach(a=>{
+    let sc=1;
+    if(a.spawn<1||a.status==='spawning'){const k=Math.min(1,(now-a.born)/700);sc=.15+.85*easeBack(k)}
+    a.g.setAttribute('transform',`translate(${a.x},${a.y}) scale(${sc.toFixed(3)})`);
+    liquidPath(a,now);
+    const col=a.status==='done'?C.ok:a.status==='blocked'?C.warn:a.orch?C.orch:C.cl;
+    a.surf.setAttribute('stroke',col);a.liq.setAttribute('fill',rgba(col,a.status==='done'?.13:.17));
+    const g=a.status==='done'?'✓':a.status==='blocked'?'‖':a.status==='spawning'?'·':sp;
+    a.tName.innerHTML=`<tspan fill="${a.status==='spawning'?C.faint:col}">${a.orch?'◆':g}</tspan> ${a.orch?'você':a.name}`;
+    a.tPct.textContent=Math.round(a.p*100)+'%';
+    a.tSt.textContent=a.orch?`${ws.filter(x=>x.status==='blocked').length} bloqueio(s)`:statusOf(a).t;
+    a.tSt.setAttribute('fill',a.status==='blocked'?C.warn:C.faint);
+    const fk=Math.max(0,1-(now-a.flash)/600);
+    a.flashEl.setAttribute('stroke',fk>0?rgba(a.flashC,fk):'transparent');
+  });
+  // pulses hop hex-to-hex across shared edges
+  for(let i=pulses.length-1;i>=0;i--){
+    const p=pulses[i];
+    if(p.path.length<2){p.dots.forEach(d=>d.remove());pulses.splice(i,1);continue}
+    const a=p.path[p.seg],b=p.path[p.seg+1],L=Math.hypot(b.x-a.x,b.y-a.y);
+    p.u+=dt*250/L;
+    if(p.u>=.5&&p.flashed!==p.seg){flashEdge(a,b,p.color);p.flashed=p.seg}
+    if(p.u>=1){p.seg++;p.u=0;
+      if(p.seg>=p.path.length-1){const t=p.path[p.path.length-1];t.flash=now;t.flashC=p.color;p.dots.forEach(d=>d.remove());pulses.splice(i,1);if(p.onArrive)p.onArrive();continue}
+      else{const mid=p.path[p.seg];mid.flash=now;mid.flashC=p.color}}
+    const aa=p.path[p.seg],bb=p.path[p.seg+1],u=p.u,e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+    const x=aa.x+(bb.x-aa.x)*e,y=aa.y+(bb.y-aa.y)*e;
+    p.trail.unshift([x,y]);if(p.trail.length>9)p.trail.pop();
+    p.dots.forEach((d,j)=>{const q=p.trail[Math.min(p.trail.length-1,j*4)];d.setAttribute('cx',q[0]);d.setAttribute('cy',q[1])});
+  }
+  edgeFlash.forEach(e=>{const k=Math.max(0,1-(now-e.t)/750);e.line.setAttribute('opacity',k.toFixed(3))});
+  // top bar + side
+  const pct=Math.round(o.p*100);$('opct').textContent=pct+'%';$('obar').style.width=pct+'%';
+  const nb=ws.filter(a=>a.status==='blocked').length;
+  $('mw').textContent=ws.length;$('mb').textContent=`${nb} bloqueado${nb===1?'':'s'}`;$('mb').style.color=nb?C.warn:C.faint;
+  $('fa').textContent=ws.length;
+  if(now-sideT>250){renderSide();sideT=now}
+  requestAnimationFrame(frame);
+}
+// seed the bus so the concept opens mid-session
+for(let i=0;i<5;i++)event();
+renderSide(true);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

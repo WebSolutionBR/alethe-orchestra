@@ -1,0 +1,585 @@
+.root {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ---------- graph ---------- */
+
+.graph {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  /* Dot grid on the viewport itself so it still fills the screen when zoomed out. */
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--fg) 6%, transparent) 0.8px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+.svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  overflow: visible;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--fg-faint);
+  stroke-opacity: 0.5;
+  stroke-width: 1.2;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+  transition:
+    stroke-opacity 0.25s,
+    stroke 0.25s;
+}
+
+.edgeDone {
+  stroke-opacity: 0.18;
+}
+
+.edgeDim {
+  stroke-opacity: 0.1;
+}
+
+.edgeSel {
+  stroke: var(--agent-claude);
+  stroke-opacity: 0.95;
+  stroke-dasharray: 2 5;
+  animation: flow 0.9s linear infinite;
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+.legend {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 16px;
+  font: 11px var(--font-mono);
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.hint {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  z-index: 2;
+  font: 11px var(--font-mono);
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+
+/* ---------- nodes ---------- */
+
+.node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  /* Individual `translate`, not `transform`: visual-clean.css resets `transform` on
+     [role='button']:hover, which made hovered cards jump, lose hover and jump back (flicker). */
+  translate: -50% -50%;
+  width: 200px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font: 12.5px/1.45 var(--font-mono);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    opacity 0.25s,
+    border-color 0.25s,
+    background-color 0.2s,
+    left 0.35s var(--ease-out-fluid),
+    top 0.35s var(--ease-out-fluid);
+}
+
+.node:hover {
+  background: var(--panel);
+}
+
+.node:focus-visible {
+  border-color: var(--fg);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.compact {
+  width: 172px;
+  font-size: 12px;
+}
+
+.inner {
+  padding: 9px 12px 8px;
+}
+
+.row1,
+.row2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.row2 {
+  margin-top: 2px;
+  color: var(--fg-muted);
+}
+
+.ast {
+  color: var(--agent-claude);
+  font-weight: 600;
+}
+
+.name {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.spin {
+  margin-left: auto;
+  width: 12px;
+  text-align: right;
+  color: var(--fg-faint);
+}
+
+.task {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-muted);
+}
+
+.state {
+  min-width: 0;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+.pct {
+  margin-left: auto;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  height: 2px;
+  background: var(--panel);
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--agent-claude);
+  transition: width 0.35s linear;
+}
+
+.done {
+  opacity: 0.5;
+}
+
+.done .bar i {
+  background: var(--status-working);
+}
+
+.done .spin {
+  color: var(--status-working);
+}
+
+.done .ast {
+  color: var(--fg-faint);
+}
+
+/* Failed (ended without done): fully visible, unlike a finished agent, and never dimmer. */
+.exited {
+  border-color: var(--status-offline);
+  box-shadow: 0 0 0 3px var(--status-offline-soft);
+}
+
+.exited .spin,
+.exited .ast {
+  color: var(--status-offline);
+}
+
+.exited .bar i {
+  background: var(--status-offline);
+}
+
+.waiting {
+  border-style: dashed;
+}
+
+/* Blocked never relies on color alone: a dashed outline sets it apart from working. */
+.blocked {
+  border-color: var(--status-waiting);
+  box-shadow: 0 0 0 3px var(--status-waiting-soft);
+  outline: 1px dashed var(--status-waiting);
+  outline-offset: 4px;
+}
+
+.blocked .spin,
+.blocked .ast {
+  color: var(--status-waiting);
+}
+
+.blocked .bar i {
+  background: var(--status-waiting);
+}
+
+/* Selection is neutral, as in Flow and Hive: orange already means "working". */
+.sel {
+  border-color: var(--fg-muted);
+  box-shadow: 0 0 0 3px var(--panel-hover);
+}
+
+.dim {
+  opacity: 0.32;
+}
+
+.done.dim,
+.exited.dim {
+  opacity: 0.22;
+}
+
+.ping {
+  animation: ping 0.6s ease-out;
+}
+
+@keyframes ping {
+  0% {
+    border-color: var(--agent-claude);
+  }
+  100% {
+    border-color: var(--border-strong);
+  }
+}
+
+.orch {
+  z-index: 2;
+  width: 260px;
+  border-color: var(--agent-codex);
+}
+
+.orch .inner {
+  padding: 11px 14px 10px;
+}
+
+.orch .ast {
+  color: var(--agent-codex);
+}
+
+.orch .bar i {
+  background: var(--agent-codex);
+}
+
+.orch.ping {
+  animation: pingOrch 0.6s ease-out;
+}
+
+@keyframes pingOrch {
+  0% {
+    box-shadow: 0 0 0 3px var(--agent-codex-soft);
+  }
+  100% {
+    box-shadow: 0 0 0 0 var(--agent-codex-soft);
+  }
+}
+
+.orchSel {
+  box-shadow: 0 0 0 3px var(--agent-codex-soft);
+}
+
+.who {
+  color: var(--fg-faint);
+}
+
+.lead {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--agent-codex);
+}
+
+.empty {
+  position: absolute;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  font: 12px/1.5 var(--font-sans);
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+
+.empty strong {
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+/* ---------- message bus ---------- */
+
+.bus {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border);
+}
+
+.busHead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  min-width: 0;
+  padding: 0 14px 0 6px;
+  font: 12px var(--font-mono);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.busTitle {
+  flex: none;
+  color: var(--fg-muted);
+}
+
+.busToggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.busToggle svg {
+  transform: rotate(-90deg);
+  transition: transform var(--anim-normal);
+}
+
+.bus[data-open] .busToggle svg {
+  transform: none;
+}
+
+.busToggle:hover {
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+
+/* Collapsed bus: the newest message inline, so the strip is a single compact line. */
+.peek {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.peek:hover {
+  background: var(--bg-elevated);
+}
+
+.peekText {
+  min-width: 0;
+  margin-left: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.busTitle b {
+  font-weight: 500;
+  color: var(--agent-codex);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--agent-claude);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--agent-claude);
+  font: 11px var(--font-mono);
+  cursor: pointer;
+}
+
+.chip span {
+  padding: 0 4px;
+  color: var(--fg-faint);
+}
+
+.chip:hover span {
+  color: var(--fg);
+}
+
+.follow {
+  color: var(--fg-faint);
+}
+
+.followOff {
+  color: var(--status-waiting);
+}
+
+/* Height comes from the splitter, which keeps it inside the view. */
+.log {
+  overflow-y: auto;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+  padding: 6px 0 10px;
+  font: 12px/1.8 var(--font-mono);
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel) transparent;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 98px minmax(0, 230px) minmax(0, 1fr);
+  padding: 0 14px;
+  color: var(--fg-muted);
+  animation: lineIn 0.35s ease-out;
+}
+
+.line:hover {
+  background: var(--bg-elevated);
+}
+
+.ts {
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.route {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.arrow {
+  margin: 0 7px;
+  color: var(--fg-faint);
+}
+
+.msg {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ok {
+  color: var(--status-working);
+}
+
+.ref {
+  color: var(--fg);
+}
+
+.file {
+  color: var(--accent);
+  text-decoration: underline dotted var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+.busEmpty {
+  padding: 10px 14px;
+  font: 12px/1.6 var(--font-sans);
+  color: var(--fg-faint);
+}
+
+@keyframes lineIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .hint {
+    display: none;
+  }
+
+  .line {
+    grid-template-columns: 90px minmax(0, 205px) minmax(0, 1fr);
+  }
+
+  .node {
+    width: 184px;
+    font-size: 12px;
+  }
+
+  .compact {
+    width: 160px;
+  }
+
+  .orch {
+    width: 236px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edgeSel,
+  .line,
+  .ping,
+  .orch.ping {
+    animation: none;
+  }
+}

@@ -1,0 +1,727 @@
+/* Flow: layered left-to-right DAG of the orchestra with a collapsible message bus drawer. */
+
+.root {
+  --fl-orch: var(--agent-codex);
+  --fl-worker: var(--agent-claude);
+  --fl-ok: var(--status-working);
+  --fl-warn: var(--status-waiting);
+  --fl-danger: var(--status-offline);
+  --fl-orch-line: color-mix(in srgb, var(--agent-codex) 40%, transparent);
+  --fl-worker-line: color-mix(in srgb, var(--agent-claude) 45%, transparent);
+  --fl-ok-line: color-mix(in srgb, var(--status-working) 35%, transparent);
+  --fl-hair: color-mix(in srgb, var(--fg) 8%, transparent);
+  --fl-edge: color-mix(in srgb, var(--fg) 16%, transparent);
+  --fl-edge-done: color-mix(in srgb, var(--fg) 24%, transparent);
+
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.4 var(--font-sans);
+}
+
+.faint {
+  color: var(--fg-faint);
+}
+
+/* ---- canvas ---- */
+
+.canvasWrap {
+  position: relative;
+  min-height: 0;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.stage {
+  position: relative;
+}
+
+.column {
+  position: absolute;
+  top: 8px;
+  bottom: 0;
+  border-left: 1px dashed var(--fl-hair);
+  pointer-events: none;
+}
+
+.colHead {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  color: var(--fg-faint);
+  font: 10px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.edgeBase {
+  fill: none;
+  stroke: var(--fl-edge);
+  stroke-dasharray: 2 5;
+  stroke-width: 1.2;
+  transition: stroke var(--anim-slow);
+}
+
+.edgeFlow {
+  fill: none;
+  stroke: var(--fl-worker);
+  stroke-dasharray: 7 7;
+  stroke-width: 1.6;
+  opacity: 0;
+  transition: opacity var(--anim-slow);
+}
+
+.edge[data-orch] .edgeFlow {
+  stroke: var(--fl-orch);
+}
+
+.edge[data-kind='feeding'] .edgeBase {
+  stroke: var(--fl-worker-line);
+}
+
+.edge[data-orch][data-kind='feeding'] .edgeBase {
+  stroke: var(--fl-orch-line);
+}
+
+.edge[data-kind='done'] .edgeBase {
+  stroke: var(--fl-edge-done);
+  stroke-dasharray: none;
+}
+
+.edge[data-kind='handoff'] .edgeFlow {
+  opacity: 1;
+  animation: dash 0.45s linear infinite;
+}
+
+.port {
+  fill: var(--bg);
+  stroke: var(--fl-edge-done);
+  stroke-width: 1;
+}
+
+.edge[data-kind='feeding'] .port,
+.edge[data-kind='handoff'] .port {
+  stroke: var(--fl-worker);
+}
+
+.edge[data-orch][data-kind='feeding'] .port,
+.edge[data-orch][data-kind='handoff'] .port {
+  stroke: var(--fl-orch);
+}
+
+/* ---- nodes ---- */
+
+.node,
+.orch {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--anim-slow),
+    background-color var(--anim-slow),
+    opacity var(--anim-slow);
+}
+
+.node {
+  padding: 8px 10px 0;
+}
+
+.node:hover {
+  border-color: var(--border-strong);
+}
+
+.node:focus-visible,
+.orch:focus-visible,
+.node[data-selected],
+.orch[data-selected] {
+  box-shadow:
+    0 0 0 1px var(--bg),
+    0 0 0 2px var(--fg);
+}
+
+/* Focus reads apart from selection: the ring sits outside the selection outline. */
+.node:focus-visible,
+.orch:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.nodeHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.mark {
+  color: var(--fl-worker);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.nodeId {
+  color: var(--fg);
+}
+
+.nodeState {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--fg-faint);
+  font-size: 10px;
+}
+
+.glyph::before {
+  content: '·';
+}
+
+.node[data-busy] .glyph::before {
+  content: '⠋';
+  animation: spin 0.9s steps(1) infinite;
+}
+
+.nodeTitle {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nodeMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--fg-faint);
+  font-size: 10.5px;
+}
+
+.nodeAct {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pct {
+  flex: none;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  left: 10px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--panel);
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--fl-worker);
+  transition: width 0.4s linear;
+}
+
+.node[data-busy] {
+  border-color: var(--border-strong);
+}
+
+.node[data-busy] .nodeState {
+  color: var(--fl-worker);
+}
+
+.node[data-state='waiting'] {
+  border-style: dashed;
+  border-color: var(--fl-edge);
+  background: var(--bg-sunken);
+}
+
+.node[data-state='waiting'] .nodeTitle,
+.node[data-state='waiting'] .nodeId,
+.node[data-state='waiting'] .mark {
+  color: var(--fg-faint);
+}
+
+.node[data-state='done'] {
+  border-color: var(--fl-ok-line);
+}
+
+.node[data-state='done'] .nodeState {
+  color: var(--fl-ok);
+}
+
+.node[data-state='done'] .glyph::before {
+  content: '✓';
+}
+
+.node[data-state='done'] .bar i {
+  background: var(--fl-ok);
+}
+
+.node[data-state='blocked'] {
+  border-color: var(--fl-warn);
+}
+
+.node[data-state='blocked'] .nodeState,
+.node[data-state='blocked'] .nodeAct {
+  color: var(--fl-warn);
+}
+
+.node[data-state='blocked'] .glyph::before {
+  content: '!';
+}
+
+.node[data-state='blocked'] .bar i {
+  background: var(--fl-warn);
+}
+
+.node[data-state='exited'] {
+  opacity: 0.6;
+}
+
+.node[data-state='exited'] .nodeState {
+  color: var(--fl-danger);
+}
+
+.node[data-state='exited'] .glyph::before {
+  content: '✕';
+}
+
+/* ---- orchestrator node ---- */
+
+.orch {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border-color: var(--fl-orch-line);
+}
+
+.orch:hover {
+  border-color: var(--fl-orch);
+}
+
+.orch .nodeHead,
+.orch .mark {
+  color: var(--fl-orch);
+}
+
+.you {
+  margin-left: auto;
+  padding: 0 6px;
+  border: 1px solid var(--fl-orch-line);
+  border-radius: 999px;
+  color: var(--fl-orch);
+  font-size: 9.5px;
+}
+
+.orchGoal {
+  display: -webkit-box;
+  margin-top: 7px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.orchStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 6px;
+  color: var(--fg-faint);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.orchStats b {
+  color: var(--fg-muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.orchLine {
+  margin-top: auto;
+  overflow: hidden;
+  color: var(--fl-orch);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- empty state, legend ---- */
+
+.empty {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  left: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  text-align: center;
+  transform: translateY(-50%);
+}
+
+.empty h2 {
+  margin: 0;
+  font: 500 15px var(--font-sans);
+}
+
+.empty p {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.emptyAction {
+  height: 28px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--fl-orch-line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--fl-orch);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+}
+
+.emptyAction:hover {
+  border-color: var(--fl-orch);
+}
+
+.legend {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 14px;
+  pointer-events: none;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--fg-faint);
+  font: 10.5px var(--font-mono);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend svg {
+  display: block;
+}
+
+.legendPending {
+  stroke: var(--border-strong);
+  stroke-dasharray: 2 4;
+}
+
+.legendHandoff {
+  stroke: var(--fl-worker);
+  stroke-dasharray: 6 5;
+  stroke-width: 1.6;
+}
+
+.legendDone {
+  stroke: var(--border-strong);
+}
+
+.legendOrch {
+  fill: var(--fl-orch);
+}
+
+/* ---- message bus drawer ---- */
+
+.drawer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 14px 0 6px;
+  font-size: 12px;
+}
+
+.drawerToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.drawerToggle:hover {
+  background: var(--bg-elevated);
+}
+
+.drawerToggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.chev {
+  display: inline-block;
+  color: var(--fg-faint);
+  font-size: 10px;
+  transform: rotate(-90deg);
+  transition: transform var(--anim-normal);
+}
+
+.drawer[data-open] .chev {
+  transform: none;
+}
+
+.drawerTitle {
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+
+.drawerCount {
+  color: var(--fl-worker);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.filters {
+  display: flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.filters button {
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--fg-faint);
+  font: 11px var(--font-sans);
+  cursor: pointer;
+}
+
+.filters button:hover {
+  color: var(--fg);
+}
+
+.filters button[aria-pressed='true'] {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+
+.live {
+  margin-left: auto;
+  color: var(--fl-ok);
+  font: 11px var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Open height comes from the splitter, which keeps it inside the view. */
+.drawerBody {
+  height: 196px;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  transition: height var(--anim-slow) var(--ease-out-fluid);
+}
+
+.drawer:not([data-open]) .drawerBody {
+  height: 0;
+  border-top-color: transparent;
+}
+
+.busList {
+  height: 100%;
+  padding: 6px 0;
+  overflow-y: auto;
+  font: 12px var(--font-mono);
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel) transparent;
+}
+
+.busEmpty {
+  padding: 10px 14px;
+  color: var(--fg-faint);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 96px minmax(140px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  padding: 2px 14px 2px 12px;
+  border-left: 2px solid transparent;
+  color: var(--fg-muted);
+}
+
+.row:last-child {
+  animation: flash 1.4s var(--ease-out-fluid);
+}
+
+.row:hover {
+  background: var(--bg-elevated);
+}
+
+.row[data-handoff] {
+  border-left-color: var(--fl-worker);
+}
+
+.row[data-handoff] .rowText {
+  color: var(--fg);
+}
+
+.row[data-done] .rowText::before {
+  content: '✓ ';
+  color: var(--fl-ok);
+}
+
+.rowFrom {
+  overflow: hidden;
+  color: var(--fg-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowFrom [data-role='worker'] {
+  color: var(--fl-worker);
+}
+
+.rowFrom [data-role='orch'] {
+  color: var(--fl-orch);
+}
+
+.rowFrom [data-role='you'] {
+  color: var(--fg);
+}
+
+/* Obsidian scribe: `obsidian → <note>` lines for every written block. */
+.rowFrom [data-role='scribe'] {
+  color: var(--agent-obsidian);
+}
+
+/* Creative agent: a worker in the `criativo` area. */
+.rowFrom [data-role='creative'] {
+  color: var(--agent-creative);
+}
+
+.rowText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+@keyframes flash {
+  from {
+    background: var(--accent-soft);
+  }
+}
+
+@keyframes spin {
+  0% {
+    content: '⠋';
+  }
+  10% {
+    content: '⠙';
+  }
+  20% {
+    content: '⠹';
+  }
+  30% {
+    content: '⠸';
+  }
+  40% {
+    content: '⠼';
+  }
+  50% {
+    content: '⠴';
+  }
+  60% {
+    content: '⠦';
+  }
+  70% {
+    content: '⠧';
+  }
+  80% {
+    content: '⠇';
+  }
+  90% {
+    content: '⠏';
+  }
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: 84px minmax(120px, 200px) minmax(0, 1fr);
+  }
+
+  .empty {
+    left: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge[data-kind='handoff'] .edgeFlow,
+  .node[data-busy] .glyph::before,
+  .row:last-child {
+    animation: none;
+  }
+}

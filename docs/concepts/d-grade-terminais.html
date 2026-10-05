@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orchestra Grade de Terminais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#101114; --elev:#1f2125; --sunken:#1a1c1f; --panel:#2a2d33;
+  --border:#2a2d33; --border-strong:rgba(243,244,246,.22); --hair:rgba(243,244,246,.08);
+  --fg:#f3f4f6; --muted:#c8c8d0; --faint:#8b8b95; --accent:#ececea;
+  --claude:#d97757; --claude-dim:rgba(217,119,87,.45); --orch:#5ec8e5; --orch-dim:rgba(94,200,229,.4);
+  --ok:#4ade80; --ok-dim:rgba(74,222,128,.32); --warn:#fbbf24; --err:#f87171;
+  --add-bg:rgba(74,222,128,.08); --del-bg:rgba(248,113,113,.08);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono","Cascadia Mono",Consolas,"Courier New",monospace;
+  --r:6px; --r-sm:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.4 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit;background:none;border:0}
+button{cursor:pointer}
+.app{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:88px minmax(0,1fr) 30px 24px;height:100vh;min-width:1000px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:22px;padding:0 14px;border-bottom:1px solid var(--border);min-width:0;overflow:hidden}
+.tl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.brand{display:flex;align-items:center;gap:7px;font-weight:500;color:var(--muted);white-space:nowrap}
+.brand b{color:var(--fg);font-weight:600}
+.brand .logo{color:var(--claude);font-family:var(--mono);font-size:15px}
+.plan{font-family:var(--mono);font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plan .cur{color:var(--fg)}
+.stats{display:flex;flex-direction:column;gap:8px;margin-left:auto;min-width:250px}
+.ovrow{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px}
+.ovbar{flex:1;height:3px;background:var(--panel);border-radius:2px;overflow:hidden}
+.ovbar i{display:block;height:100%;width:0;background:var(--fg);transition:width .4s linear}
+.counts{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
+.counts b{font-weight:500;color:var(--muted)}
+.counts .r b{color:var(--claude)} .counts .d b{color:var(--ok)} .counts .w b{color:var(--warn)}
+.map{position:relative;width:286px;height:72px;border:1px solid var(--border);border-radius:var(--r);background:var(--sunken);flex:none}
+.map .ml{position:absolute;left:8px;top:5px;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.map svg{position:absolute;inset:0}
+.map .ln{stroke:rgba(243,244,246,.18);stroke-width:1;stroke-dasharray:1.5 3}
+.map .wn{cursor:pointer}
+.map .wn .core{fill:var(--bg);stroke:var(--claude);stroke-width:1.2}
+.map .wn .ring{fill:none;stroke:var(--claude);stroke-width:1.6}
+.map .wn .ringbg{fill:none;stroke:var(--panel);stroke-width:1.6}
+.map .wn.done .core,.map .wn.done .ring{stroke:var(--ok)}
+.map .wn.wait .core{stroke:var(--warn)}
+.map .wn.hl .core{fill:var(--claude)}
+.map .wn text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+.map .wn text .p{fill:var(--faint)}
+.map .oc{fill:var(--bg);stroke:var(--orch);stroke-width:1.4}
+.map .mdot{fill:var(--claude)} .map .mdot.o{fill:var(--orch)}
+.views{display:flex;border:1px solid var(--border);border-radius:var(--r);padding:2px;gap:2px;align-self:center}
+.views button{padding:4px 10px;border-radius:var(--r-sm);color:var(--faint);font-size:12px}
+.views button.on{background:var(--panel);color:var(--fg)}
+
+/* main */
+.main{display:grid;grid-template-columns:minmax(320px,30%) minmax(0,1fr);gap:8px;padding:8px;min-height:0}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--sunken);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .2s}
+.ph{display:flex;align-items:center;gap:8px;height:32px;flex:none;padding:0 10px;border-bottom:1px solid var(--border);background:var(--elev);font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+.sdot.running{background:var(--claude);animation:blink 1.6s ease-in-out infinite}
+.sdot.done{background:var(--ok)} .sdot.wait{background:var(--warn)} .sdot.err{background:var(--err)} .sdot.o{background:var(--orch)}
+@keyframes blink{50%{opacity:.35}}
+.ph .ast{color:var(--claude)} .ph .nm{color:var(--fg)}
+.ph .task{color:var(--faint);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ph .pbar{margin-left:auto;width:56px;height:2px;background:var(--panel);border-radius:1px;overflow:hidden;flex:none}
+.ph .pbar i{display:block;height:100%;width:0;background:var(--claude)}
+.pane.done .ph .pbar i{background:var(--ok)}
+.ph .pct{width:32px;text-align:right;color:var(--muted);flex:none}
+.ph .mx{width:22px;height:22px;border-radius:var(--r-sm);color:var(--faint);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ph .mx:hover{background:var(--panel);color:var(--fg)}
+.ph .esc{display:none;color:var(--faint);font-size:10.5px}
+
+.term{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px 4px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--muted)}
+.term .l{flex:none;white-space:pre;overflow:hidden;text-overflow:ellipsis;animation:lin .22s ease-out}
+@keyframes lin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.l.prompt{color:var(--faint)} .l.prompt span{color:var(--muted)}
+.l.tool .d{color:var(--ok)} .l.tool b{color:var(--fg);font-weight:600}
+.l.say{color:var(--fg)} .l.say .d{color:var(--fg)}
+.l.sub{color:var(--faint)}
+.l.add{color:var(--ok);background:var(--add-bg)} .l.del{color:var(--err);background:var(--del-bg)}
+.l.err{color:var(--err)} .l.ok{color:var(--ok)} .l.donel{color:var(--ok);font-weight:600}
+.l.in{color:var(--orch)}
+.l.welcome{color:var(--claude)}
+.l.gap{height:6px}
+.live{flex:none;padding:2px 10px 0;font-family:var(--mono);font-size:11px;color:var(--claude);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:20px}
+.live.done{color:var(--ok)} .live.wait{color:var(--warn)}
+.live .dim{color:var(--faint)}
+.pbox{flex:none;margin:4px 10px 8px;height:24px;border:1px solid var(--border-strong);border-radius:var(--r-sm);display:flex;align-items:center;padding:0 8px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.pbox .cur{display:inline-block;width:6px;height:12px;background:var(--faint);margin-left:6px;animation:cur 1.1s steps(1) infinite}
+@keyframes cur{50%{opacity:0}}
+
+/* orchestrator */
+.orch{border-color:var(--orch-dim)}
+.orch .ph{background:var(--elev)}
+.orch .ph .ast,.orch .ph .nm{color:var(--orch)}
+.orch .you{font-size:10px;border:1px solid var(--orch-dim);color:var(--orch);border-radius:999px;padding:0 6px}
+.ochat{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.55;display:flex;flex-direction:column;gap:6px}
+.ochat .m{animation:lin .25s ease-out;flex:none}
+.ochat{scrollbar-width:thin;scrollbar-color:var(--panel) transparent}
+.m.user{color:var(--fg)} .m.user .who{color:var(--faint)}
+.m.say{color:var(--muted)} .m.say .d{color:var(--orch)}
+.m.in{color:var(--muted)} .m.in .a{color:var(--claude)} .m.in .arr{color:var(--faint)}
+.m.dispatch{display:grid;grid-template-columns:14px 70px minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 8px;background:var(--bg)}
+.m.dispatch .arr{color:var(--orch)} .m.dispatch .a{color:var(--claude)} .m.dispatch .t{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m.dispatch .s{font-size:10.5px;color:var(--ok)} .m.dispatch.wait .s{color:var(--warn)} .m.dispatch.wait .arr{color:var(--faint)}
+.m.sum{border-left:2px solid var(--orch-dim);padding-left:8px;color:var(--muted);white-space:pre}
+.ofoot{flex:none;border-top:1px solid var(--border);padding:8px 10px 10px;background:var(--elev)}
+.quick{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.quick button{font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted);background:var(--sunken)}
+.quick button:hover{border-color:var(--border-strong);color:var(--fg)}
+.inrow{display:flex;align-items:center;gap:8px;border:1px solid var(--border-strong);border-radius:var(--r);background:var(--bg);padding:0 6px 0 6px;height:36px}
+.inrow:focus-within{border-color:var(--orch)}
+.target{font-family:var(--mono);font-size:11px;color:var(--orch);border:1px solid var(--orch-dim);border-radius:var(--r-sm);padding:1px 6px;white-space:nowrap}
+.inrow input{flex:1;min-width:0;outline:none;font-family:var(--mono);font-size:12px;color:var(--fg)}
+.inrow input::placeholder{color:var(--faint)}
+.send{font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--border);border-radius:var(--r-sm);padding:1px 6px}
+
+/* grid */
+.grid{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;min-width:0}
+.grid .pane.w{cursor:zoom-in}
+.grid .pane.w:hover{border-color:var(--border-strong)}
+.grid .pane.flash{border-color:var(--claude)}
+.grid .slot{border:1px dashed var(--border);border-radius:var(--r)}
+.grid .pane.floating{position:absolute;z-index:5;cursor:default}
+.grid > .pane.w.anim{transition:left .32s cubic-bezier(.2,.75,.2,1),top .32s cubic-bezier(.2,.75,.2,1),width .32s cubic-bezier(.2,.75,.2,1),height .32s cubic-bezier(.2,.75,.2,1)}
+.grid .pane.maxed{border-color:var(--border-strong)}
+.grid .pane.maxed .ph .esc{display:inline}
+.grid .pane.maxed .term{font-size:12.5px}
+.grid.has-max > .pane.w:not(.floating){opacity:.35;transition:opacity .3s}
+.grid > .pane.w{transition:opacity .3s,border-color .2s}
+
+/* bus ticker */
+.ticker{display:flex;align-items:center;border-top:1px solid var(--border);background:var(--sunken);font-family:var(--mono);font-size:11.5px;min-width:0}
+.ticker .lbl{flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;height:100%;border-right:1px solid var(--border);color:var(--fg)}
+.ticker .lbl .n{color:var(--claude)}
+.tview{position:relative;flex:1;height:100%;overflow:hidden}
+.ttrack{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;white-space:nowrap;will-change:transform}
+.ti{display:inline-flex;gap:8px;padding:0 18px;color:var(--muted);border-right:1px solid var(--hair)}
+.ti .ts{color:var(--faint)} .ti .c{color:var(--claude)} .ti .o{color:var(--orch)} .ti .u{color:var(--fg)} .ti .ar{color:var(--faint)}
+.ti.handoff .tx{color:var(--fg)}
+.ticker .state{flex:none;padding:0 12px;color:var(--ok);font-size:11px;border-left:1px solid var(--border);height:100%;display:flex;align-items:center}
+.ticker .state.paused{color:var(--warn)}
+
+.status{display:flex;align-items:center;gap:12px;padding:0 12px;border-top:1px solid var(--border);background:var(--bg);font-family:var(--mono);font-size:11px;color:var(--faint)}
+.status .concept{color:var(--muted);border:1px solid var(--border);border-radius:var(--r-sm);padding:0 6px;line-height:16px}
+.status .r{margin-left:auto}
+.status .lv{color:var(--ok)}
+.status kbd{font-family:var(--mono);border:1px solid var(--border);border-radius:3px;padding:0 4px;color:var(--muted)}
+
+@media (max-width:1240px){
+  .main{grid-template-columns:300px minmax(0,1fr)}
+  .views{display:none}
+  .term{font-size:10.5px}
+  .ph .pbar{width:36px}
+  .stats{min-width:200px}
+  .top{gap:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="tl">
+      <div class="brand"><span class="logo">✻</span>alethe <b>orchestra</b></div>
+      <div class="plan">billing-service / <span class="cur">portar p/ rust</span> · <span id="elapsed">00:00</span> decorrido</div>
+    </div>
+    <div class="views"><button>Constelação</button><button>Fluxo</button><button class="on">Grade</button></div>
+    <div class="stats">
+      <div class="ovrow"><span style="color:var(--faint)">geral</span><div class="ovbar"><i id="ovBar"></i></div><span id="ovPct">0%</span></div>
+      <div class="counts"><span class="r"><b id="cRun">0</b> rodando</span><span class="d"><b id="cDone">0</b> concluídos</span><span class="w"><b id="cWait">0</b> aguardando</span><span><b id="cTok">0</b> tokens</span></div>
+    </div>
+    <div class="map" title="mapa — clique num agent para maximizar"><span class="ml">mapa</span><svg id="map" viewBox="0 0 286 72"></svg></div>
+  </header>
+
+  <main class="main">
+    <section class="pane orch">
+      <div class="ph"><span class="sdot o"></span><span class="ast">✻</span><span class="nm">orchestrator</span><span class="you">você</span><span class="task" style="margin-left:auto">plano · 6 workers</span></div>
+      <div class="ochat" id="ochat"></div>
+      <div class="ofoot">
+        <div class="quick"><button data-q="status">status geral</button><button data-q="pause" id="qPause">pausar todos</button><button data-q="merge">pedir merge</button></div>
+        <form class="inrow" id="form" autocomplete="off">
+          <button type="button" class="target" id="target" title="clique para trocar o destino">@todos</button>
+          <input id="inp" placeholder="despachar tarefa… (@claude-N para direcionar)">
+          <button class="send" type="submit">⏎</button>
+        </form>
+      </div>
+    </section>
+    <section class="grid" id="grid"></section>
+  </main>
+
+  <div class="ticker">
+    <div class="lbl">message bus <span class="n" id="busN">0</span></div>
+    <div class="tview" id="tview"><div class="ttrack" id="ttrack"></div></div>
+    <div class="state" id="busState">● ao vivo</div>
+  </div>
+
+  <footer class="status">
+    <span class="concept">Conceito D — Grade de Terminais</span>
+    <span>clique num pane p/ maximizar · <kbd>esc</kbd> restaura · <kbd>1</kbd>–<kbd>6</kbd> foco</span>
+    <span class="r"><span class="lv">●</span> 6 agents portando para rust · <span id="sbN">0</span> mensagens no bus</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const pad = (n, w = 2) => String(n).padStart(w, '0');
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const SPIN = ['·','✢','✳','✶','✻','✽','✻','✶','✳','✢'];
+const VERBS = ['Cogitating','Pondering','Compiling','Brewing','Reticulating','Noodling','Simmering'];
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const ri = (a, b) => Math.floor(a + rnd() * (b - a + 1));
+
+/* ---------- task definitions ---------- */
+const T = (o) => o;
+const WORKERS = [
+  { id:'claude-1', queue:[
+    T({title:'api contracts', prompt:'gerar contracts a partir de openapi.yaml', files:['api/openapi.yaml','contracts/src/billing.rs'], grep:['"InvoiceDto"','legacy/api/'], note:'38 schemas. Money vira newtype sobre Decimal.', diff:['+ pub struct InvoiceDto { pub id: InvoiceId, pub total: Money }','- class InvoiceDto(BaseModel):'], test:'cargo check -p contracts', n:0, done:'contracts publicados · 38 tipos'}),
+    T({title:'docs da api', prompt:'gerar docs da api a partir dos contracts', files:['contracts/src/lib.rs','docs/api.md'], grep:['"pub struct"','contracts/'], note:'Vou gerar exemplos a partir dos testes de contrato.', diff:['+ ## POST /invoices','- TODO: documentar'], test:'cargo doc -p contracts', n:0, done:'docs/api.md atualizado'}) ] , init:.72 },
+  { id:'claude-2', queue:[
+    T({title:'billing', prompt:'portar billing (invoices, proration)', files:['legacy/billing/invoice.py','src/billing/proration.rs','src/billing/money.rs'], grep:['"prorate"','legacy/billing/'], note:'Proration usa float no legado. Vou manter a semântica e testar bordas.', diff:['+ let days = period.days_in(&cycle) as i64;','- days = (end - start).days'], test:'cargo test -p billing', n:46, fail:'3 failed · arredondamento em proration', fix:'Trocando f64 por rust_decimal, igual contracts.', done:'billing pronto · 46 testes'}),
+    T({title:'proration edge cases', prompt:'cobrir bordas: troca de plano no dia 31', files:['src/billing/proration.rs','tests/proration_edges.rs'], grep:['"end_of_month"','src/billing/'], note:'Fevereiro e anos bissextos primeiro.', diff:['+ assert_eq!(prorate(feb29, plan), Money::new(dec!(9.66)));','- // TODO bissexto'], test:'cargo test -p billing edges', n:18, done:'18 bordas cobertas'}) ], init:.46 },
+  { id:'claude-3', wait:{ on:'claude-5', label:'schema v3 · claude-5' }, queue:[
+    T({title:'ledger', prompt:'implementar ledger sobre schema v3', files:['migrations/0007_core.sql','src/ledger/balance.rs','src/ledger/balance.rs'], grep:['"post_entry"','legacy/'], note:'6 call sites de post_entry. Book precisa de &mut em dois lugares.', diff:['+ pub fn post(&mut self, e: Entry) -> Result<BalanceId>','- def post_entry(self, entry):'], test:'cargo test -p ledger', n:42, fail:'error[E0502]: cannot borrow `self.book` as mutable', fix:'Movendo o cálculo de saldo para um método &self.', done:'borrow checker won. ledger pronto'}),
+    T({title:'ledger snapshots', prompt:'snapshots diários do ledger', files:['src/ledger/snapshot.rs','src/ledger/snapshot.rs'], grep:['"snapshot"','legacy/ledger/'], note:'Snapshot incremental por conta, não global.', diff:['+ pub async fn snapshot(&self, day: NaiveDate) -> Result<()>','- def nightly_dump():'], test:'cargo test -p ledger snapshot', n:12, done:'snapshots diários ok'}) ], init:0 },
+  { id:'claude-4', queue:[
+    T({title:'notify', prompt:'eventos de billing → webhooks + email', files:['src/billing/events.rs','src/notify/webhook.rs'], grep:['"InvoicePaid"','src/'], note:'Webhook assinado com hmac-sha256, retry com jitter.', diff:['+ let sig = hmac_sha256(&secret, &body);','- sig = sign(body)'], test:'cargo test -p notify', n:19, done:'notify pronto · webhooks assinados'}),
+    T({title:'retry policy', prompt:'retry exponencial com dead-letter', files:['src/notify/retry.rs','src/notify/dlq.rs'], grep:['"max_attempts"','src/notify/'], note:'Máx 5 tentativas, depois dead-letter.', diff:['+ const MAX_ATTEMPTS: u32 = 5;','- RETRIES = 3'], test:'cargo test -p notify retry', n:9, done:'retry + DLQ prontos'}) ], init:.3 },
+  { id:'claude-5', queue:[
+    T({title:'schema db', prompt:'portar schema legado (mysql) p/ sqlx + postgres 16', files:['legacy/db/schema.sql','migrations/0007_core.sql'], grep:['"FOREIGN KEY"','legacy/db/'], note:'14 tabelas, 61 FKs. invoice_id vira bigint.', diff:['+ invoice_id BIGINT NOT NULL REFERENCES invoices(id),','- invoice_id INT(11),'], test:'sqlx migrate run --dry-run', n:0, done:'schema v3 publicado · 14 tabelas'}),
+    T({title:'seed data', prompt:'seed de dados p/ e2e', files:['legacy/db/fixtures.sql','migrations/seed.sql'], grep:['"INSERT INTO"','legacy/db/'], note:'Anonimizando e-mails antes de copiar.', diff:['+ INSERT INTO customers (email) VALUES (\'a1@example.test\');','- INSERT INTO customers VALUES (...real...)'], test:'sqlx migrate run', n:0, done:'seed pronto · 2.1k linhas'}) ], init:.84 },
+  { id:'claude-6', wait:{ timer:16, label:'billing + ledger' }, queue:[
+    T({title:'integration tests', prompt:'suíte e2e contra stack completa', files:['docker-compose.yml','tests/e2e/invoice_flow.rs','src/notify/retry.rs'], grep:['"#[tokio::test]"','tests/'], note:'Subindo postgres efêmero antes da suíte.', diff:['+ #[tokio::test] async fn invoice_paid_triggers_webhook()','- def test_invoice_flow():'], test:'cargo test --test e2e', n:112, fail:'2 failed · notify timeout', fix:'Pedi a claude-4 timeout de 10s no webhook.', done:'112/112 verdes'}),
+    T({title:'load tests', prompt:'carga: 500 invoices/s por 2 min', files:['bench/load.rs','bench/load.rs'], grep:['"criterion"','bench/'], note:'p99 alvo < 40ms.', diff:['+ group.throughput(Throughput::Elements(500));','- # sem benchmark'], test:'cargo bench --bench load', n:6, done:'p99 31ms · ok'}) ], init:0 },
+];
+
+function buildScript(task) {
+  const L = [];
+  L.push(['prompt', task.prompt]);
+  L.push(['tool', 'Read', task.files[0]]); L.push(['sub', `⎿  Read ${ri(120, 520)} lines`]);
+  L.push(['say', task.note]);
+  L.push(['tool', 'Grep', `${task.grep[0]}, path: "${task.grep[1]}"`]); L.push(['sub', `⎿  Found ${ri(3, 14)} matches`]);
+  L.push(['tool', 'Edit', task.files[1]]); L.push(['sub', `⎿  Updated ${task.files[1]} with ${ri(12, 60)} additions and ${ri(2, 20)} removals`]);
+  L.push(['add', '     ' + task.diff[0]]); L.push(['del', '     ' + task.diff[1]]);
+  L.push(['tool', 'Bash', task.test]);
+  if (task.n) L.push(['sub', `⎿  running ${task.n} tests`]);
+  if (task.fail) {
+    L.push(['err', `   ✗ ${task.fail}`]);
+    L.push(['say', task.fix]);
+    L.push(['tool', 'Edit', task.files[2] || task.files[1]]); L.push(['sub', `⎿  Updated with ${ri(4, 12)} additions and ${ri(2, 8)} removals`]);
+    L.push(['tool', 'Bash', task.test]);
+  }
+  L.push(['ok', task.n ? `   ✓ tests ${task.n} passed` : '   ✓ ok · 0 warnings']);
+  L.push(['tool', 'SendMessage', 'orchestrator']); L.push(['sub', `⎿  "${task.done}"`]);
+  L.push(['donel', `✓ ${task.title} concluído`]);
+  return L;
+}
+function lineHTML(l) {
+  const [k, a, b] = l;
+  if (k === 'prompt') return `&gt; <span>${esc(a)}</span>`;
+  if (k === 'tool') return `<span class="d">●</span> <b>${a}</b>(${esc(b)})`;
+  if (k === 'say') return `<span class="d">●</span> ${esc(a)}`;
+  if (k === 'sub') return '  ' + esc(a);
+  return esc(a);
+}
+const delayFor = k => 1.35 * (k === 'tool' ? 700 + rnd() * 1300 : k === 'say' ? 900 + rnd() * 900 : k === 'prompt' ? 600 : 220 + rnd() * 420);
+
+/* ---------- bus ---------- */
+const BUS = []; let busCount = 0;
+const clock0 = performance.now(), CLOCK_BASE = (58 * 60 + 41.2) * 1000;
+const stampNow = () => { const ms = CLOCK_BASE + (performance.now() - clock0); const s = ms / 1000; return `${pad(Math.floor(s / 60) % 60)}:${pad(Math.floor(s % 60))}.${pad(Math.floor(ms % 1000), 3)}`; };
+const ac = a => a === 'orchestrator' ? 'o' : (a === 'todos' || a === 'você') ? 'u' : 'c';
+const ttrack = $('#ttrack'), tview = $('#tview');
+let tx = 0, tickerPaused = false;
+function bus(from, to, text, kind = '') {
+  busCount++;
+  $('#busN').textContent = busCount; $('#sbN').textContent = busCount;
+  const el = document.createElement('span'); el.className = 'ti ' + kind;
+  el.innerHTML = `<span class="ts">${stampNow()}</span><span><span class="${ac(from)}">${from}</span> <span class="ar">→</span> <span class="${ac(to)}">${to}</span></span><span class="tx">${esc(text)}</span>`;
+  ttrack.appendChild(el);
+  mapPulse(from, to);
+}
+tview.addEventListener('mouseenter', () => tickerPaused = true);
+tview.addEventListener('mouseleave', () => tickerPaused = false);
+
+/* ---------- orchestrator chat ---------- */
+const ochat = $('#ochat');
+function o(kind, html, extra = '') {
+  const near = ochat.scrollTop + ochat.clientHeight >= ochat.scrollHeight - 40;
+  const d = document.createElement('div'); d.className = 'm ' + kind + ' ' + extra; d.innerHTML = html; ochat.appendChild(d);
+  while (ochat.children.length > 80) ochat.firstChild.remove();
+  if (near) ochat.scrollTop = ochat.scrollHeight;
+  return d;
+}
+const oUser = t => o('user', `<span class="who">você ›</span> ${esc(t)}`);
+const oSay = t => o('say', `<span class="d">●</span> ${esc(t)}`);
+const oIn = (a, t) => o('in', `<span class="arr">←</span> <span class="a">${a}</span> ${esc(t)}`);
+const oDispatch = (a, t, wait) => o('dispatch', `<span class="arr">${wait ? '◌' : '→'}</span><span class="a">${a}</span><span class="t">${esc(t)}</span><span class="s">${wait ? 'aguardando' : 'despachado'}</span>`, wait ? 'wait' : '');
+
+/* ---------- panes ---------- */
+const grid = $('#grid');
+WORKERS.forEach((w, i) => {
+  const el = document.createElement('section');
+  el.className = 'pane w'; el.dataset.i = i;
+  el.innerHTML = `<div class="ph"><span class="sdot"></span><span class="ast">✻</span><span class="nm">${w.id}</span><span class="task"></span><span class="esc">esc restaura</span><span class="pbar"><i></i></span><span class="pct"></span><button class="mx" title="maximizar">⤢</button></div>
+    <div class="term"></div><div class="live"></div><div class="pbox">&gt;<span class="cur"></span></div>`;
+  grid.appendChild(el);
+  Object.assign(w, { el, dot: el.querySelector('.sdot'), taskEl: el.querySelector('.task'), bar: el.querySelector('.pbar i'), pctEl: el.querySelector('.pct'),
+    term: el.querySelector('.term'), live: el.querySelector('.live'), mx: el.querySelector('.mx'),
+    qi: 0, lines: [], idx: 0, nextAt: 0, lastAt: 0, curDelay: 1, state: 'wait', tokens: ri(8, 40) * 100, started: 0, errUntil: 0, doneAt: 0, keyH: '', verb: VERBS[i % VERBS.length] });
+  el.addEventListener('click', e => { if (maxed !== el && !e.target.closest('.mx')) maximize(el); });
+  w.mx.addEventListener('click', e => { e.stopPropagation(); maxed === el ? restore() : maximize(el); });
+  el.addEventListener('mouseenter', () => mapHL(i, true));
+  el.addEventListener('mouseleave', () => mapHL(i, false));
+});
+function appendLine(w, l, animate = true) {
+  const d = document.createElement('div'); d.className = 'l ' + l[0]; d.innerHTML = lineHTML(l);
+  if (!animate) d.style.animation = 'none';
+  w.term.appendChild(d);
+  while (w.term.children.length > 70) w.term.firstChild.remove();
+  if (l[0] === 'err') w.errUntil = performance.now() + 2200;
+}
+function startTask(w, now, prefill = 0) {
+  const task = w.queue[w.qi % w.queue.length];
+  w.task = task; w.lines = buildScript(task); w.state = 'running'; w.started = now;
+  w.idx = Math.floor(prefill * w.lines.length);
+  if (w.term.children.length) appendLine(w, ['gap', ''], prefill === 0);
+  for (let k = 0; k < w.idx; k++) appendLine(w, w.lines[k], false);
+  w.curDelay = delayFor(w.lines[w.idx][0]); w.lastAt = now; w.nextAt = now + w.curDelay * (prefill ? rnd() : 1);
+  w.started = now - w.idx * 1100;
+  w.taskEl.textContent = '· ' + task.title;
+  w.verb = VERBS[ri(0, VERBS.length - 1)];
+}
+function finishTask(w, now) {
+  w.state = 'done'; w.doneAt = now;
+  bus(w.id, 'orchestrator', w.task.done, 'done');
+  oIn(w.id, `${w.task.title} concluído · ${w.task.done}`);
+  // dependents waiting on this worker get unblocked
+  WORKERS.forEach(x => {
+    if (x.state === 'wait' && x.wait && x.wait.on === w.id) {
+      setTimeout(() => {
+        bus(w.id, x.id, `${x.wait.label.split(' · ')[0]} pronto. pode começar`, 'handoff');
+        setTimeout(() => dispatch(x, 'deps ok'), 700);
+      }, 500);
+    }
+  });
+}
+function dispatch(w, why) {
+  const now = performance.now();
+  const task = w.queue[w.qi % w.queue.length];
+  bus('orchestrator', w.id, `despachado: ${task.title}${why ? ' · ' + why : ''}`);
+  oDispatch(w.id, task.title, false);
+  startTask(w, now);
+}
+
+/* ---------- maximize (FLIP-ish via absolute positioning) ---------- */
+let maxed = null, slot = null, busyAnim = false;
+function rectIn(el) { const g = grid.getBoundingClientRect(), r = el.getBoundingClientRect(); return { l: r.left - g.left, t: r.top - g.top, w: r.width, h: r.height }; }
+function place(el, r) { el.style.left = r.l + 'px'; el.style.top = r.t + 'px'; el.style.width = r.w + 'px'; el.style.height = r.h + 'px'; }
+function maximize(el) {
+  if (busyAnim) return;
+  if (maxed) { restore(() => maximize(el)); return; }
+  busyAnim = true;
+  const r = rectIn(el);
+  slot = document.createElement('div'); slot.className = 'slot'; el.after(slot);
+  el.classList.add('floating'); place(el, r); el.offsetWidth;
+  el.classList.add('anim', 'maxed'); grid.classList.add('has-max');
+  place(el, { l: 0, t: 0, w: grid.clientWidth, h: grid.clientHeight });
+  el.querySelector('.mx').textContent = '⤡';
+  maxed = el;
+  setTimeout(() => { el.classList.remove('anim'); el.style.width = '100%'; el.style.height = '100%'; busyAnim = false; }, 340);
+}
+function restore(then) {
+  if (!maxed || busyAnim) return;
+  busyAnim = true;
+  const el = maxed, target = rectIn(slot);
+  place(el, { l: 0, t: 0, w: grid.clientWidth, h: grid.clientHeight }); el.offsetWidth;
+  el.classList.add('anim'); el.classList.remove('maxed'); grid.classList.remove('has-max');
+  place(el, target);
+  setTimeout(() => {
+    el.classList.remove('anim', 'floating'); el.removeAttribute('style');
+    slot.remove(); slot = null; maxed = null; busyAnim = false;
+    el.querySelector('.mx').textContent = '⤢';
+    if (then) then();
+  }, 340);
+}
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') { if (e.key === 'Escape') e.target.blur(); return; }
+  if (e.key === 'Escape') restore();
+  if (/^[1-6]$/.test(e.key)) maximize(WORKERS[+e.key - 1].el);
+});
+
+/* ---------- mini map ---------- */
+const map = $('#map'), NS = 'http://www.w3.org/2000/svg';
+const MC = { x: 143, y: 39 }, RX = 104, RY = 22;
+const ANG = [210, 270, 330, 30, 90, 150];
+const mk = (tag, attrs, parent = map) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+const RING = 2 * Math.PI * 7;
+WORKERS.forEach((w, i) => {
+  const a = ANG[i] * Math.PI / 180;
+  w.mp = { x: MC.x + RX * Math.cos(a), y: MC.y + RY * Math.sin(a) };
+  mk('line', { x1: MC.x, y1: MC.y, x2: w.mp.x, y2: w.mp.y, class: 'ln' });
+});
+mk('circle', { cx: MC.x, cy: MC.y, r: 5.5, class: 'oc' });
+const ot = mk('text', { x: MC.x, y: MC.y + 2.5, 'text-anchor': 'middle', 'font-size': 6.5, fill: 'currentColor' }); ot.style.fill = 'var(--orch)'; ot.style.fontFamily = 'var(--mono)'; ot.textContent = '✻';
+WORKERS.forEach((w, i) => {
+  const g = mk('g', { class: 'wn' });
+  mk('circle', { cx: w.mp.x, cy: w.mp.y, r: 7, class: 'ringbg' }, g);
+  w.ring = mk('circle', { cx: w.mp.x, cy: w.mp.y, r: 7, class: 'ring', 'stroke-dasharray': `0 ${RING}`, transform: `rotate(-90 ${w.mp.x} ${w.mp.y})` }, g);
+  mk('circle', { cx: w.mp.x, cy: w.mp.y, r: 3.2, class: 'core' }, g);
+  const left = Math.cos(ANG[i] * Math.PI / 180) < -.1, right = Math.cos(ANG[i] * Math.PI / 180) > .1;
+  const tx_ = left ? w.mp.x - 11 : right ? w.mp.x + 11 : w.mp.x + 11;
+  const t = mk('text', { x: tx_, y: w.mp.y + 3, 'text-anchor': left ? 'end' : 'start' }, g);
+  t.innerHTML = `c${i + 1} <tspan class="p">0%</tspan>`;
+  w.mapG = g; w.mapPct = t.querySelector('.p');
+  g.addEventListener('click', () => maximize(w.el));
+  g.addEventListener('mouseenter', () => w.el.classList.add('flash'));
+  g.addEventListener('mouseleave', () => w.el.classList.remove('flash'));
+});
+function mapHL(i, on) { WORKERS[i].mapG.classList.toggle('hl', on); }
+const pulses = [];
+function mapPulse(from, to) {
+  const pt = id => id === 'orchestrator' || id === 'todos' || id === 'você' ? MC : (WORKERS.find(w => w.id === id) || {}).mp || MC;
+  const a = pt(from), b = pt(to);
+  if (a === b) return;
+  const path = (a === MC || b === MC) ? [a, b] : [a, MC, b];
+  const c = mk('circle', { r: 2, class: 'mdot' + (from === 'orchestrator' ? ' o' : ''), cx: a.x, cy: a.y });
+  pulses.push({ c, path, t0: performance.now(), dur: 900 * (path.length - 1) });
+}
+
+/* ---------- input ---------- */
+const TARGETS = ['@todos', ...WORKERS.map(w => '@' + w.id)];
+let tgt = 0, paused = false;
+$('#target').addEventListener('click', () => { tgt = (tgt + 1) % TARGETS.length; $('#target').textContent = TARGETS[tgt]; $('#inp').focus(); });
+$('#form').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#inp').value.trim(); if (!v) return;
+  $('#inp').value = '';
+  oUser(v);
+  const m = v.match(/@?claude-([1-6])/);
+  const target = m ? 'claude-' + m[1] : TARGETS[tgt].slice(1);
+  bus('você', 'orchestrator', v);
+  setTimeout(() => {
+    if (target === 'todos') { oSay('Ok. Repassando a todos os workers ativos.'); bus('orchestrator', 'todos', v); }
+    else {
+      const w = WORKERS.find(x => x.id === target);
+      oDispatch(target, v, false); bus('orchestrator', target, v);
+      appendLine(w, ['in', `← orchestrator: ${v}`]);
+      w.el.classList.add('flash'); setTimeout(() => w.el.classList.remove('flash'), 900);
+    }
+  }, 450);
+});
+document.querySelector('.quick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const q = b.dataset.q;
+  if (q === 'status') {
+    oUser('status geral');
+    const rows = WORKERS.map(w => `${w.id.padEnd(9)} ${(w.task ? w.task.title : '—').padEnd(18).slice(0, 18)} ${w.state === 'wait' ? 'aguardando' : pct(w) + '%'}`).join('\n');
+    setTimeout(() => o('sum', esc(rows)), 300);
+  } else if (q === 'pause') {
+    paused = !paused; b.textContent = paused ? 'retomar todos' : 'pausar todos';
+    oUser(paused ? 'pausar todos' : 'retomar todos');
+    bus('orchestrator', 'todos', paused ? 'pausa: finalizem a tool call atual e aguardem' : 'retomar');
+    $('#busState').textContent = paused ? '❚❚ pausado' : '● ao vivo'; $('#busState').classList.toggle('paused', paused);
+    if (!paused) { const now = performance.now(); WORKERS.forEach(w => { if (w.state === 'running') { w.lastAt = now; w.nextAt = now + w.curDelay; } }); }
+  } else if (q === 'merge') {
+    oUser('pedir merge');
+    const pending = WORKERS.filter(w => w.state !== 'done').map(w => w.id);
+    setTimeout(() => oSay(pending.length ? `Merge bloqueado: e2e ainda não verde. Pendentes: ${pending.join(', ')}.` : 'Tudo verde. Abrindo merge orchestra/rust-port → main.'), 350);
+  }
+});
+
+/* ---------- loop ---------- */
+function pct(w) {
+  if (w.state === 'done') return 100;
+  if (w.state !== 'running') return 0;
+  const frac = paused ? 0 : Math.min(1, (performance.now() - w.lastAt) / w.curDelay);
+  return Math.min(99, Math.floor((w.idx + frac) / w.lines.length * 100));
+}
+const t0 = performance.now();
+let lastTick = t0;
+function tick(now) {
+  const dt = Math.min(.1, (now - lastTick) / 1000); lastTick = now;
+  const spin = SPIN[Math.floor(now / 110) % SPIN.length];
+  let run = 0, done = 0, wait = 0, sum = 0, tok = 0;
+
+  WORKERS.forEach((w, i) => {
+    if (w.state === 'running' && !paused && now >= w.nextAt) {
+      const l = w.lines[w.idx]; appendLine(w, l); w.idx++;
+      if (l[0] === 'tool') w.tokens += ri(200, 1400);
+      if (l[0] === 'say' && rnd() < .5) bus(w.id, 'orchestrator', l[1]);
+      if (w.idx >= w.lines.length) finishTask(w, now);
+      else { w.curDelay = delayFor(w.lines[w.idx][0]); w.lastAt = now; w.nextAt = now + w.curDelay; }
+    }
+    if (w.state === 'done' && now - w.doneAt > 4200 && !w.redispatch) {
+      w.redispatch = true;
+      setTimeout(() => { w.qi++; w.redispatch = false; dispatch(w, 'próxima da fila'); }, 10);
+    }
+    if (w.state === 'wait' && w.wait && w.wait.timer && now - t0 > w.wait.timer * 1000 && !w.wait.fired) {
+      w.wait.fired = true; bus('claude-2', 'claude-6', 'billing estável. fixtures em tests/fixtures/', 'handoff'); setTimeout(() => dispatch(w, 'deps ok'), 600);
+    }
+    const p = pct(w);
+    sum += p; tok += w.tokens;
+    if (w.state === 'running') run++; else if (w.state === 'done') done++; else wait++;
+
+    const dotCls = now < w.errUntil ? 'err' : w.state;
+    const key = `${w.state}|${p}|${dotCls}`;
+    if (key !== w.keyH) {
+      w.keyH = key;
+      w.el.classList.toggle('done', w.state === 'done');
+      w.dot.className = 'sdot ' + dotCls;
+      w.bar.style.width = p + '%';
+      w.pctEl.textContent = w.state === 'wait' ? '—' : p + '%';
+      w.ring.setAttribute('stroke-dasharray', `${RING * p / 100} ${RING}`);
+      w.mapPct.textContent = w.state === 'wait' ? '··' : p + '%';
+      w.mapG.classList.toggle('done', w.state === 'done'); w.mapG.classList.toggle('wait', w.state === 'wait');
+    }
+    let live;
+    if (w.state === 'running') {
+      const secs = Math.floor((now - w.started) / 1000 * 3);
+      live = paused ? `<span class="dim">❚❚ pausado pelo orchestrator</span>` : `${spin} ${w.verb}… <span class="dim">(${secs}s · ↓ ${(w.tokens / 1000).toFixed(1)}k tokens · esc to interrupt)</span>`;
+      w.live.className = 'live';
+    } else if (w.state === 'done') { live = '✓ tarefa concluída · aguardando orchestrator'; w.live.className = 'live done'; }
+    else { live = `◌ aguardando ${w.wait ? w.wait.label : 'dispatch'}`; w.live.className = 'live wait'; }
+    if (live !== w.liveH) { w.liveH = live; w.live.innerHTML = live; }
+  });
+
+  $('#cRun').textContent = run; $('#cDone').textContent = done; $('#cWait').textContent = wait;
+  $('#cTok').textContent = (tok / 1000).toFixed(1) + 'k';
+  const ov = Math.round(sum / WORKERS.length);
+  $('#ovPct').textContent = ov + '%'; $('#ovBar').style.width = ov + '%';
+  const el = (now - t0) / 1000 * 3 + 12 * 60 + 40;
+  $('#elapsed').textContent = `${pad(Math.floor(el / 60))}:${pad(Math.floor(el % 60))}`;
+
+  // ticker
+  const backlog = Math.max(0, ttrack.scrollWidth + tx - tview.clientWidth * 1.5);
+  if (!tickerPaused) tx -= dt * (46 + backlog * .12);   // speed up when messages pile up
+  const first = ttrack.firstElementChild;
+  if (first && -tx > first.offsetWidth) { tx += first.offsetWidth; first.remove(); }
+  const trackW = ttrack.scrollWidth, viewW = tview.clientWidth;
+  if (tx + trackW < viewW - 40) tx = viewW - 40 - trackW;   // never leave an empty tail
+  if (tx > 0) tx = 0;
+  ttrack.style.transform = `translate3d(${tx.toFixed(1)}px,0,0)`;
+
+  // map pulses
+  for (let k = pulses.length - 1; k >= 0; k--) {
+    const pu = pulses[k]; const u = Math.max(0, (now - pu.t0) / pu.dur);
+    if (u >= 1) { pu.c.remove(); pulses.splice(k, 1); continue; }
+    const segs = pu.path.length - 1, s = Math.min(segs - 1, Math.floor(u * segs)), f = u * segs - s;
+    const a = pu.path[s], b = pu.path[s + 1];
+    pu.c.setAttribute('cx', (a.x + (b.x - a.x) * f).toFixed(1)); pu.c.setAttribute('cy', (a.y + (b.y - a.y) * f).toFixed(1));
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------- chatter ---------- */
+const CHAT = [
+  ['claude-3', 'orchestrator', 'borrow checker won. merging'], ['claude-2', 'claude-1', 'Money precisa de Display p/ os logs'],
+  ['claude-1', 'claude-2', 'feito: impl Display for Money'], ['claude-4', 'claude-2', 'qual o nome do evento de estorno?'],
+  ['claude-2', 'claude-4', 'InvoiceVoided, payload em events.rs'], ['claude-5', 'claude-3', 'índice novo em entries(account_id, at)'],
+  ['claude-6', 'claude-4', 'webhook timeout em 2 casos. ok subir p/ 10s?'], ['claude-4', 'claude-6', 'ok, ajustado em retry.rs'],
+  ['orchestrator', 'claude-2', 'usa rust_decimal, igual contracts'], ['claude-1', 'orchestrator', 'openapi.yaml tinha 2 schemas órfãos, removi'],
+  ['orchestrator', 'todos', 'lembrete: nada de push em orchestra/* sem testes verdes'], ['claude-3', 'claude-6', 'fixtures em tests/fixtures/ledger.json'],
+];
+let ci = 0;
+function chatter() {
+  if (!paused) {
+    const [a, b, t] = CHAT[ci++ % CHAT.length];
+    const wa = WORKERS.find(w => w.id === a);
+    if (!wa || wa.state === 'running') bus(a, b, t, a === 'orchestrator' ? '' : (b !== 'orchestrator' && b !== 'todos' ? 'handoff' : ''));
+  }
+  setTimeout(chatter, 1800 + rnd() * 2600);
+}
+
+/* ---------- boot ---------- */
+const now0 = performance.now();
+oUser('portar o billing-service p/ rust. 6 workers. merge só com e2e verde.');
+oSay('Quebrei em 7 tarefas em 5 etapas. Contracts e schema primeiro; ledger e billing dependem do schema v3.');
+WORKERS.forEach(w => {
+  appendLine(w, ['welcome', `✻ Claude Code · ${w.id} · worker`], false);
+  appendLine(w, ['sub', `  cwd: ~/billing-service  ·  worktree orchestra/${w.queue[0].title.replace(/ /g, '-')}`], false);
+  appendLine(w, ['sub', '  bus: conectado ao orchestrator'], false);
+  if (w.wait) { w.state = 'wait'; w.taskEl.textContent = '· ' + w.queue[0].title; oDispatch(w.id, w.queue[0].title, true); }
+  else { oDispatch(w.id, w.queue[0].title, false); startTask(w, now0, w.init); }
+});
+oIn('claude-2', '3 testes falhando em proration');
+oSay('Sugeri rust_decimal p/ claude-2 — mesmo tipo do contracts.');
+[['você', 'orchestrator', 'portar billing-service p/ rust. 6 workers'], ['orchestrator', 'todos', 'plano publicado: 7 tarefas em 5 etapas'],
+ ['claude-5', 'orchestrator', '12/14 tabelas convertidas'], ['claude-2', 'orchestrator', '3 testes falhando: arredondamento'],
+ ['orchestrator', 'claude-2', 'usa rust_decimal, igual contracts'], ['claude-1', 'claude-2', 'contracts/billing.rs publicado (draft)']].forEach(m => bus(...m));
+tx = 0;
+setTimeout(chatter, 1500);
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

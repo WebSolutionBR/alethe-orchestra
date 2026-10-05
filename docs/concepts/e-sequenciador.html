@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orchestra Sequenciador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#101114; --elev:#1f2125; --sunken:#1a1c1f; --panel:#2a2d33;
+  --border:#2a2d33; --border-strong:rgba(243,244,246,.22);
+  --fg:#f3f4f6; --muted:#c8c8d0; --faint:#8b8b95; --accent:#ece9e2;
+  --claude:#d97757; --orch:#5ec8e5; --ok:#4ade80; --warn:#fbbf24;
+  --act-think:#a78bfa; --act-read:#7aa2f7; --act-edit:#d97757; --act-test:#4ade80;
+  --act-block:#fbbf24; --act-idle:#8b8b95; --act-dispatch:#5ec8e5;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --lane:52px; --ruler:28px; --r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.4 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(140px,1fr) auto;height:100vh;min-height:620px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:18px;padding:0 16px;height:48px;border-bottom:1px solid var(--border);background:var(--bg)}
+.brand{display:flex;align-items:center;gap:8px;font:600 13px var(--mono);letter-spacing:.01em;white-space:nowrap}
+.brand .mark{width:18px;height:18px;border:1px solid var(--border-strong);border-radius:3px;display:grid;place-items:center;color:var(--claude);font-size:12px}
+.brand .sub{color:var(--faint);font-weight:400}
+.sep{width:1px;height:20px;background:var(--border)}
+.goal{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.goal .k{font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.goal .v{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctrls{display:flex;align-items:center;gap:8px}
+.btn{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--elev);display:inline-flex;align-items:center;gap:6px;font:500 12px var(--mono);color:var(--muted)}
+.btn:hover{border-color:var(--border-strong);color:var(--fg)}
+.btn.icon{width:28px;padding:0;justify-content:center}
+.seg{display:flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.seg button{height:26px;padding:0 9px;font:500 11px var(--mono);color:var(--faint);background:var(--sunken)}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button.on{background:var(--panel);color:var(--fg)}
+.clock{font:500 13px var(--mono);color:var(--fg);min-width:96px;text-align:right}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:11px;border:1px solid var(--border);font:500 10.5px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.live{color:var(--ok)} .pill.live i{animation:blink 1.2s infinite}
+.pill.replay{color:var(--warn)}
+@keyframes blink{50%{opacity:.25}}
+
+/* sequencer */
+.seq{border-bottom:1px solid var(--border)}
+.seq-body{display:grid;grid-template-columns:200px minmax(0,1fr) 220px}
+.col-h{height:var(--ruler);display:flex;align-items:center;padding:0 12px;font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);background:var(--sunken)}
+.labels{border-right:1px solid var(--border)}
+.lab{height:var(--lane);display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border)}
+.lab.orch{background:rgba(94,200,229,.04);border-bottom:1px solid var(--border-strong)}
+.lab .g{width:14px;font:600 13px var(--mono);text-align:center;color:var(--claude)}
+.lab.orch .g{color:var(--orch)}
+.lab .nm{font:600 12.5px var(--mono);color:var(--fg)}
+.lab .nm .ast{color:var(--claude);margin-right:4px}
+.lab.orch .nm .ast{color:var(--orch)}
+.lab .ar{font:400 11px var(--mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.lab .ar b{font-weight:500;color:var(--muted)}
+.lab.sel{box-shadow:inset 2px 0 0 var(--accent)}
+.tl{position:relative;overflow:hidden;cursor:crosshair}
+.tl canvas{display:block}
+.summary{border-left:1px solid var(--border)}
+.sum{height:var(--lane);display:grid;grid-template-columns:1fr auto;align-content:center;gap:5px 10px;padding:0 12px;border-bottom:1px solid var(--border);font:400 11px var(--mono);color:var(--faint)}
+.sum.orch{background:rgba(94,200,229,.04);border-bottom:1px solid var(--border-strong)}
+.sum .pct{font:600 13px var(--mono);color:var(--fg)}
+.sum .bar{grid-column:1/-1;height:2px;background:var(--panel);position:relative}
+.sum .bar i{position:absolute;inset:0 auto 0 0;background:var(--claude)}
+.sum.orch .bar i{background:var(--orch)}
+.sum.done .bar i{background:var(--ok)}
+.sum .tk{text-align:right}
+.sum .tk b{color:var(--muted);font-weight:500}
+.legend{display:flex;align-items:center;gap:16px;padding:8px 16px;border-top:1px solid var(--border);font:400 11px var(--mono);color:var(--faint);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sw{width:14px;height:8px;border:1px solid;border-top-width:2px}
+.legend .arc{width:16px;height:0;border-top:1.5px solid}
+.legend .hint{margin-left:auto;color:var(--faint)}
+.legend kbd{font:500 10px var(--mono);border:1px solid var(--border);border-bottom-width:2px;border-radius:3px;padding:0 4px;color:var(--muted)}
+
+/* bus */
+.bus{display:grid;grid-template-rows:auto 1fr;min-height:0;background:var(--sunken)}
+.bus-h{display:flex;align-items:center;gap:12px;padding:0 16px;height:32px;border-bottom:1px solid var(--border);font:500 10px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.bus-h .cnt{color:var(--muted)}
+.bus-h .sync{margin-left:auto;text-transform:none;letter-spacing:0;font-size:11px}
+.log{position:relative;overflow-y:auto;padding:6px 0;font:400 12px/1 var(--mono);scrollbar-width:thin;scrollbar-color:var(--panel) transparent}
+.ln{display:grid;grid-template-columns:96px 108px 16px 108px minmax(0,1fr);align-items:center;height:22px;padding:0 16px;cursor:pointer;color:var(--muted);border-left:2px solid transparent}
+.ln:hover{background:var(--elev)}
+.ln .ts{color:var(--faint)}
+.ln .a{font-weight:500}
+.ln .a.o{color:var(--orch)} .ln .a.w{color:var(--claude)}
+.ln .ar{color:var(--faint)}
+.ln .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.ln.fut{opacity:.32}
+.ln.cur{background:var(--elev);border-left-color:var(--accent)}
+.foot{display:flex;align-items:center;gap:10px;height:30px;padding:0 16px 0 196px;border-top:1px solid var(--border);font:400 11.5px var(--mono);color:var(--faint);background:var(--bg)}
+.foot .dot{color:var(--ok)}
+.foot b{color:var(--fg);font-weight:500}
+.foot .r{margin-left:auto}
+
+/* tooltip */
+.tip{position:absolute;pointer-events:none;z-index:5;min-width:220px;max-width:320px;background:var(--elev);border:1px solid var(--border-strong);border-radius:var(--r);padding:9px 11px;font:400 11.5px/1.45 var(--mono);color:var(--muted);opacity:0;transform:translateY(2px);transition:opacity .08s,transform .08s}
+.tip.on{opacity:1;transform:none}
+.tip .h{display:flex;align-items:center;gap:7px;color:var(--fg);font-weight:600;margin-bottom:4px}
+.tip .h i{width:8px;height:8px;border-radius:1px}
+.tip .d{color:var(--fg);margin-bottom:6px}
+.tip .m{display:flex;justify-content:space-between;gap:12px;color:var(--faint);font-size:10.5px}
+
+.concept-tag{position:fixed;left:10px;bottom:5px;font:500 10px var(--mono);color:var(--faint);background:var(--bg);border:1px solid var(--border);padding:3px 7px;border-radius:3px;z-index:20;letter-spacing:.02em}
+
+@media (max-width:1180px){
+  .seq-body{grid-template-columns:168px minmax(0,1fr) 184px}
+  .lab .ar{max-width:120px}
+  .goal .v{max-width:260px}
+  .legend .hint{display:none}
+  .ln{grid-template-columns:90px 96px 14px 96px minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark">✻</span>alethe <span class="sub">orchestra</span></div>
+    <span class="sep"></span>
+    <div class="goal"><span class="k">Meta</span><span class="v">portar o compilador TypeScript para Rust — crates/lexer · parser · ast · typecheck · codegen · runtime</span></div>
+    <div class="ctrls">
+      <span class="pill live" id="mode"><i></i>ao vivo</span>
+      <span class="clock" id="clock">00:00.000</span>
+      <button class="btn icon" id="play" title="Pausar / continuar (espaço)">❚❚</button>
+      <div class="seg" id="speed"><button data-s="1">1×</button><button data-s="2" class="on">2×</button><button data-s="4">4×</button></div>
+      <button class="btn" id="live" title="Voltar para o ponto ao vivo">⇥ ao vivo</button>
+    </div>
+  </header>
+
+  <section class="seq">
+    <div class="seq-body">
+      <div class="labels"><div class="col-h">Agentes</div><div id="labels"></div></div>
+      <div class="tl" id="tl"><canvas id="cv"></canvas><div class="tip" id="tip"></div></div>
+      <div class="summary"><div class="col-h" style="justify-content:space-between"><span>Progresso</span><span>tokens · custo</span></div><div id="summary"></div></div>
+    </div>
+    <div class="legend" id="legend">
+      <span><i class="sw" style="color:var(--act-think);background:rgba(167,139,250,.16)"></i>pensando</span>
+      <span><i class="sw" style="color:var(--act-read);background:rgba(122,162,247,.16)"></i>lendo</span>
+      <span><i class="sw" style="color:var(--act-edit);background:rgba(217,119,87,.16)"></i>editando</span>
+      <span><i class="sw" style="color:var(--act-test);background:rgba(74,222,128,.16)"></i>testes</span>
+      <span><i class="sw" style="color:var(--act-block);background:repeating-linear-gradient(135deg,rgba(251,191,36,.35) 0 2px,transparent 2px 5px)"></i>bloqueado</span>
+      <span><i class="sw" style="color:var(--act-idle);border-style:dashed;border-top-width:1px"></i>ocioso</span>
+      <span><i class="sw" style="color:var(--act-dispatch);background:rgba(94,200,229,.16)"></i>despachando</span>
+      <span><i class="arc" style="color:var(--orch)"></i>orchestrator → worker</span>
+      <span><i class="arc" style="color:var(--claude)"></i>worker → *</span>
+      <span class="hint"><kbd>clique</kbd> posiciona o cursor · <kbd>←</kbd><kbd>→</kbd> 5s · <kbd>ctrl</kbd>+scroll zoom</span>
+    </div>
+  </section>
+
+  <section class="bus">
+    <div class="bus-h">message bus <span class="cnt" id="buscnt">0</span><span class="sync" id="sync">sincronizado com o cursor</span></div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <footer class="foot">
+    <span class="dot">●</span><span><b id="fagents">6</b> agents portando para rust · <b id="fmsgs">0</b> mensagens no bus</span>
+    <span class="r" id="ftok">0 tokens · $0.00</span>
+  </footer>
+</div>
+<div class="concept-tag">Conceito E — Sequenciador</div>
+
+<script>
+(()=>{
+/* ---------- utils ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=mulberry(20261004);
+const rr=(a,b)=>a+R()*(b-a), ri=(a,b)=>Math.floor(rr(a,b+1)), pick=a=>a[Math.floor(R()*a.length)];
+const css=getComputedStyle(document.documentElement), V=k=>css.getPropertyValue(k).trim();
+function rgba(hex,a){const n=parseInt(hex.replace('#',''),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+const CLOCK0=47*60+48; // session clock offset, mirrors the terminal
+function fmt(t){const s=CLOCK0+t, m=Math.floor(s/60)%60, ss=s%60;return String(m).padStart(2,'0')+':'+ss.toFixed(3).padStart(6,'0')}
+function fmtShort(t){const s=Math.round(CLOCK0+t), m=Math.floor(s/60)%60;return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+const ktok=n=>n>=1000?(n/1000).toFixed(1)+'k':String(Math.round(n));
+
+const COL={think:V('--act-think'),read:V('--act-read'),edit:V('--act-edit'),test:V('--act-test'),block:V('--act-block'),idle:V('--act-idle'),dispatch:V('--act-dispatch')};
+const LBL={think:'pensando',read:'lendo',edit:'editando',test:'testes',block:'bloqueado',idle:'ocioso',dispatch:'despachando'};
+const WEIGHT={think:.3,read:.5,edit:1,test:.8,block:0,idle:0,dispatch:0};
+const RATE={think:520,read:760,edit:430,test:140,block:12,idle:0,dispatch:300};
+const C_ORCH=V('--orch'), C_CL=V('--claude'), C_FG=V('--fg'), C_MUTED=V('--muted'), C_FAINT=V('--faint'), C_BORDER=V('--border'), C_PANEL=V('--panel'), C_ACC=V('--accent'), C_OK=V('--ok'), C_WARN=V('--warn');
+
+/* ---------- deterministic simulation ---------- */
+const W=[
+ {name:'claude-1',area:'lexer',fin:300,files:['scanner','tokens','unicode','trivia']},
+ {name:'claude-2',area:'parser',fin:455,files:['expr','stmt','decl','recover']},
+ {name:'claude-3',area:'ast',fin:375,files:['node','visit','span','arena']},
+ {name:'claude-4',area:'typecheck',fin:492,files:['infer','unify','scope','prim']},
+ {name:'claude-5',area:'codegen',fin:480,files:['emit','regalloc','ir','lower']},
+ {name:'claude-6',area:'runtime',fin:420,files:['gc','intrinsics','ffi','heap']},
+];
+const LANES=[{name:'orchestrator',area:'você conduz',orch:true,blocks:[]},...W.map(w=>({...w,blocks:[]}))];
+const msgs=[];
+const push=(li,type,s,e,detail)=>{LANES[li].blocks.push({type,s,e,detail,li})};
+const THINK=['mapeando tipos TS → Rust','decidindo entre Rc<T> e arena','desenhando enum de erros','planejando lifetimes do módulo','avaliando trait vs enum dispatch','revisando invariantes do original'];
+const REPORT=a=>pick([`${a}: suite verde, seguindo`,`terminei o módulo, abrindo o próximo`,'borrow checker venceu. fazendo merge',`lifetimes resolvidos em ${a}`,'removi 3 clones desnecessários','clippy limpo, 0 warnings']);
+const Q_ORCH=['preciso do formato de Span antes de seguir','posso mudar a API pública de Token?','conflito em Cargo.toml, quem resolve?','trait Visitor ou enum + match?'];
+const A_ORCH=['use Span { lo, hi } de crates/common','pode, eu atualizo os dependentes','resolvo eu, segura 10s','enum + match, sem dyn'];
+const Q_W=['Expr já expõe span()?','qual o nome do enum de tipos primitivos?','você mexeu em ast::Node? quebrou meu build','NodeId é u32 ou usize?'];
+const A_W=['sim, ast::Expr::span()','PrimTy, em types/prim.rs','foi mal, já reverti','u32, com newtype'];
+
+W.forEach((w,i)=>{
+  const li=i+1, d=5+i*1.4;
+  msgs.push({t:d,from:0,to:li,text:`tarefa: portar src/${w.area} → crates/${w.area}`,kind:'dispatch'});
+  push(li,'idle',0,d+.4,'aguardando tarefa do orchestrator');
+  let s=d+.4, tests=0, a, b;
+  while(s<w.fin){
+    const f=pick(w.files);
+    push(li,'read',s,s=s+rr(4,10),`lendo src/${w.area}/${f}.ts (${ri(120,640)} linhas)`);
+    push(li,'think',s,s=s+rr(3,8),pick(THINK));
+    a=ri(20,140);b=ri(0,40);
+    push(li,'edit',s,s=s+rr(9,24),`editando crates/${w.area}/src/${f}.rs  +${a} −${b}`);
+    tests+=ri(4,14);const fail=R()<.3?ri(1,3):0;
+    push(li,'test',s,s=s+rr(4,10),`cargo test -p ${w.area} · ${tests} passed${fail?`, ${fail} failed`:''}`);
+    if(s>=w.fin)break;
+    if(R()<.5)msgs.push({t:s,from:li,to:0,text:REPORT(w.area),kind:'report'});
+    if(R()<.32){
+      const toOrch=R()<.55; let tgt=0; if(!toOrch){do{tgt=ri(1,6)}while(tgt===li)}
+      const qi=Math.floor(R()*4), dur=rr(6,15);
+      const q=toOrch?Q_ORCH[qi]:Q_W[qi], ans=toOrch?A_ORCH[qi]:A_W[qi];
+      const m1={t:s+.05,from:li,to:tgt,text:q,kind:'ask'};
+      const m2={t:s+dur,from:tgt,to:li,text:ans,kind:'reply',q:m1};
+      msgs.push(m1,m2);
+      push(li,'block',s,s+dur,`aguardando ${LANES[tgt].name}: ${q}`);
+      s+=dur;
+    }
+  }
+  LANES[li].doneAt=s;
+  msgs.push({t:s,from:li,to:0,text:`${w.area} concluído: ${tests} testes, 0 unsafe`,kind:'done'});
+  push(li,'idle',s,null,'concluído — aguardando merge final');
+});
+const maxEnd=Math.max(...LANES.slice(1).map(l=>l.doneAt));
+const T=maxEnd+28;
+LANES.forEach(l=>l.blocks.forEach(b=>{if(b.e==null)b.e=T}));
+
+// periodic orchestrator broadcasts
+for(let t=42;t<maxEnd-20;t+=rr(55,80)){
+  msgs.push({t,from:0,to:ri(1,6),text:pick(['rebase em main antes do próximo commit','prioridade: manter a API do parser estável','rodem clippy antes de reportar','claude-3 publicou ast v0.2, atualizem']),kind:'broadcast'});
+}
+// final merge
+msgs.push({t:maxEnd+22,from:0,to:1,text:'workspace verde. encerrando sessão',kind:'final'});
+for(let k=2;k<=6;k++)msgs.push({t:maxEnd+22+k*.08,from:0,to:k,text:'workspace verde. encerrando sessão',kind:'final'});
+msgs.sort((a,b)=>a.t-b.t);
+msgs.forEach((m,i)=>m.i=i);
+
+// orchestrator lane: priority grid, then compacted into blocks
+(function(){
+  const RES=.25,N=Math.ceil(T/RES),ty=new Array(N).fill('idle'),de=new Array(N).fill('aguardando mensagens no bus'),pr=new Array(N).fill(0);
+  const mark=(s,e,t,d,p)=>{for(let k=Math.max(0,Math.floor(s/RES));k<Math.min(N,Math.ceil(e/RES));k++)if(p>=pr[k]){ty[k]=t;de[k]=d;pr[k]=p}};
+  mark(0,5,'think','planejando decomposição em 6 áreas',1);
+  msgs.forEach(m=>{
+    const to=LANES[m.to].name, from=LANES[m.from].name;
+    if(m.to===0)mark(m.t,m.t+2.25,'read',`lendo mensagem de ${from}: “${m.text}”`,2);
+    if(m.from===0){
+      if(m.kind==='reply')mark(m.q.t+2.25,m.t-.5,'think',`decidindo resposta para ${to}`,1);
+      mark(m.t-.5,m.t+.5,'dispatch',m.kind==='dispatch'?`despachando tarefa para ${to}`:`enviando para ${to}: “${m.text}”`,3);
+    }
+  });
+  mark(maxEnd+1,maxEnd+15,'edit','merge final · cargo build --release --workspace',4);
+  mark(maxEnd+15,maxEnd+21.5,'test','cargo test --workspace · 412 passed',4);
+  const out=LANES[0].blocks;let cur=null;
+  for(let k=0;k<N;k++){
+    if(cur&&cur.type===ty[k]&&cur.detail===de[k]){cur.e=(k+1)*RES}
+    else{cur={type:ty[k],s:k*RES,e:(k+1)*RES,detail:de[k],li:0};out.push(cur)}
+  }
+})();
+LANES.forEach(l=>{l.W=l.blocks.reduce((a,b)=>a+(b.e-b.s)*WEIGHT[b.type],0)||1});
+
+function stats(l,t){let w=0,tok=0;for(const b of l.blocks){if(b.s>=t)break;const o=Math.min(b.e,t)-b.s;w+=o*WEIGHT[b.type];tok+=o*RATE[b.type]}return{p:Math.min(1,w/l.W),tok}}
+function blockAt(l,t){for(const b of l.blocks){if(t>=b.s&&t<b.e)return b}return l.blocks[l.blocks.length-1]}
+
+/* ---------- DOM ---------- */
+const $=id=>document.getElementById(id);
+const labelsEl=$('labels'), sumEl=$('summary');
+LANES.forEach((l,i)=>{
+  const a=document.createElement('div');a.className='lab'+(l.orch?' orch':'');
+  a.innerHTML=`<span class="g"></span><div><div class="nm"><span class="ast">${l.orch?'◆':'✻'}</span>${l.name}</div><div class="ar"></div></div>`;
+  labelsEl.appendChild(a);l.lab=a;l.g=a.querySelector('.g');l.ar=a.querySelector('.ar');
+  const s=document.createElement('div');s.className='sum'+(l.orch?' orch':'');
+  s.innerHTML=`<span class="pct">0%</span><span class="tk"><b>0</b> · $0.00</span><span class="bar"><i style="width:0"></i></span>`;
+  sumEl.appendChild(s);l.sum=s;l.pct=s.querySelector('.pct');l.tk=s.querySelector('.tk');l.bar=s.querySelector('.bar i');
+});
+
+const tl=$('tl'), cv=$('cv'), ctx=cv.getContext('2d'), tip=$('tip');
+const LANE_H=parseFloat(V('--lane')), RULER=parseFloat(V('--ruler'));
+let Wd=0,Hd=0,dpr=1;
+function resize(){
+  dpr=window.devicePixelRatio||1;Wd=tl.clientWidth;Hd=RULER+LANE_H*LANES.length;
+  cv.width=Wd*dpr;cv.height=Hd*dpr;cv.style.width=Wd+'px';cv.style.height=Hd+'px';tl.style.height=Hd+'px';
+}
+new ResizeObserver(resize).observe(tl);resize();
+
+// hatch pattern for blocked
+const hatch=(()=>{const c=document.createElement('canvas');c.width=c.height=7;const g=c.getContext('2d');g.strokeStyle=rgba(C_WARN,.45);g.lineWidth=1.4;g.beginPath();g.moveTo(-1,8);g.lineTo(8,-1);g.stroke();return ctx.createPattern(c,'repeat')})();
+
+/* ---------- playback state ---------- */
+let L=0,P=0,follow=true,playing=true,speed=2,span=150,v0=0,hover=null,hoverMsg=null,fired=new Map(),lastReal=performance.now();
+const toX=t=>(t-v0)*(Wd/span), toT=x=>v0+x*(span/Wd);
+const laneY=i=>RULER+i*LANE_H, laneMid=i=>laneY(i)+LANE_H/2;
+
+function draw(now){
+  const pps=Wd/span;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,Wd,Hd);
+  // lane backgrounds
+  LANES.forEach((l,i)=>{ctx.fillStyle=l.orch?'rgba(94,200,229,.035)':(i%2?'#121316':V('--bg'));ctx.fillRect(0,laneY(i),Wd,LANE_H);ctx.fillStyle=l.orch?'rgba(243,244,246,.22)':C_BORDER;ctx.fillRect(0,laneY(i)+LANE_H-1,Wd,1)});
+  // ruler
+  ctx.fillStyle=V('--sunken');ctx.fillRect(0,0,Wd,RULER);ctx.fillStyle=C_BORDER;ctx.fillRect(0,RULER-1,Wd,1);
+  const step=span>200?30:span>90?10:5;
+  ctx.font='10px "JetBrains Mono",monospace';ctx.textBaseline='middle';
+  for(let t=Math.ceil(v0/step)*step;t<=v0+span;t+=step){
+    const x=Math.round(toX(t))+.5, major=t%(step*3)===0;
+    ctx.fillStyle=major?'rgba(243,244,246,.07)':'rgba(243,244,246,.03)';ctx.fillRect(x-.5,RULER,1,Hd-RULER);
+    ctx.fillStyle=major?C_FAINT:C_PANEL;ctx.fillRect(x-.5,RULER-(major?8:4),1,major?8:4);
+    if(major){ctx.fillStyle=C_FAINT;ctx.fillText(fmtShort(t),x+4,RULER/2-1)}
+  }
+  // blocks
+  ctx.textBaseline='middle';
+  for(const l of LANES){
+    const y=laneY(LANES.indexOf(l))+11,h=LANE_H-22;
+    for(const b of l.blocks){
+      if(b.s>=L||b.e<=v0||b.s>v0+span)continue;
+      const e=Math.min(b.e,L), x0=Math.max(toX(b.s),-2), x1=toX(e), w=x1-x0;
+      if(w<.5)continue;
+      const c=COL[b.type], fut=b.s>P, isH=hover===b;
+      ctx.globalAlpha=fut?.28:1;
+      if(b.type==='idle'){
+        ctx.strokeStyle=rgba(c,.35);ctx.setLineDash([2,3]);ctx.strokeRect(Math.round(x0)+.5,y+.5,Math.max(0,w-1),h-1);ctx.setLineDash([]);
+      }else{
+        ctx.fillStyle=rgba(c,isH?.3:.16);ctx.fillRect(x0,y,w,h);
+        if(b.type==='block'){ctx.fillStyle=hatch;ctx.fillRect(x0,y,w,h)}
+        ctx.fillStyle=c;ctx.fillRect(x0,y,w,2);
+        ctx.strokeStyle=rgba(c,isH?.9:.42);ctx.strokeRect(Math.round(x0)+.5,y+.5,Math.max(0,Math.round(w)-1),h-1);
+      }
+      if(w>58){
+        ctx.save();ctx.beginPath();ctx.rect(x0+6,y,w-12,h);ctx.clip();
+        ctx.fillStyle=b.type==='idle'?C_FAINT:rgba(C_FG,.86);ctx.font='500 10px "JetBrains Mono",monospace';
+        ctx.fillText(LBL[b.type],x0+7,y+h/2-5);
+        ctx.fillStyle=C_FAINT;ctx.font='10px "JetBrains Mono",monospace';
+        ctx.fillText(b.detail.replace(/^(lendo|editando|aguardando) /,''),x0+7,y+h/2+7);
+        ctx.restore();
+      }
+      if(b.e>L&&b.type!=='idle'){ // live edge
+        const pulse=.55+.45*Math.sin(now/180);ctx.fillStyle=rgba(c,pulse);ctx.fillRect(x1-2,y,2,h);
+      }
+      ctx.globalAlpha=1;
+    }
+  }
+  // messages
+  for(const m of msgs){
+    if(m.t>L)break;
+    if(m.t<v0-2||m.t>v0+span)continue;
+    const x=toX(m.t), y1=laneMid(m.from), y2=laneMid(m.to), c=m.from===0?C_ORCH:C_CL;
+    const bulge=8+Math.abs(y2-y1)*.1, fut=m.t>P, age=(L-m.t);
+    const strong=hoverMsg===m||age<3;
+    ctx.globalAlpha=fut?.2:(strong?1:.5);
+    ctx.strokeStyle=c;ctx.lineWidth=strong?1.5:1;
+    ctx.setLineDash(m.from===0?[]:[3,2.5]);
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.quadraticCurveTo(x+bulge,(y1+y2)/2,x,y2);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y1,2.5,0,7);ctx.fill();
+    const dir=y2>y1?1:-1;ctx.beginPath();ctx.moveTo(x,y2);ctx.lineTo(x-3.5,y2-6*dir);ctx.lineTo(x+3.5,y2-6*dir);ctx.closePath();ctx.fill();
+    // travelling pulse (real time)
+    const f=fired.get(m);
+    if(f!=null){const k=(now-f)/650;
+      if(k<1){const u=k,ix=(1-u)*(1-u)*x+2*(1-u)*u*(x+bulge)+u*u*x,iy=(1-u)*(1-u)*y1+2*(1-u)*u*((y1+y2)/2)+u*u*y2;
+        ctx.globalAlpha=1;ctx.fillStyle=c;ctx.beginPath();ctx.arc(ix,iy,3.5,0,7);ctx.fill();}
+      else if(k<2){ctx.globalAlpha=(2-k)*.8;ctx.strokeStyle=c;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y2,4+(k-1)*10,0,7);ctx.stroke()}
+    }
+    ctx.globalAlpha=1;ctx.lineWidth=1;
+  }
+  // live point
+  if(!follow){const xl=toX(L);if(xl>=0&&xl<=Wd){ctx.strokeStyle=rgba(C_OK,.6);ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(Math.round(xl)+.5,RULER);ctx.lineTo(Math.round(xl)+.5,Hd);ctx.stroke();ctx.setLineDash([])}}
+  // playhead
+  const xp=Math.round(toX(P))+.5;
+  ctx.fillStyle=C_ACC;ctx.fillRect(xp-.5,RULER-2,1,Hd);
+  ctx.beginPath();ctx.moveTo(xp-6,0);ctx.lineTo(xp+6,0);ctx.lineTo(xp+6,RULER-9);ctx.lineTo(xp,RULER-3);ctx.lineTo(xp-6,RULER-9);ctx.closePath();ctx.fill();
+  ctx.fillStyle=V('--bg');ctx.font='600 9px "JetBrains Mono",monospace';ctx.textAlign='center';ctx.fillText('▸',xp,9);ctx.textAlign='left';
+  const lbl=fmt(P);ctx.font='500 10px "JetBrains Mono",monospace';const tw=ctx.measureText(lbl).width;
+  const lx=xp+10+tw>Wd?xp-14-tw:xp+10;ctx.fillStyle=V('--elev');ctx.fillRect(lx-4,4,tw+8,16);ctx.strokeStyle=rgba(C_FG,.22);ctx.strokeRect(lx-4+.5,4.5,tw+7,15);
+  ctx.fillStyle=C_FG;ctx.fillText(lbl,lx,12);
+}
+
+/* ---------- synced panels ---------- */
+const SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+let lastPanel=0;
+function panels(now){
+  const sp=SPIN[Math.floor(now/80)%10];let totTok=0,sumP=0;
+  LANES.forEach((l,i)=>{
+    const st=stats(l,P);l._p=st.p;totTok+=st.tok;
+    if(!l.orch)sumP+=st.p;
+  });
+  LANES.forEach((l,i)=>{
+    const b=blockAt(l,P), st={p:l.orch?sumP/6:l._p}, tok=stats(l,P).tok, done=!l.orch&&P>=l.doneAt;
+    let g,gc;
+    if(done){g='✓';gc=C_OK}else if(b.type==='block'){g='‖';gc=C_WARN}else if(b.type==='idle'){g='·';gc=C_FAINT}else{g=sp;gc=l.orch?C_ORCH:C_CL}
+    l.g.textContent=g;l.g.style.color=gc;
+    l.ar.innerHTML=`<b>${done?'concluído':LBL[b.type]}</b> · ${l.area}`;
+    l.ar.title=b.detail;
+    const pct=Math.round(st.p*100);
+    l.pct.textContent=pct+'%';l.bar.style.width=pct+'%';
+    l.sum.classList.toggle('done',done||(l.orch&&pct>=100));
+    const cost=tok*(l.orch?0.0000185:0.0000105);
+    l.tk.innerHTML=`<b>${ktok(tok)}</b> · $${cost.toFixed(2)}`;
+  });
+  const totCost=LANES.reduce((a,l)=>a+stats(l,P).tok*(l.orch?0.0000185:0.0000105),0);
+  $('ftok').textContent=`${ktok(totTok)} tokens · $${totCost.toFixed(2)}`;
+  $('clock').textContent=fmt(P);
+  const working=LANES.slice(1).filter(l=>P<l.doneAt).length;
+  $('fagents').textContent=working||6;
+}
+
+const logEl=$('log');let logSig='';
+function renderLog(){
+  // messages up to the live point; those after the cursor are dimmed
+  let nL=0,nP=0;for(const m of msgs){if(m.t<=L)nL++;if(m.t<=P)nP++}
+  const sig=nL+'/'+nP;if(sig===logSig)return;logSig=sig;
+  const from=Math.max(0,Math.min(nP,nL)-60), to=nL;
+  let h='';
+  for(let i=from;i<to;i++){const m=msgs[i],a=LANES[m.from],b=LANES[m.to];
+    h+=`<div class="ln${m.t>P?' fut':''}${i===nP-1?' cur':''}" data-i="${i}"><span class="ts">${fmt(m.t)}</span><span class="a ${m.from===0?'o':'w'}">${a.name}</span><span class="ar">→</span><span class="a ${m.to===0?'o':'w'}">${b.name}</span><span class="tx">${m.text}</span></div>`}
+  logEl.innerHTML=h;
+  const cur=logEl.querySelector('.cur');
+  if(cur){const top=cur.offsetTop-logEl.clientHeight+44;logEl.scrollTop=Math.max(0,top)}
+  $('buscnt').textContent=nP;$('fmsgs').textContent=nP;
+  $('sync').textContent=follow?'sincronizado com o cursor · ao vivo':`cursor em ${fmt(P)} · ${nL-nP} mensagens à frente`;
+}
+logEl.addEventListener('click',e=>{const ln=e.target.closest('.ln');if(!ln)return;seek(msgs[+ln.dataset.i].t+.01)});
+
+/* ---------- interaction ---------- */
+function setMode(){const m=$('mode');m.className='pill '+(follow?'live':'replay');m.innerHTML=follow?'<i></i>ao vivo':'<i></i>replay'}
+function seek(t){P=Math.max(0,Math.min(L,t));follow=P>=L-.05;setMode();if(P<v0+4||P>v0+span-4)v0=Math.max(0,P-span*.5);logSig=''}
+$('live').onclick=()=>{follow=true;P=L;setMode();logSig=''};
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'❚❚':'▶'};
+$('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.s;[...$('speed').children].forEach(x=>x.classList.toggle('on',x===b))};
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();$('play').click()}
+  if(e.key==='ArrowLeft')seek(P-5);
+  if(e.key==='ArrowRight')seek(P+5);
+});
+let dragging=false;
+tl.addEventListener('mousedown',e=>{dragging=true;seek(toT(e.offsetX))});
+window.addEventListener('mouseup',()=>dragging=false);
+tl.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(e.ctrlKey){const tm=toT(e.offsetX);span=Math.max(45,Math.min(360,span*(e.deltaY>0?1.12:.89)));v0=Math.max(0,tm-e.offsetX*span/Wd)}
+  else{follow=false;setMode();v0=Math.max(0,Math.min(Math.max(0,L-span*.2),v0+(e.deltaY+e.deltaX)*span/Wd*.6))}
+},{passive:false});
+tl.addEventListener('mousemove',e=>{
+  if(dragging)seek(toT(e.offsetX));
+  const x=e.offsetX,y=e.offsetY,t=toT(x);hover=null;hoverMsg=null;
+  if(y<RULER){tip.classList.remove('on');return}
+  const li=Math.floor((y-RULER)/LANE_H);
+  for(const m of msgs){if(m.t>L)break;const mx=toX(m.t),y1=laneMid(m.from),y2=laneMid(m.to);
+    if(Math.abs(x-mx-4)<7&&y>=Math.min(y1,y2)-4&&y<=Math.max(y1,y2)+4){hoverMsg=m}}
+  if(!hoverMsg&&LANES[li]){for(const b of LANES[li].blocks){if(t>=b.s&&t<b.e&&b.s<L){hover=b;break}}}
+  let html='';
+  if(hoverMsg){const m=hoverMsg,c=m.from===0?C_ORCH:C_CL;
+    html=`<div class="h"><i style="background:${c}"></i>${LANES[m.from].name} → ${LANES[m.to].name}</div><div class="d">“${m.text}”</div><div class="m"><span>${fmt(m.t)}</span><span>${{dispatch:'tarefa',report:'relatório',ask:'pergunta',reply:'resposta',done:'conclusão',broadcast:'aviso',final:'encerramento'}[m.kind]}</span></div>`}
+  else if(hover){const b=hover,e2=Math.min(b.e,L),d=e2-b.s,c=COL[b.type];
+    html=`<div class="h"><i style="background:${c}"></i>${LBL[b.type]} · ${LANES[b.li].name}</div><div class="d">${b.detail}</div><div class="m"><span>${fmt(b.s)} → ${b.e>L?'agora':fmt(b.e)}</span><span>${d.toFixed(1)}s · ${ktok(d*RATE[b.type])} tok</span></div>`}
+  if(html){tip.innerHTML=html;tip.classList.add('on');
+    const tw=tip.offsetWidth,th=tip.offsetHeight;let tx=x+14,ty=y+14;if(tx+tw>Wd-4)tx=x-tw-14;if(ty+th>Hd)ty=y-th-10;tip.style.left=tx+'px';tip.style.top=ty+'px'}
+  else tip.classList.remove('on');
+});
+tl.addEventListener('mouseleave',()=>{hover=null;hoverMsg=null;tip.classList.remove('on')});
+
+/* ---------- loop ---------- */
+let msgIdx=0;
+function frame(now){
+  const dt=Math.min(.1,(now-lastReal)/1000);lastReal=now;
+  if(playing){
+    L+=dt*speed;
+    if(follow)P=L;
+    else if(P<L)P=Math.min(L,P+dt*speed); // replay keeps advancing
+    if(!follow&&P>=L-.01){follow=true;setMode()}
+    if(L>T+5){L=0;P=0;v0=0;follow=true;fired=new Map();msgIdx=0;logSig='';setMode()}
+  }
+  while(msgIdx<msgs.length&&msgs[msgIdx].t<=L){fired.set(msgs[msgIdx],now);msgIdx++}
+  if(follow)v0=Math.max(0,L-span*.82);
+  else if(P>v0+span*.9)v0=P-span*.5;
+  draw(now);
+  if(now-lastPanel>90){panels(now);renderLog();lastPanel=now}
+  requestAnimationFrame(frame);
+}
+// start with some history so the concept already looks alive
+L=P=138;msgs.forEach((m,i)=>{if(m.t<=L)msgIdx=i+1});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

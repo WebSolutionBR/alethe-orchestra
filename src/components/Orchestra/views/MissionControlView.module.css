@@ -1,0 +1,904 @@
+/* Mission Control: orchestrator card on top, worker grid, message bus on the right. */
+
+.root {
+  --mc-orch: var(--agent-codex);
+  --mc-worker: var(--agent-claude);
+  --mc-ok: var(--status-working);
+  --mc-warn: var(--status-waiting);
+  --mc-danger: var(--status-offline);
+  --mc-orch-line: color-mix(in srgb, var(--agent-codex) 40%, transparent);
+  --mc-worker-line: color-mix(in srgb, var(--agent-claude) 40%, transparent);
+  --mc-ok-line: color-mix(in srgb, var(--status-working) 40%, transparent);
+  --mc-warn-line: color-mix(in srgb, var(--status-waiting) 45%, transparent);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.4 var(--font-sans);
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel) transparent;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.faint {
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- state pill ---- */
+
+.pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  font: 11px var(--font-mono);
+  white-space: nowrap;
+}
+
+.glyph {
+  width: 10px;
+  text-align: center;
+}
+
+.glyph::before {
+  content: '·';
+}
+
+.glyph[data-busy]::before {
+  content: '⠋';
+  animation: spin 0.9s steps(1) infinite;
+}
+
+.pill[data-state='thinking'],
+.pill[data-state='starting'] {
+  border-color: var(--border);
+  color: var(--fg-faint);
+}
+
+.pill[data-state='editing'] {
+  border-color: var(--mc-worker-line);
+  color: var(--mc-worker);
+}
+
+.pill[data-state='testing'] {
+  color: var(--fg);
+}
+
+.pill[data-state='blocked'] {
+  border-color: var(--mc-warn-line);
+  background: var(--status-waiting-soft);
+  color: var(--mc-warn);
+}
+
+.pill[data-state='blocked'] .glyph::before {
+  content: '!';
+}
+
+.pill[data-state='done'] {
+  border-color: var(--mc-ok-line);
+  color: var(--mc-ok);
+}
+
+.pill[data-state='done'] .glyph::before {
+  content: '✓';
+}
+
+.pill[data-state='waiting'] {
+  border-color: var(--border);
+  border-style: dashed;
+  color: var(--fg-faint);
+}
+
+.pill[data-state='waiting'] .glyph::before {
+  content: '◌';
+}
+
+.pill[data-state='exited'] {
+  border-color: var(--border);
+  color: var(--mc-danger);
+}
+
+.pill[data-state='exited'] .glyph::before {
+  content: '✕';
+}
+
+/* ---- orchestrator card ---- */
+
+.orch {
+  display: grid;
+  flex: none;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 14px 18px;
+  border: 1px solid var(--mc-orch-line);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--anim-normal);
+}
+
+.orch:hover {
+  border-color: var(--mc-orch);
+}
+
+.orch[data-selected] {
+  border-color: var(--mc-orch);
+  box-shadow: 0 0 0 1px var(--mc-orch);
+}
+
+.ring {
+  position: relative;
+  width: 92px;
+  height: 92px;
+}
+
+.ring svg {
+  width: 92px;
+  height: 92px;
+  transform: rotate(-90deg);
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--panel);
+  stroke-width: 5;
+}
+
+.ringVal {
+  fill: none;
+  stroke: var(--mc-orch);
+  stroke-width: 5;
+  transition: stroke-dashoffset 0.4s linear;
+}
+
+.ringLabel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.ringLabel b {
+  font: 600 20px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ringLabel span {
+  margin-top: 4px;
+  color: var(--fg-faint);
+  font: 10px var(--font-mono);
+}
+
+.orchInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.orchTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font: 12.5px var(--font-mono);
+  white-space: nowrap;
+}
+
+.orchMark {
+  color: var(--mc-orch);
+  font-weight: 600;
+}
+
+.orchWho {
+  color: var(--fg-faint);
+}
+
+.orchTop .pill {
+  border-color: var(--mc-orch-line);
+  color: var(--mc-orch);
+}
+
+.pending {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--mc-warn-line);
+  border-radius: var(--radius-sm);
+  color: var(--mc-warn);
+  font: 11px var(--font-mono);
+}
+
+.goal {
+  overflow: hidden;
+  font: 500 16px/1.3 var(--font-sans);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orchLine {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font: 12px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orchLine i {
+  color: var(--mc-orch);
+  font-style: normal;
+}
+
+.strip {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.strip div {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--panel);
+}
+
+.strip i {
+  display: block;
+  height: 100%;
+  background: var(--mc-worker);
+  transition: width 0.4s linear;
+}
+
+.strip i[data-state='done'] {
+  background: var(--mc-ok);
+}
+
+.strip i[data-state='blocked'] {
+  background: var(--mc-warn);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 10px 26px;
+  margin: 0;
+  padding-left: 20px;
+  border-left: 1px solid var(--border);
+}
+
+.stat dt {
+  color: var(--fg-faint);
+  font: 11px var(--font-sans);
+}
+
+.stat dd {
+  margin: 2px 0 0;
+  font: 500 15px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- worker grid ---- */
+
+.grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: minmax(236px, auto);
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 13px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--anim-normal),
+    opacity var(--anim-slow);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+}
+
+/* The agent's name is the card's keyboard button: the ring goes around the whole card, inside its
+   edge so the scrolling grid never clips it. */
+.orch:has(.cardOpen:focus-visible),
+.card:has(.cardOpen:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.cardOpen:focus-visible {
+  outline: none;
+}
+
+.card[data-selected] {
+  border-color: var(--mc-worker);
+}
+
+.card[data-state='blocked'] {
+  border-color: var(--mc-warn);
+  box-shadow: 0 0 0 1px var(--mc-warn-line);
+}
+
+.card[data-state='done'],
+.card[data-state='exited'] {
+  opacity: 0.6;
+}
+
+.card[data-state='done']:hover,
+.card[data-state='exited']:hover,
+.card[data-state='done'][data-selected] {
+  opacity: 1;
+}
+
+.card[data-state='waiting'] {
+  border-style: dashed;
+  background: var(--bg-sunken);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.cardMark {
+  color: var(--mc-worker);
+  font: 600 13px var(--font-mono);
+}
+
+.card[data-state='done'] .cardMark,
+.card[data-state='waiting'] .cardMark {
+  color: var(--fg-faint);
+}
+
+.cardId {
+  font: 500 13px var(--font-mono);
+}
+
+.cardArea {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font: 12px var(--font-mono);
+  text-overflow: ellipsis;
+}
+
+.cardTask {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pbar {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--panel);
+}
+
+.pbar i {
+  display: block;
+  height: 100%;
+  background: var(--mc-worker);
+  transition: width 0.4s linear;
+}
+
+.card[data-state='done'] .pbar i {
+  background: var(--mc-ok);
+}
+
+.card[data-state='blocked'] .pbar i {
+  background: var(--mc-warn);
+}
+
+.prog b {
+  min-width: 36px;
+  font: 500 12px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.blocked {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 10px;
+  border: 1px solid var(--mc-warn-line);
+  border-radius: var(--radius-sm);
+  background: var(--status-waiting-soft);
+  font: 11.5px/1.5 var(--font-mono);
+  animation: rise var(--anim-slow) var(--ease-out-fluid);
+}
+
+.blockedTag {
+  color: var(--mc-warn);
+  font-weight: 500;
+}
+
+.blockedNote {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.waits {
+  color: var(--fg-faint);
+  font: 11.5px var(--font-mono);
+}
+
+.term {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 72px;
+  padding: 6px 9px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  font: 11.5px/1.7 var(--font-mono);
+}
+
+.line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line:last-child {
+  animation: rise var(--anim-slow) var(--ease-out-fluid);
+}
+
+/* Only the newest three lines stay bright. */
+.line:nth-last-child(n + 4) {
+  opacity: 0.38;
+}
+
+.term[data-live] .line:last-child::after {
+  content: '▍';
+  margin-left: 2px;
+  color: var(--fg-faint);
+  animation: caret 1s steps(1) infinite;
+}
+
+.line[data-tone='tool'] {
+  color: var(--fg);
+}
+
+.line[data-tone='ok'] {
+  color: var(--mc-ok);
+}
+
+.line[data-tone='error'] {
+  color: var(--mc-danger);
+}
+
+.line[data-tone='note'] {
+  color: var(--mc-worker);
+}
+
+.line[data-tone='prompt'] {
+  color: var(--mc-orch);
+}
+
+.lineEmpty {
+  color: var(--fg-faint);
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--fg-faint);
+  font: 11px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- empty state ---- */
+
+.empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 240px;
+  padding: 32px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.emptyMark {
+  color: var(--mc-orch);
+  font: 600 22px var(--font-mono);
+}
+
+.empty h2 {
+  margin: 0;
+  font: 500 15px var(--font-sans);
+}
+
+.empty p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.emptyAction {
+  height: 28px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--mc-orch-line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--mc-orch);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+}
+
+.emptyAction:hover {
+  border-color: var(--mc-orch);
+}
+
+/* ---- message bus ---- */
+
+.bus {
+  display: grid;
+  grid-template-rows: 42px auto minmax(0, 1fr) auto;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-sunken);
+}
+
+.busHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  font: 12px var(--font-mono);
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 96px;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font: 11px var(--font-mono);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.chip i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mc-worker);
+}
+
+.chip i[data-role='orch'] {
+  background: var(--mc-orch);
+}
+
+.chip i[data-role='you'] {
+  background: var(--fg);
+}
+
+.chip i[data-role='all'] {
+  background: var(--fg-faint);
+}
+
+.chip i[data-role='scribe'] {
+  background: var(--agent-obsidian);
+}
+
+.chip i[data-role='creative'] {
+  background: var(--agent-creative);
+}
+
+.feed {
+  padding: 6px 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel) transparent;
+}
+
+.feedEmpty {
+  padding: 16px 14px;
+  color: var(--fg-faint);
+  font: 12px var(--font-mono);
+}
+
+.msg {
+  padding: 6px 14px 7px 12px;
+  border-left: 2px solid transparent;
+  font: 12px/1.5 var(--font-mono);
+}
+
+.msg:last-child {
+  animation: rise var(--anim-slow) var(--ease-out-fluid);
+}
+
+.msg:hover {
+  background: var(--bg-elevated);
+}
+
+.msg[data-from='you'] {
+  border-left-color: var(--mc-orch);
+  background: var(--agent-codex-soft);
+}
+
+.msg[data-done] {
+  border-left-color: var(--mc-ok);
+}
+
+.msgHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.msgHead [data-role='worker'] {
+  color: var(--mc-worker);
+}
+
+.msgHead [data-role='orch'] {
+  color: var(--mc-orch);
+}
+
+.msgHead [data-role='you'] {
+  color: var(--fg);
+}
+
+/* Obsidian scribe: `obsidian → <note>` lines for every written block. */
+.msgHead [data-role='scribe'] {
+  color: var(--agent-obsidian);
+}
+
+.msg[data-from='scribe'] {
+  border-left-color: var(--agent-obsidian);
+}
+
+/* Creative agent: a worker in the `criativo` area. */
+.msgHead [data-role='creative'] {
+  color: var(--agent-creative);
+}
+
+.msg[data-from='creative'] {
+  border-left-color: var(--agent-creative);
+}
+
+.msgBody {
+  margin-top: 1px;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.msg[data-from='you'] .msgBody {
+  color: var(--fg);
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--mc-orch);
+  font: 12px var(--font-mono);
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--bg);
+  color: var(--fg);
+  font: 12px var(--font-mono);
+}
+
+.composer input:focus {
+  border-color: var(--mc-orch-line);
+}
+
+.composer input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.composer input::placeholder {
+  color: var(--fg-faint);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  0% {
+    content: '⠋';
+  }
+  10% {
+    content: '⠙';
+  }
+  20% {
+    content: '⠹';
+  }
+  30% {
+    content: '⠸';
+  }
+  40% {
+    content: '⠼';
+  }
+  50% {
+    content: '⠴';
+  }
+  60% {
+    content: '⠦';
+  }
+  70% {
+    content: '⠧';
+  }
+  80% {
+    content: '⠇';
+  }
+  90% {
+    content: '⠏';
+  }
+}
+
+@media (max-width: 1240px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+
+  .stats {
+    gap: 8px 16px;
+    padding-left: 14px;
+  }
+}
+
+@media (max-width: 960px) {
+  .orch {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, auto);
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line:last-child,
+  .msg:last-child,
+  .blocked,
+  .glyph[data-busy]::before,
+  .term[data-live] .line:last-child::after {
+    animation: none;
+  }
+}
+
+.expand {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.expand:hover {
+  border-color: var(--mc-orch-line);
+  color: var(--fg);
+}
+
+.expand[data-pending] {
+  border-color: var(--mc-orch-line);
+  color: var(--mc-orch);
+}

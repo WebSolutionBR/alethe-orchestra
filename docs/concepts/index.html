@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alethe Orchestra — Conceitos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101114; --bg-elevated: #1f2125; --bg-sunken: #1a1c1f; --panel: #2a2d33;
+    --border: #2a2d33; --border-strong: rgba(243,244,246,.22);
+    --fg: #f3f4f6; --fg-muted: #c8c8d0; --fg-faint: #8b8b95;
+    --claude: #d97757; --orch: #5ec8e5; --ok: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 Inter, system-ui, sans-serif; }
+  header { padding: 28px 32px 8px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  h1 span { color: var(--claude); font-family: 'JetBrains Mono', monospace; }
+  header p { margin: 0; color: var(--fg-faint); }
+  .pick { margin: 0 32px 8px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-sunken);
+          font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--fg-muted); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pick b { color: var(--fg); font-weight: 500; }
+  .pick button { margin-left: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--border-strong); border-radius: 4px;
+                 padding: 5px 10px; font: inherit; cursor: pointer; }
+  .pick button:hover { border-color: var(--fg-muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(560px, 100%), 1fr)); gap: 20px; padding: 16px 32px 40px; }
+  .card { border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elevated); overflow: hidden; display: flex; flex-direction: column; }
+  .card.chosen { border-color: var(--claude); box-shadow: 0 0 0 1px var(--claude); }
+  .frame { position: relative; aspect-ratio: 16 / 10; background: var(--bg); overflow: hidden; border-bottom: 1px solid var(--border); }
+  .frame iframe { position: absolute; top: 0; left: 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .meta { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .meta h2 { margin: 0; font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .tag { font: 11px 'JetBrains Mono', monospace; color: var(--fg-faint); border: 1px solid var(--border-strong); border-radius: 4px; padding: 1px 6px; }
+  .meta p { margin: 0; color: var(--fg-muted); font-size: 13px; }
+  .meta .fit { color: var(--fg-faint); font-size: 12px; }
+  .actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .actions a, .actions label { font-size: 12px; padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--fg); text-decoration: none; cursor: pointer; user-select: none; }
+  .actions a:hover, .actions label:hover { border-color: var(--fg-muted); }
+  .actions input { display: none; }
+  .card.chosen .actions label { border-color: var(--claude); color: var(--claude); }
+  @media (max-width: 640px) { .grid { padding: 16px; } header { padding: 20px 16px 8px; } .pick { margin: 0 16px 8px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>✱</span> Alethe Orchestra — conceitos de orquestração</h1>
+  <p>6 direções visuais com dados simulados. Abra em tela cheia e marque as que você quer (dá para combinar).</p>
+</header>
+<div class="pick"><span>Escolhidos:</span> <b id="chosen">nenhum</b><button id="copy" type="button">Copiar escolha</button></div>
+<main class="grid" id="grid"></main>
+<script>
+  const CONCEPTS = [
+    { id: 'A', file: 'a-constelacao.html', name: 'Constelação', fit: 'Mais fiel à imagem de referência.',
+      desc: 'Grafo radial: orchestrator no centro, workers em volta com %, pontos trafegando nas conexões e message bus embaixo.' },
+    { id: 'B', file: 'b-mission-control.html', name: 'Mission Control', fit: 'Melhor para acompanhar detalhes de cada worker.',
+      desc: 'Cards por worker com status, progresso e mini-terminal ao vivo; bus lateral com filtros; worker bloqueado pede ajuda.' },
+    { id: 'C', file: 'c-fluxo-dag.html', name: 'Fluxo (DAG)', fit: 'Melhor para tarefas com dependência entre etapas.',
+      desc: 'Plano como grafo de dependências da esquerda para a direita; tarefas destravam quando as anteriores terminam.' },
+    { id: 'D', file: 'd-grade-terminais.html', name: 'Grade de Terminais', fit: 'Mais próximo do Alethe atual (terminais reais).',
+      desc: 'Terminais dos workers em grade + painel do orchestrator com entrada de tarefa; mini-mapa radial e bus em faixa.' },
+    { id: 'E', file: 'e-sequenciador.html', name: 'Sequenciador', fit: 'Melhor para entender o que aconteceu e quando.',
+      desc: 'Linha do tempo estilo DAW: uma faixa por agente, blocos por atividade e mensagens como arcos entre faixas.' },
+    { id: 'F', file: 'f-colmeia.html', name: 'Colmeia', fit: 'Escala bem para muitos workers (8–12+).',
+      desc: 'Hexágonos que “enchem” com o progresso; pulsos de mensagem saltam entre vizinhos; adicionar worker ao vivo.' },
+  ];
+  const KEY = 'orchestra-concepts-chosen';
+  let chosen = new Set();
+  try { chosen = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch {}
+  const grid = document.getElementById('grid');
+  const out = document.getElementById('chosen');
+
+  function render() {
+    out.textContent = chosen.size ? [...chosen].sort().map(id => id + ' — ' + CONCEPTS.find(c => c.id === id).name).join(', ') : 'nenhum';
+    document.querySelectorAll('.card').forEach(el => el.classList.toggle('chosen', chosen.has(el.dataset.id)));
+    try { localStorage.setItem(KEY, JSON.stringify([...chosen])); } catch {}
+  }
+
+  for (const c of CONCEPTS) {
+    const card = document.createElement('article');
+    card.className = 'card'; card.dataset.id = c.id;
+    card.innerHTML = `
+      <div class="frame"><iframe src="${c.file}" loading="lazy" title="${c.name}"></iframe></div>
+      <div class="meta">
+        <h2><span class="tag">${c.id}</span>${c.name}</h2>
+        <p>${c.desc}</p>
+        <p class="fit">${c.fit}</p>
+        <div class="actions">
+          <a href="${c.file}" target="_blank">Abrir em tela cheia ↗</a>
+          <label><input type="checkbox" ${chosen.has(c.id) ? 'checked' : ''}> Quero este</label>
+        </div>
+      </div>`;
+    card.querySelector('input').addEventListener('change', e => { e.target.checked ? chosen.add(c.id) : chosen.delete(c.id); render(); });
+    grid.appendChild(card);
+  }
+
+  function fit() {
+    document.querySelectorAll('.frame').forEach(f => { f.querySelector('iframe').style.transform = `scale(${f.clientWidth / 1440})`; });
+  }
+  new ResizeObserver(fit).observe(grid); fit();
+
+  document.getElementById('copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText('Conceitos escolhidos: ' + out.textContent); document.getElementById('copy').textContent = 'Copiado ✓'; } catch {}
+  });
+  render();
+</script>
+</body>
+</html>

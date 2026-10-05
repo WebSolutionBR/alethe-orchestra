@@ -1,6 +1,11 @@
+import { flowPtBR } from '../../../components/Orchestra/i18n/flow'
 import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
 import { projectPtBR } from '../../../components/Orchestra/i18n/project'
 import { sessionsPtBR } from '../../../components/Orchestra/i18n/sessions'
+import { hivePtBR } from '../../../components/Orchestra/i18n/hive'
+import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
+import { terminalsPtBR } from '../../../components/Orchestra/i18n/terminals'
+import { timelinePtBR } from '../../../components/Orchestra/i18n/timeline'
 import type { MessageKey } from './en'
 
 export const ptBR: Record<MessageKey, string> = {
@@ -2178,7 +2183,32 @@ export const ptBR: Record<MessageKey, string> = {
   'orchestra.drawer.noActivity': 'Nenhuma atividade registrada.',
   'orchestra.drawer.sendPlaceholder': 'Mensagem para {id}… (Enter envia)',
   'orchestra.drawer.send': 'Enviar',
+  'orchestra.constellation.graph': 'Grafo de agentes',
+  'orchestra.constellation.legendOrch': 'orchestrator → worker',
+  'orchestra.constellation.legendWorker': 'worker → orchestrator',
+  'orchestra.constellation.hint':
+    'clique num agente para filtrar o bus e abrir o terminal · esc limpa',
+  'orchestra.constellation.you': 'você',
+  'orchestra.constellation.emptyTitle': 'Nenhum worker ainda',
+  'orchestra.constellation.emptyBody':
+    'O orquestrador cria workers conforme divide o objetivo. Clique nele para abrir o terminal e conversar.',
+  'orchestra.constellation.busTitle': 'message bus',
+  'orchestra.constellation.busAgents': '{count} agentes',
+  'orchestra.constellation.filter': 'filtro',
+  'orchestra.constellation.clearFilter': 'Limpar filtro',
+  'orchestra.constellation.follow': '↓ auto-scroll',
+  'orchestra.constellation.paused': '‖ rolagem pausada',
+  'orchestra.constellation.msgCount': '{count} msgs',
+  'orchestra.constellation.busEmpty':
+    'Nenhuma mensagem ainda. Delegações, reports e respostas aparecem aqui conforme acontecem.',
+  'orchestra.constellation.busEmptyFilter': 'Nenhuma mensagem de ou para {id} ainda.',
+  'orchestra.constellation.nodeLabel': '{id}, {area}, {state}, {progress}%',
+  ...missionPtBR,
+  ...flowPtBR,
   ...usagePtBR,
+  ...terminalsPtBR,
+  ...timelinePtBR,
+  ...hivePtBR,
   ...projectPtBR,
   ...sessionsPtBR,
 }

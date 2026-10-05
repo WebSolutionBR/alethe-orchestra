@@ -1,0 +1,633 @@
+.root {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) 28px;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Empty state */
+.empty {
+  grid-row: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  max-width: 420px;
+  padding: 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.emptyBody {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-faint);
+}
+
+/* Top strip: goal, overall progress, counts, mini map */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.goalRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.goal {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  color: var(--fg);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.elapsed {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.statLabel {
+  flex: none;
+}
+
+.overallBar {
+  position: relative;
+  flex: 0 1 180px;
+  min-width: 60px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--panel);
+}
+
+.overallBar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--fg);
+  transition: width 0.4s linear;
+}
+
+.overallPct {
+  flex: none;
+  min-width: 32px;
+  color: var(--fg-muted);
+}
+
+.count b {
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.count[data-kind='running'] b {
+  color: var(--agent-claude);
+}
+
+.count[data-kind='done'] b {
+  color: var(--status-working);
+}
+
+.count[data-kind='waiting'] b {
+  color: var(--status-waiting);
+}
+
+/* Mini radial map */
+.map {
+  position: relative;
+  flex: none;
+  width: 160px;
+  height: 64px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
+.map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mapLabel {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-size: 9.5px;
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.mapLink {
+  stroke: var(--border-strong);
+  stroke-width: 0.8;
+  stroke-dasharray: 1.5 2.5;
+}
+
+.mapPulse {
+  stroke-width: 1.4;
+  animation: mapPulse 1.6s ease-out forwards;
+}
+
+@keyframes mapPulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.mapNode {
+  cursor: pointer;
+}
+
+.mapCore {
+  fill: var(--bg);
+  stroke-width: 1.2;
+}
+
+.mapRingBg {
+  fill: none;
+  stroke: var(--panel);
+  stroke-width: 1.6;
+}
+
+.mapRing {
+  fill: none;
+  stroke-width: 1.6;
+  transition: stroke-dasharray 0.4s linear;
+}
+
+/* Main area: orchestrator column + worker grid */
+.main {
+  position: relative;
+  display: grid;
+  /* Columns (orchestrator, splitter, grid) are set inline from the remembered split. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  padding: 8px;
+}
+
+.grid {
+  grid-row: 1;
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Too many workers for the area: panes keep a usable minimum height and the grid scrolls. */
+.grid[data-scroll] {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel) transparent;
+}
+
+/* Drag handle between the orchestrator column and the worker grid. */
+.splitter {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.splitter::after {
+  content: '';
+  position: absolute;
+  inset: 0 3px;
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+
+.splitter:hover::after,
+.splitter:active::after {
+  background: var(--border-strong);
+}
+
+.splitter:focus-visible {
+  outline: none;
+}
+
+.splitter:focus-visible::after {
+  background: var(--focus-ring);
+}
+
+.hasMax > .splitter {
+  visibility: hidden;
+}
+
+.gridEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--fg-faint);
+  text-align: center;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-sunken);
+  transition: border-color 0.2s;
+}
+
+.pane:hover {
+  border-color: var(--border-strong);
+}
+
+.orchestratorPane {
+  grid-column: 1;
+  grid-row: 1;
+  border-color: var(--agent-codex-soft);
+}
+
+.selected {
+  border-color: var(--border-strong);
+}
+
+.orchestratorPane.selected {
+  border-color: var(--agent-codex);
+}
+
+.pane[data-state='blocked'] {
+  border-color: var(--status-waiting-soft);
+}
+
+/* The maximized pane covers the whole main area; the other panes stay mounted underneath so
+   their terminals keep their PTY attachment and scrollback. As an absolutely positioned item of
+   the .main grid, spanning every line makes its containing block the whole content area. */
+.maxed {
+  position: absolute;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  inset: 0;
+  z-index: 3;
+  border-color: var(--border-strong);
+}
+
+/* A worker pane lives in .grid, so its containing block is .main's padding box instead. */
+.grid > .maxed {
+  inset: 8px;
+}
+
+.hasMax > .pane:not(.maxed),
+.hasMax > .grid > .pane:not(.maxed) {
+  visibility: hidden;
+}
+
+.paneHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: inherit;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-align: left;
+  cursor: default;
+  user-select: none;
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dot[data-busy] {
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.paneFlag {
+  flex: none;
+  font-weight: 700;
+}
+
+.paneId {
+  flex: none;
+  font-weight: 600;
+}
+
+.paneArea {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10.5px;
+  line-height: 16px;
+  color: var(--fg-muted);
+}
+
+.paneTask {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-faint);
+  text-overflow: ellipsis;
+}
+
+.paneState {
+  flex: none;
+  font-size: 10.5px;
+}
+
+.paneBar {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--panel);
+}
+
+.paneBar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  transition: width 0.4s linear;
+}
+
+.panePct {
+  flex: none;
+  width: 32px;
+  color: var(--fg-muted);
+  text-align: right;
+}
+
+.escHint {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--fg-faint);
+}
+
+.maxIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.maxIcon:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.maxIcon:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Placeholders for agents without a live terminal */
+.placeholder {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-muted);
+}
+
+.placeholderTitle {
+  font-size: 11px;
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.placeholderMuted {
+  color: var(--fg-faint);
+}
+
+.placeholderTask {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.deps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.dep {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg);
+}
+
+.depState {
+  color: var(--fg-faint);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lines li[data-tone='error'] {
+  color: var(--status-offline);
+}
+
+.lines li[data-tone='ok'] {
+  color: var(--status-working);
+}
+
+.lines li[data-tone='prompt'] {
+  color: var(--fg-faint);
+}
+
+/* Message bus ticker */
+.ticker {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sunken);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tickerLabel {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-right: 1px solid var(--border);
+  color: var(--fg);
+}
+
+.tickerLabel b {
+  font-weight: 500;
+  color: var(--agent-claude);
+}
+
+.tickerTrack {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tickerEmpty {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--fg-faint);
+}
+
+.tickerItem {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  max-width: 460px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+  animation: tickerIn 0.25s ease-out;
+}
+
+.tickerItem:hover {
+  background: var(--bg-elevated);
+}
+
+@keyframes tickerIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tickerTime,
+.tickerArrow {
+  color: var(--fg-faint);
+}
+
+.tickerText {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1100px) {
+  .paneState,
+  .paneArea {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-busy],
+  .tickerItem,
+  .mapPulse {
+    animation: none;
+  }
+}

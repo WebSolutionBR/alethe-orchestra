@@ -1,6 +1,11 @@
+import { flowEn } from '../../../components/Orchestra/i18n/flow'
 import { usageEn } from '../../../components/Orchestra/usage/i18n'
 import { projectEn } from '../../../components/Orchestra/i18n/project'
 import { sessionsEn } from '../../../components/Orchestra/i18n/sessions'
+import { hiveEn } from '../../../components/Orchestra/i18n/hive'
+import { missionEn } from '../../../components/Orchestra/i18n/mission'
+import { terminalsEn } from '../../../components/Orchestra/i18n/terminals'
+import { timelineEn } from '../../../components/Orchestra/i18n/timeline'
 
 export const en = {
   /* ---- loading ---- */
@@ -2163,7 +2168,32 @@ export const en = {
   'orchestra.drawer.noActivity': 'No activity recorded.',
   'orchestra.drawer.sendPlaceholder': 'Message {id}… (Enter sends)',
   'orchestra.drawer.send': 'Send',
+  'orchestra.constellation.graph': 'Agent graph',
+  'orchestra.constellation.legendOrch': 'orchestrator → worker',
+  'orchestra.constellation.legendWorker': 'worker → orchestrator',
+  'orchestra.constellation.hint':
+    'click an agent to filter the bus and open its terminal · esc clears',
+  'orchestra.constellation.you': 'you',
+  'orchestra.constellation.emptyTitle': 'No workers yet',
+  'orchestra.constellation.emptyBody':
+    'The orchestrator spawns workers as it breaks the goal down. Click it to open its terminal and talk to it.',
+  'orchestra.constellation.busTitle': 'message bus',
+  'orchestra.constellation.busAgents': '{count} agents',
+  'orchestra.constellation.filter': 'filter',
+  'orchestra.constellation.clearFilter': 'Clear filter',
+  'orchestra.constellation.follow': '↓ auto-scroll',
+  'orchestra.constellation.paused': '‖ scroll paused',
+  'orchestra.constellation.msgCount': '{count} msgs',
+  'orchestra.constellation.busEmpty':
+    'No messages yet. Delegations, reports and replies show up here as they happen.',
+  'orchestra.constellation.busEmptyFilter': 'No messages to or from {id} yet.',
+  'orchestra.constellation.nodeLabel': '{id}, {area}, {state}, {progress}%',
+  ...missionEn,
+  ...flowEn,
   ...usageEn,
+  ...terminalsEn,
+  ...timelineEn,
+  ...hiveEn,
   ...projectEn,
   ...sessionsEn,
 } as const

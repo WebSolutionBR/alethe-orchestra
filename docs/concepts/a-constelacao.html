@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alethe Orchestra — Constelação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#101114; --elev:#1f2125; --sunken:#1a1c1f; --panel:#2a2d33;
+  --border:#2a2d33; --border-strong:rgba(243,244,246,.22);
+  --fg:#f3f4f6; --muted:#c8c8d0; --faint:#8b8b95; --accent:#ececef;
+  --claude:#d97757; --orch:#5ec8e5; --ok:#4ade80; --warn:#fbbf24;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--fg)}
+body{
+  font:13px/1.4 var(--sans);-webkit-font-smoothing:antialiased;
+  display:grid;grid-template-rows:44px minmax(320px,1fr) clamp(200px,31vh,280px) 30px;
+  min-width:1000px;overflow:hidden;
+}
+button{font:inherit;color:inherit}
+
+/* header */
+header{display:flex;align-items:center;gap:18px;padding:0 14px;background:var(--sunken);border-bottom:1px solid var(--border);min-width:0}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.mark{width:20px;height:20px;border:1px solid var(--border-strong);border-radius:4px;display:grid;place-items:center;font:600 12px var(--mono);color:var(--claude)}
+.crumb{font-weight:400;color:var(--faint);font-size:12px}
+.crumb b{font-weight:500;color:var(--muted)}
+.vsep{width:1px;height:18px;background:var(--border)}
+.goal{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font:12px var(--mono)}
+.goal .k{color:var(--faint);white-space:nowrap}
+.goal .v{color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal .tag{color:var(--claude);border:1px solid rgba(217,119,87,.35);border-radius:4px;padding:0 6px;font-size:11px;white-space:nowrap}
+.meta{display:flex;align-items:center;gap:14px;font:12px var(--mono);color:var(--faint);white-space:nowrap}
+.meta b{font-weight:500;color:var(--muted)}
+.views{display:flex;border:1px solid var(--border);border-radius:5px;overflow:hidden;flex:none}
+.views a{height:24px;display:flex;align-items:center;padding:0 10px;font:500 12px var(--sans);color:var(--faint);text-decoration:none;white-space:nowrap}
+.views a+a{border-left:1px solid var(--border)}
+.views a:hover{color:var(--fg)}
+.views a.on{background:var(--elev);color:var(--fg)}
+.btn{height:26px;padding:0 10px;border:1px solid var(--border);border-radius:5px;background:var(--elev);color:var(--muted);font:500 12px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--border-strong);color:var(--fg)}
+.btn kbd{font:11px var(--mono);color:var(--faint)}
+
+/* graph */
+#graph{position:relative;overflow:hidden;min-height:0}
+#graph svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.edge{fill:none;stroke:var(--faint);stroke-opacity:.5;stroke-width:1.2;stroke-dasharray:1 6;stroke-linecap:round;transition:stroke-opacity .25s,stroke .25s}
+.edge.done{stroke-opacity:.18}
+.edge.dim{stroke-opacity:.1}
+.edge.sel{stroke:var(--claude);stroke-opacity:.95;stroke-dasharray:2 5;animation:flow .9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+
+.node{
+  position:absolute;left:0;top:0;transform:translate(-50%,-50%);
+  width:200px;background:var(--elev);border:1px solid var(--border-strong);border-radius:6px;
+  font:12.5px/1.45 var(--mono);overflow:hidden;cursor:pointer;user-select:none;
+  transition:opacity .25s,border-color .25s,background .2s;outline:none;
+}
+.node:hover{background:#24262b}
+.node:focus-visible{border-color:var(--fg)}
+.node .in{padding:9px 12px 8px}
+.node .r1,.node .r2{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.node .r2{color:var(--muted);margin-top:2px}
+.ast{color:var(--claude);font-weight:600}
+.node .name{color:var(--fg);font-weight:500}
+.node .spin{margin-left:auto;color:var(--faint);width:12px;text-align:right}
+.node .task{color:var(--muted)}
+.node .pct{margin-left:auto;color:var(--fg);font-variant-numeric:tabular-nums}
+.node .state{color:var(--faint);font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.bar{height:2px;background:var(--panel)}
+.bar i{display:block;height:100%;width:0;background:var(--claude);transition:width .35s linear}
+.node.done{opacity:.5}
+.node.done .bar i{background:var(--ok)}
+.node.done .spin{color:var(--ok)}
+.node.done .ast{color:var(--faint)}
+.node.sel{border-color:var(--claude);box-shadow:0 0 0 3px rgba(217,119,87,.14)}
+.node.dim{opacity:.32}
+.node.done.dim{opacity:.22}
+.node.ping{animation:ping .6s ease-out}
+@keyframes ping{0%{border-color:var(--claude)}100%{border-color:var(--border-strong)}}
+
+.node.orch{width:260px;cursor:default;border-color:rgba(94,200,229,.45)}
+.node.orch .ast{color:var(--orch)}
+.node.orch .in{padding:11px 14px 10px}
+.node.orch .who{color:var(--faint)}
+.node.orch .r2{color:var(--muted)}
+.node.orch .lead{color:var(--orch);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.node.orch .bar i{background:var(--orch)}
+.node.orch.ping{animation:pingc .6s ease-out}
+@keyframes pingc{0%{border-color:var(--orch)}100%{border-color:rgba(94,200,229,.45)}}
+
+.legend{position:absolute;left:14px;top:12px;display:flex;gap:16px;font:11px var(--mono);color:var(--faint);z-index:2}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.hint{position:absolute;right:14px;top:12px;font:11px var(--mono);color:var(--faint);z-index:2}
+
+/* bus */
+#bus{display:grid;grid-template-rows:34px 1fr;min-height:0;background:var(--sunken);border-top:1px solid var(--border)}
+.bushead{display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--border);font:12px var(--mono);color:var(--faint)}
+.bushead .t{color:var(--muted)}
+.bushead .t b{color:var(--orch);font-weight:500}
+.bushead .sp{flex:1}
+.chip{display:none;align-items:center;gap:6px;height:20px;padding:0 4px 0 8px;border:1px solid rgba(217,119,87,.45);border-radius:4px;color:var(--claude);font:11px var(--mono);cursor:pointer;background:transparent}
+.chip.on{display:inline-flex}
+.chip span{color:var(--faint);padding:0 4px}
+.chip:hover span{color:var(--fg)}
+.follow{color:var(--faint)}
+.follow.off{color:var(--warn)}
+#log{overflow-y:auto;padding:6px 0 10px;font:12px/1.8 var(--mono);min-height:0;scrollbar-width:thin;scrollbar-color:var(--panel) transparent}
+#log::-webkit-scrollbar{width:8px}
+#log::-webkit-scrollbar-thumb{background:var(--panel);border-radius:4px}
+.line{display:grid;grid-template-columns:98px 230px minmax(0,1fr);padding:0 14px;color:var(--muted);animation:in .35s ease-out}
+.line:hover{background:var(--elev)}
+.line[hidden]{display:none}
+.line .ts{color:var(--faint);font-variant-numeric:tabular-nums}
+.line .route{white-space:nowrap;overflow:hidden}
+.line .msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c{color:var(--claude)} .o{color:var(--orch)}
+.arr{color:var(--faint);margin:0 7px}
+.msg .ref{color:var(--fg)}
+.msg .file{color:var(--accent);text-decoration:underline dotted rgba(243,244,246,.3);text-underline-offset:3px}
+.msg .ok{color:var(--ok)}
+.line.sys .msg{color:var(--faint);font-style:italic}
+@keyframes in{from{opacity:0;transform:translateY(3px)}}
+
+/* footer */
+footer{display:flex;align-items:center;gap:10px;padding:0 14px 0 200px;border-top:1px solid var(--border);font:12px var(--mono);color:var(--faint);background:var(--bg);white-space:nowrap}
+footer .dot{color:var(--ok);animation:blink 2s ease-in-out infinite}
+footer.paused .dot{color:var(--warn);animation:none}
+footer .sp{flex:1}
+footer b{color:var(--muted);font-weight:500}
+@keyframes blink{50%{opacity:.35}}
+.concept{position:fixed;left:12px;bottom:6px;z-index:10;height:18px;display:flex;align-items:center;padding:0 8px;border:1px solid var(--border);border-radius:4px;background:var(--elev);font:500 11px var(--sans);color:var(--faint);letter-spacing:.01em}
+
+@media (max-width:1180px){
+  .crumb{display:none}
+  .line{grid-template-columns:90px 205px minmax(0,1fr)}
+  .node{width:184px;font-size:12px}
+  .node.orch{width:236px}
+  .hint{display:none}
+  .goal .tag,.goal .k{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .edge.sel{animation:none}
+  .line{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="mark">✻</span>Alethe Orchestra <span class="crumb">/ <b>orchestra</b> · sessão #7</span></div>
+  <div class="vsep"></div>
+  <nav class="views" aria-label="Visualização">
+    <a href="a-constelacao.html" class="on" aria-current="page">Constelação</a>
+    <a href="b-mission-control.html">Mission Control</a>
+  </nav>
+  <div class="goal"><span class="k">objetivo</span><span class="v">porting billing services to rust</span><span class="tag">fase 2/3 · port</span></div>
+  <div class="meta">
+    <span>decorrido <b id="elapsed">00:42:18</b></span>
+    <span><b id="activeCount">6</b>/6 ativos</span>
+    <button class="btn" id="pauseBtn" type="button"><span id="pauseLbl">pausar</span><kbd>espaço</kbd></button>
+  </div>
+</header>
+
+<section id="graph" aria-label="Grafo de agentes">
+  <svg id="svg" aria-hidden="true">
+    <defs>
+      <pattern id="grid" width="22" height="22" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r=".8" fill="#f3f4f6" fill-opacity=".055"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)"/>
+    <g id="edges"></g>
+    <g id="dots"></g>
+  </svg>
+  <div class="legend">
+    <span><i style="background:var(--orch)"></i>orchestrator → worker</span>
+    <span><i style="background:var(--claude)"></i>worker → orchestrator</span>
+  </div>
+  <div class="hint">clique num worker para filtrar o bus · esc limpa</div>
+  <div id="nodes"></div>
+</section>
+
+<section id="bus" aria-label="Message bus">
+  <div class="bushead">
+    <span class="t">message bus · <b>orchestrator</b> ⇄ <span id="busAgents">6</span> agents</span>
+    <button class="chip" id="chip" type="button" title="Limpar filtro">filtro: <em id="chipName" style="font-style:normal">claude-1</em><span>✕</span></button>
+    <span class="sp"></span>
+    <span class="follow" id="follow">↓ auto-scroll</span>
+    <span><b id="busCount" style="color:var(--muted);font-weight:500">0</b> msgs</span>
+  </div>
+  <div id="log" role="log" aria-live="off"></div>
+</section>
+
+<footer id="footer">
+  <span class="dot">●</span>
+  <span id="footText"><b>6 agentes</b> portando para rust · <b>0</b> mensagens no bus</span>
+  <span class="sp"></span>
+  <span>clique: filtrar · esc: limpar · espaço: pausar</span>
+</footer>
+
+<div class="concept">Conceito A — Constelação</div>
+
+<script>
+(() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const INIT = [29, 72, 65, 77, 96, 64];
+  const W = [
+    { name:'claude-1', task:'billing', files:['invoice.rs','tax.rs','proration.rs'],        speed:.55 },
+    { name:'claude-2', task:'queue',   files:['consumer.rs','retry.rs','dlq.rs'],           speed:.42 },
+    { name:'claude-3', task:'ledger',  files:['entries.rs','balance.rs','journal.rs'],      speed:.48 },
+    { name:'claude-4', task:'notify',  files:['email.rs','push.rs','templates.rs'],         speed:.36 },
+    { name:'claude-5', task:'db',      files:['pool.rs','schema.rs','0042_ledger.sql'],     speed:.30 },
+    { name:'claude-6', task:'search',  files:['index.rs','tokenizer.rs','ranker.rs'],       speed:.44 },
+  ];
+  W.forEach((w, i) => { w.p = INIT[i]; w.done = false; w.stallUntil = 0; w.i = i; });
+
+  /* ---------- message templates ---------- */
+  const W2O = [
+    'rebasing em main — 3 conflitos em {file}',
+    'tests green ({n}/{n}). review my PR #{newpr}',
+    'borrow checker won. merging',
+    'cargo clippy limpo, 0 warnings',
+    'port de {file} concluído',
+    'bench {task}: p99 {ms}ms → {ms2}ms',
+    'canary em {pct}%, error rate 0.00%',
+    'lifetimes resolvidos em {file}',
+    'flaky test em {file}, re-rodando com seed fixa',
+    'abrindo PR #{newpr}: {task} → rust',
+    'pedindo merge window',
+    'unsafe removido de {file}, miri ok',
+    'serde derive pronto p/ {task}::Event',
+    'shim de compat com o serviço Go ainda ativo',
+    'cobertura de {task}: {cov}%',
+    'cargo test --workspace: {n} passed, 0 failed',
+    'tokio runtime trocado p/ multi-thread em {file}',
+  ];
+  const O2W = [
+    'ok, merge window aberta às :{mm}',
+    'PR #{pr} aprovado. pode mergear',
+    'segura o merge — {other} migrando schema',
+    'prioriza {file}, {other} depende disso',
+    'rebase depois do PR #{pr}',
+    'sobe canary p/ {pct}% e reporta',
+    'manda o diff de {file}',
+    'bom. próximo: remover o shim Go',
+    'mantém a API pública idêntica, só troca o runtime',
+    'roda o property test de novo com seed fixa',
+    'ack. sem pressa no {file}, qualidade primeiro',
+  ];
+  const W2W = [
+    'seu PR #{pr} quebrou meu build — trait Money mudou',
+    'pode usar o crate {task}-core, já exportei os tipos',
+    'revisa #{pr}? toca no seu {file}',
+    'lock em {file} liberado',
+  ];
+  const ORCH_STATES = ['leading', 'leading', 'reviewing #{pr}', 'merging #{pr}', 'replanning', 'leading'];
+  let prSeq = 4512;
+
+  function fill(tpl, w) {
+    return tpl.replace(/\{(\w+)\}/g, (m, k) => {
+      switch (k) {
+        case 'file':  return pick(w.files);
+        case 'pr':    return String(rint(4498, prSeq));
+        case 'newpr': return String(++prSeq);
+        case 'n':     return String(rint(38, 214));
+        case 'pct':   return String(pick([5, 10, 25, 50]));
+        case 'other': return pick(W.filter(x => x !== w)).name;
+        case 'mm':    return String(rint(0, 59)).padStart(2, '0');
+        case 'ms':    return String(rint(18, 64));
+        case 'ms2':   return String(rint(2, 12));
+        case 'cov':   return String(rint(81, 97));
+        case 'task':  return w.task;
+        default:      return m;
+      }
+    });
+  }
+
+  /* ---------- DOM: nodes ---------- */
+  const nodesEl = $('nodes');
+  const orchEl = document.createElement('div');
+  orchEl.className = 'node orch';
+  orchEl.innerHTML =
+    '<div class="in"><div class="r1"><span class="ast">✻</span><span class="name">orchestrator</span><span class="who">· you</span><span class="spin" id="orchSpin">⠋</span></div>' +
+    '<div class="r2"><span id="orchWorkers">6 workers</span><span class="who">·</span><span class="lead" id="orchState">leading</span><span class="pct" id="orchPct">0%</span></div></div>' +
+    '<div class="bar"><i id="orchBar"></i></div>';
+  nodesEl.appendChild(orchEl);
+
+  W.forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'node';
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', w.name + ' ' + w.task);
+    el.innerHTML =
+      '<div class="in"><div class="r1"><span class="ast">✻</span><span class="name">' + w.name + '</span><span class="spin">⠋</span></div>' +
+      '<div class="r2"><span class="task">' + w.task + '</span><span class="state"></span><span class="pct">0%</span></div></div>' +
+      '<div class="bar"><i></i></div>';
+    w.el = el;
+    w.spinEl = el.querySelector('.spin');
+    w.pctEl = el.querySelector('.pct');
+    w.barEl = el.querySelector('.bar i');
+    w.stateEl = el.querySelector('.state');
+    el.addEventListener('click', e => { e.stopPropagation(); select(selected === w ? null : w); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); select(selected === w ? null : w); } });
+    nodesEl.appendChild(el);
+  });
+
+  /* ---------- SVG edges ---------- */
+  const edgesG = $('edges'), dotsG = $('dots'), svg = $('svg'), graph = $('graph');
+  W.forEach(w => {
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('class', 'edge');
+    edgesG.appendChild(l);
+    w.edge = { line: l, x0:0, y0:0, x1:0, y1:0 };
+  });
+
+  // Order around the ellipse: top-left, top-right, right, bottom-right, bottom-left, left
+  const ANGLES = [-120, -60, 0, 60, 120, 180].map(a => a * Math.PI / 180);
+
+  function rectExit(cx, cy, hw, hh, dx, dy, pad) {
+    const ax = Math.abs(dx) || 1e-6, ay = Math.abs(dy) || 1e-6;
+    const t = Math.min((hw + pad) / ax, (hh + pad) / ay);
+    return [cx + dx * t, cy + dy * t];
+  }
+
+  function layout() {
+    const w = graph.clientWidth, h = graph.clientHeight;
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    const cx = w / 2, cy = h / 2 + 8;
+    const ow = orchEl.offsetWidth, oh = orchEl.offsetHeight;
+    const nw = W[0].el.offsetWidth, nh = W[0].el.offsetHeight;
+    const rx = Math.min(w / 2 - nw / 2 - 26, 480);
+    const ry = Math.max(Math.min(h / 2 - nh / 2 - 26, 240), oh / 2 + nh / 2 + 18);
+    orchEl.style.left = cx + 'px'; orchEl.style.top = cy + 'px';
+    W.forEach((wk, i) => {
+      const a = ANGLES[i];
+      const x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry;
+      wk.el.style.left = x + 'px'; wk.el.style.top = y + 'px';
+      const dx = x - cx, dy = y - cy, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+      const [x0, y0] = rectExit(cx, cy, ow / 2, oh / 2, ux, uy, 6);
+      const [x1, y1] = rectExit(x, y, nw / 2, nh / 2, -ux, -uy, 6);
+      const e = wk.edge;
+      e.x0 = x0; e.y0 = y0; e.x1 = x1; e.y1 = y1; e.len = Math.hypot(x1 - x0, y1 - y0);
+      e.line.setAttribute('x1', x0.toFixed(1)); e.line.setAttribute('y1', y0.toFixed(1));
+      e.line.setAttribute('x2', x1.toFixed(1)); e.line.setAttribute('y2', y1.toFixed(1));
+    });
+  }
+  new ResizeObserver(layout).observe(graph);
+
+  /* ---------- traveling dots ---------- */
+  const COLORS = { orch: '#5ec8e5', claude: '#d97757' };
+  const dots = [];
+  let simNow = 0;
+
+  function spawnDot(w, dir, color, opts) {
+    opts = opts || {};
+    const g = document.createElementNS(NS, 'g');
+    const halo = document.createElementNS(NS, 'circle');
+    halo.setAttribute('r', opts.faint ? '3.5' : '5.5');
+    halo.setAttribute('fill', color);
+    halo.setAttribute('fill-opacity', opts.faint ? '.10' : '.18');
+    const core = document.createElementNS(NS, 'circle');
+    core.setAttribute('r', opts.faint ? '1.6' : '2.6');
+    core.setAttribute('fill', color);
+    if (opts.faint) core.setAttribute('fill-opacity', '.55');
+    g.appendChild(halo); g.appendChild(core);
+    g.setAttribute('transform', 'translate(-20,-20)');
+    dotsG.appendChild(g);
+    const len = w.edge.len || 200;
+    dots.push({ w, dir, g, t0: simNow, dur: (opts.faint ? 1.6 : 1) * (520 + len * 2.4), onArrive: opts.onArrive });
+  }
+  const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+
+  function ping(el) { el.classList.remove('ping'); void el.offsetWidth; el.classList.add('ping'); }
+
+  /* ---------- bus ---------- */
+  const log = $('log');
+  let count = 0, follow = true, filter = null;
+  const T0 = (59 * 60 + 12) * 1000 + 207; // bus clock starts at 59:12.207
+
+  function stamp() {
+    const t = T0 + simNow;
+    const m = Math.floor(t / 60000) % 60, s = Math.floor(t / 1000) % 60, ms = Math.floor(t % 1000);
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') + '.' + String(ms).padStart(3, '0');
+  }
+  function decorate(text) {
+    return esc(text)
+      .replace(/(#\d{3,5})/g, '<span class="ref">$1</span>')
+      .replace(/\b([\w\/-]+\.(?:rs|sql|toml))\b/g, '<span class="file">$1</span>')
+      .replace(/\b(tests green|0 failed|miri ok|done ✓)/g, '<span class="ok">$1</span>');
+  }
+  const cls = n => n === 'orchestrator' ? 'o' : 'c';
+
+  function post(from, to, text, sys) {
+    count++;
+    const line = document.createElement('div');
+    line.className = 'line' + (sys ? ' sys' : '');
+    line.dataset.w = from + ' ' + to;
+    line.innerHTML =
+      '<span class="ts">' + stamp() + '</span>' +
+      '<span class="route"><span class="' + cls(from) + '">' + from + '</span><span class="arr">→</span><span class="' + cls(to) + '">' + to + '</span></span>' +
+      '<span class="msg" title="' + esc(text) + '">' + decorate(text) + '</span>';
+    if (filter && !line.dataset.w.split(' ').includes(filter.name)) line.hidden = true;
+    log.appendChild(line);
+    while (log.children.length > 400) log.removeChild(log.firstChild);
+    if (follow) log.scrollTop = log.scrollHeight;
+    updateCounts();
+  }
+  log.addEventListener('scroll', () => {
+    follow = log.scrollHeight - log.scrollTop - log.clientHeight < 30;
+    const f = $('follow');
+    f.textContent = follow ? '↓ auto-scroll' : '‖ rolagem pausada';
+    f.classList.toggle('off', !follow);
+  });
+
+  function updateCounts() {
+    const active = W.filter(w => !w.done).length;
+    $('busCount').textContent = count;
+    $('activeCount').textContent = active;
+    const allDone = active === 0;
+    $('footText').innerHTML = allDone
+      ? '<b>port concluído</b> · 6/6 agentes done · <b>' + count + '</b> mensagens no bus'
+      : '<b>' + active + ' agentes</b> portando para rust · <b>' + count + '</b> mensagens no bus';
+    $('orchWorkers').textContent = active + (active === 1 ? ' worker' : ' workers');
+  }
+
+  /* send helpers: spawn dot + bus line */
+  function workerToOrch(w, text) {
+    spawnDot(w, -1, COLORS.claude, { onArrive: () => ping(orchEl) });
+    post(w.name, 'orchestrator', text);
+  }
+  function orchToWorker(w, text) {
+    spawnDot(w, 1, COLORS.orch, { onArrive: () => ping(w.el) });
+    post('orchestrator', w.name, text);
+  }
+  function workerToWorker(a, b, text) {
+    spawnDot(a, -1, COLORS.claude, { onArrive: () => spawnDot(b, 1, COLORS.claude, { onArrive: () => ping(b.el) }) });
+    post(a.name, b.name, text);
+  }
+
+  /* ---------- selection ---------- */
+  let selected = null;
+  function select(w) {
+    selected = w; filter = w;
+    W.forEach(x => {
+      x.el.classList.toggle('sel', x === w);
+      x.el.classList.toggle('dim', !!w && x !== w);
+      x.edge.line.classList.toggle('sel', x === w);
+      x.edge.line.classList.toggle('dim', !!w && x !== w);
+    });
+    $('chip').classList.toggle('on', !!w);
+    if (w) $('chipName').textContent = w.name;
+    for (const line of log.children) line.hidden = !!w && !line.dataset.w.split(' ').includes(w.name);
+    follow = true; log.scrollTop = log.scrollHeight;
+  }
+  $('chip').addEventListener('click', () => select(null));
+  graph.addEventListener('click', () => { if (selected) select(null); });
+
+  /* ---------- pause ---------- */
+  let paused = false;
+  function togglePause() {
+    paused = !paused;
+    $('pauseLbl').textContent = paused ? 'retomar' : 'pausar';
+    $('footer').classList.toggle('paused', paused);
+  }
+  $('pauseBtn').addEventListener('click', togglePause);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') select(null);
+    if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); togglePause(); }
+  });
+
+  /* ---------- simulation ---------- */
+  const SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+  const WSTATES = ['editing', 'cargo test', 'thinking', 'rebasing', 'clippy', 'editing', 'editing'];
+  let nextMsg = 400, nextState = 3000, spinT = 0, spinI = 0, allDoneAt = 0, elapsedBase = 42 * 60 + 18;
+  const heart = W.map(() => rnd(300, 2400));
+
+  function setPct(w) {
+    const p = Math.min(100, w.p);
+    w.pctEl.textContent = Math.floor(p) + '%';
+    w.barEl.style.width = p + '%';
+  }
+  function overall() {
+    const avg = W.reduce((s, w) => s + Math.min(100, w.p), 0) / W.length;
+    $('orchPct').textContent = Math.floor(avg) + '%';
+    $('orchBar').style.width = avg + '%';
+  }
+
+  function finish(w) {
+    w.done = true; w.p = 100; setPct(w);
+    w.el.classList.add('done'); w.edge.line.classList.add('done');
+    w.spinEl.textContent = '✓'; w.stateEl.textContent = 'done';
+    workerToOrch(w, w.task + ': done ✓ PR #' + (++prSeq) + ' mergeado, ' + rint(120, 340) + ' tests green');
+    setTimeout(() => {
+      if (!paused) orchToWorker(w, pick(['ótimo. ' + w.name + ' liberado', 'recebido. fecha a sessão e me manda o resumo', 'perfeito, marcando ' + w.task + ' como shipped']));
+    }, 700);
+    updateCounts();
+    if (W.every(x => x.done)) {
+      allDoneAt = simNow;
+      $('orchState').textContent = 'shipped';
+      setTimeout(() => post('orchestrator', 'claude-1', 'fase 2/3 concluída · iniciando verificação cruzada', true), 1200);
+    }
+  }
+
+  function reset() {
+    allDoneAt = 0;
+    W.forEach(w => {
+      w.p = rint(3, 38); w.done = false;
+      w.el.classList.remove('done'); w.edge.line.classList.remove('done');
+      w.stateEl.textContent = '';
+      setPct(w);
+    });
+    $('orchState').textContent = 'leading';
+    post('orchestrator', 'claude-1', 'nova rodada: verificação cruzada entre crates · mesmos owners', true);
+    updateCounts();
+  }
+
+  function emitMessage() {
+    const active = W.filter(w => !w.done);
+    if (!active.length) return;
+    const r = Math.random();
+    const w = pick(active);
+    if (r < .55) workerToOrch(w, fill(pick(W2O), w));
+    else if (r < .9) orchToWorker(w, fill(pick(O2W), w));
+    else {
+      const others = active.filter(x => x !== w);
+      if (others.length) workerToWorker(w, pick(others), fill(pick(W2W), w));
+      else workerToOrch(w, fill(pick(W2O), w));
+    }
+  }
+
+  function step(dt) {
+    simNow += dt;
+
+    // progress
+    W.forEach(w => {
+      if (w.done) return;
+      if (simNow < w.stallUntil) return;
+      if (Math.random() < dt / 9000) { w.stallUntil = simNow + rnd(1500, 4500); return; }
+      w.p += w.speed * rnd(.4, 1.6) * dt / 1000;
+      if (w.p >= 100) finish(w); else setPct(w);
+    });
+    overall();
+
+    // messages
+    nextMsg -= dt;
+    if (nextMsg <= 0) { emitMessage(); nextMsg = rnd(600, 1200); }
+
+    // ambient heartbeat dots
+    W.forEach((w, i) => {
+      if (w.done) return;
+      heart[i] -= dt;
+      if (heart[i] <= 0) {
+        const out = Math.random() < .5;
+        spawnDot(w, out ? 1 : -1, out ? COLORS.orch : COLORS.claude, { faint: true });
+        heart[i] = rnd(1800, 3600);
+      }
+    });
+
+    // state labels
+    nextState -= dt;
+    if (nextState <= 0) {
+      nextState = rnd(2200, 4200);
+      if (allDoneAt === 0) $('orchState').textContent = fill(pick(ORCH_STATES), W[0]);
+      const act = W.filter(w => !w.done);
+      if (act.length) { const w = pick(act); w.stateEl.textContent = pick(WSTATES); }
+    }
+
+    if (allDoneAt && simNow - allDoneAt > 9000) reset();
+
+    // elapsed clock
+    const e = elapsedBase + Math.floor(simNow / 1000);
+    $('elapsed').textContent = [Math.floor(e / 3600), Math.floor(e / 60) % 60, e % 60].map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  /* ---------- frame loop ---------- */
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(64, now - last); last = now;
+    if (!paused) step(dt);
+
+    // spinners
+    spinT += dt;
+    if (spinT > 85 && !paused) {
+      spinT = 0; spinI = (spinI + 1) % SPIN.length;
+      const ch = SPIN[spinI];
+      W.forEach((w, i) => { if (!w.done) w.spinEl.textContent = SPIN[(spinI + i * 3) % SPIN.length]; });
+      $('orchSpin').textContent = allDoneAt ? '✓' : ch;
+    }
+
+    // dots
+    for (let i = dots.length - 1; i >= 0; i--) {
+      const d = dots[i], e = d.w.edge;
+      const k = (simNow - d.t0) / d.dur;
+      if (k >= 1) {
+        dotsG.removeChild(d.g); dots.splice(i, 1);
+        if (d.onArrive) d.onArrive();
+        continue;
+      }
+      const t = d.dir === 1 ? ease(k) : 1 - ease(k);
+      const x = e.x0 + (e.x1 - e.x0) * t, y = e.y0 + (e.y1 - e.y0) * t;
+      d.g.setAttribute('transform', 'translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ')');
+      d.g.style.opacity = k < .08 ? k / .08 : k > .92 ? (1 - k) / .08 : 1;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- boot ---------- */
+  W.forEach(setPct); overall();
+  layout();
+  // seed the bus with recent history
+  const seed = [
+    ['claude-2', 'orchestrator', 'rebasing em main — 2 conflitos em retry.rs'],
+    ['orchestrator', 'claude-2', 'ok, merge window aberta às :20'],
+    ['claude-5', 'orchestrator', 'migration 0042_ledger.sql aplicada em staging'],
+    ['claude-3', 'claude-5', 'pode usar o crate ledger-core, já exportei os tipos'],
+    ['orchestrator', 'claude-1', 'prioriza proration.rs, claude-3 depende disso'],
+    ['claude-6', 'orchestrator', 'bench search: p99 41ms → 9ms'],
+    ['claude-4', 'orchestrator', 'borrow checker won. merging'],
+    ['orchestrator', 'claude-4', 'PR #4509 aprovado. pode mergear'],
+    ['claude-1', 'orchestrator', 'tests green (118/118). review my PR #4511'],
+    ['orchestrator', 'claude-6', 'sobe canary p/ 10% e reporta'],
+  ];
+  seed.forEach((s, i) => { simNow = -((seed.length - i) * rint(700, 1300)); post(s[0], s[1], s[2]); });
+  simNow = 0;
+  requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>

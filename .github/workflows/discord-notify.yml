@@ -10,15 +10,10 @@
 #   DISCORD_WEBHOOK_ALETHE_RELEASES, DISCORD_WEBHOOK_ALETHE_UPDATES
 name: Discord notify
 
+# Alethe Orchestra (private fork): manual runs only. Upstream announced every published release,
+# issue and merged pull request on the upstream Discord; this fork's releases must not trigger it.
 on:
-  release:
-    types: [published]
-  issues:
-    types: [opened, closed]
-  # pull_request_target roda no contexto do repo base => tem acesso aos secrets.
-  # So lemos metadados (titulo/corpo/url), nunca fazemos checkout de codigo do fork, entao e seguro.
-  pull_request_target:
-    types: [closed]
+  workflow_dispatch:
 
 permissions:
   contents: read

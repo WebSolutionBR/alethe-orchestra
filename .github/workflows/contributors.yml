@@ -1,10 +1,8 @@
 name: Update contributors
 
+# Alethe Orchestra (private fork): manual runs only. Upstream ran this on every push to main and
+# weekly on a schedule, committing to README.md as github-actions[bot].
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 permissions:

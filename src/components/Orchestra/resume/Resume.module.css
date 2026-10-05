@@ -1,0 +1,300 @@
+/* Interrupted orchestrations: a strip over the Orchestra view, and the read-only record. */
+
+.strip {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--status-waiting);
+}
+
+.row + .row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.icon {
+  flex: none;
+  color: var(--status-waiting);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font: 12px var(--font-sans);
+  color: var(--fg);
+}
+
+.headline strong {
+  flex: none;
+  font-weight: 600;
+}
+
+.meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+}
+
+.why {
+  font: 11px var(--font-sans);
+  color: var(--fg-faint);
+}
+
+.where {
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Its folder is gone: the strip says so before anything can run. */
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font: 11px var(--font-sans);
+  color: var(--status-waiting);
+  overflow-wrap: anywhere;
+}
+
+.warning svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.button,
+.primary {
+  height: 26px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--fg);
+  font: 12px var(--font-sans);
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--panel-hover);
+}
+
+.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.button:focus-visible,
+.primary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.button:disabled,
+.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Narrow views: the actions go under the text. */
+@media (max-width: 720px) {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    margin-left: 28px;
+  }
+}
+
+/* ---------------------------------------------------------------- record */
+
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font: 12px var(--font-sans);
+  color: var(--fg);
+}
+
+.readOnly {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--fg-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sectionTitle {
+  margin: 0 0 6px;
+  font: 600 11px var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.goal,
+.pre {
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 11px var(--font-mono);
+}
+
+.goal {
+  max-height: 160px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
+.pre {
+  max-height: 200px;
+  margin-top: 4px;
+}
+
+.agents {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.agentHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.area,
+.state,
+.note,
+.details summary,
+.lines {
+  color: var(--fg-muted);
+}
+
+.state {
+  font-variant-numeric: tabular-nums;
+}
+
+.fate {
+  margin-left: auto;
+  color: var(--fg-faint);
+}
+
+.note {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.details summary {
+  cursor: pointer;
+}
+
+.lines {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font: 11px var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.messages {
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 11px var(--font-mono);
+}
+
+.messages time,
+.empty {
+  color: var(--fg-faint);
+}
+
+.route {
+  color: var(--fg-muted);
+}
+
+.messageText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

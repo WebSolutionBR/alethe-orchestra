@@ -1,0 +1,113 @@
+/* Why an agent needs the user. Blocked reads amber with a "!"; failed reads red with a cross,
+   so neither depends on color alone. */
+.alert {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--status-waiting);
+  background: var(--status-waiting-soft);
+  font: 11.5px/1.45 var(--font-mono);
+  color: var(--fg);
+}
+
+.alert[data-kind='failed'] {
+  border-left-color: var(--status-offline);
+  background: var(--status-offline-soft);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.tag {
+  font-weight: 600;
+  color: var(--status-waiting);
+}
+
+.alert[data-kind='failed'] .tag {
+  color: var(--status-offline);
+}
+
+.faint {
+  color: var(--fg-faint);
+}
+
+.text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.compact .text {
+  -webkit-line-clamp: 2;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.action {
+  height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--fg);
+  font: 11px var(--font-sans);
+  cursor: pointer;
+}
+
+/* An option copied from a dialog can be long; the button keeps one line, the title has it all. */
+.choice {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-hover);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.primary {
+  border-color: var(--status-waiting);
+}
+
+/* Session-level pieces: the error strip row and the failed count in the status line. */
+.stripRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stripText {
+  flex: 1;
+  min-width: 0;
+}
+
+.dotFail,
+.footFail {
+  color: var(--status-offline);
+}

@@ -1,4 +1,5 @@
 import { creativePtBR } from '../../../components/Orchestra/creative/i18n'
+import { agentsPtBR } from '../../../components/Orchestra/i18n/agents'
 import { flowPtBR } from '../../../components/Orchestra/i18n/flow'
 import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
 import { projectPtBR } from '../../../components/Orchestra/i18n/project'
@@ -11,6 +12,7 @@ import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
 import { terminalsPtBR } from '../../../components/Orchestra/i18n/terminals'
 import { timelinePtBR } from '../../../components/Orchestra/i18n/timeline'
 import { liveTerminalPtBR } from '../../../components/LiveTerminal/i18n'
+import { resumePtBR } from '../../../components/Orchestra/resume/i18n'
 import type { MessageKey } from './en'
 
 export const ptBR: Record<MessageKey, string> = {
@@ -1300,6 +1302,14 @@ export const ptBR: Record<MessageKey, string> = {
   'appClose.title': 'Fechar o Alethe?',
   'appClose.message':
     'Agentes e terminais abertos serão encerrados. As conversas salvas poderão ser retomadas quando você abrir o Alethe novamente.',
+  'appClose.orchestrasResumableOne':
+    '1 orquestração em andamento será interrompida; você poderá retomá-la quando abrir o Alethe novamente.',
+  'appClose.orchestrasResumableMany':
+    '{count} orquestrações em andamento serão interrompidas; você poderá retomá-las quando abrir o Alethe novamente.',
+  'appClose.orchestrasLostOne':
+    '1 orquestração em andamento não pôde ser salva: será encerrada e não poderá ser retomada.',
+  'appClose.orchestrasLostMany':
+    '{count} orquestrações em andamento não puderam ser salvas: serão encerradas e não poderão ser retomadas.',
   'appClose.confirm': 'Fechar o Alethe',
   'appClose.cancel': 'Cancelar',
   'appClose.failedTitle': 'Não foi possível fechar o Alethe',
@@ -2221,4 +2231,6 @@ export const ptBR: Record<MessageKey, string> = {
   ...startPtBR,
   ...attentionPtBR,
   ...liveTerminalPtBR,
+  ...agentsPtBR,
+  ...resumePtBR,
 }

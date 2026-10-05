@@ -1,4 +1,5 @@
 import { creativeEn } from '../../../components/Orchestra/creative/i18n'
+import { agentsEn } from '../../../components/Orchestra/i18n/agents'
 import { flowEn } from '../../../components/Orchestra/i18n/flow'
 import { usageEn } from '../../../components/Orchestra/usage/i18n'
 import { projectEn } from '../../../components/Orchestra/i18n/project'
@@ -11,6 +12,7 @@ import { missionEn } from '../../../components/Orchestra/i18n/mission'
 import { terminalsEn } from '../../../components/Orchestra/i18n/terminals'
 import { timelineEn } from '../../../components/Orchestra/i18n/timeline'
 import { liveTerminalEn } from '../../../components/LiveTerminal/i18n'
+import { resumeEn } from '../../../components/Orchestra/resume/i18n'
 
 export const en = {
   /* ---- loading ---- */
@@ -1287,6 +1289,14 @@ export const en = {
   'appClose.title': 'Close Alethe?',
   'appClose.message':
     'Open agents and terminals will be stopped. Saved conversations can be resumed the next time you open Alethe.',
+  'appClose.orchestrasResumableOne':
+    'One running orchestration will be interrupted; you can resume it the next time you open Alethe.',
+  'appClose.orchestrasResumableMany':
+    '{count} running orchestrations will be interrupted; you can resume them the next time you open Alethe.',
+  'appClose.orchestrasLostOne':
+    'One running orchestration could not be saved: it will be ended and cannot be resumed.',
+  'appClose.orchestrasLostMany':
+    '{count} running orchestrations could not be saved: they will be ended and cannot be resumed.',
   'appClose.confirm': 'Close Alethe',
   'appClose.cancel': 'Cancel',
   'appClose.failedTitle': 'Alethe could not close',
@@ -2206,6 +2216,8 @@ export const en = {
   ...startEn,
   ...attentionEn,
   ...liveTerminalEn,
+  ...agentsEn,
+  ...resumeEn,
 } as const
 
 export type MessageKey = keyof typeof en

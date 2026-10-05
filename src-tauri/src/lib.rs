@@ -21,6 +21,7 @@ mod diagnostics;
 mod discord_presence;
 mod economy_agents;
 mod event_bus;
+mod export;
 mod filesystem;
 mod ghostty_bridge;
 #[cfg(all(target_os = "macos", ghostty_linked))]
@@ -296,6 +297,7 @@ pub fn run() {
             filesystem::list_directory,
             filesystem::read_text_file,
             filesystem::write_text_file,
+            export::save_text_file,
             filesystem::rename_filesystem_entry,
             filesystem::delete_filesystem_entry,
             filesystem::ensure_todo_template,

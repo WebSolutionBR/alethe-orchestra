@@ -1,0 +1,50 @@
+.mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  font: 10.5px var(--font-mono);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.glyph {
+  font-weight: 600;
+}
+
+.mark[data-status='delivered'] .glyph {
+  color: var(--status-working);
+}
+
+.mark[data-status='failed'] {
+  color: var(--status-offline);
+}
+
+.resend {
+  height: 18px;
+  padding: 0 7px;
+  border: 1px solid var(--status-offline);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--status-offline);
+  font: 10.5px var(--font-sans);
+  cursor: pointer;
+}
+
+.resend:hover {
+  background: var(--status-offline-soft);
+}
+
+.resend:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

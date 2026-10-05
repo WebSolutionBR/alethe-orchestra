@@ -40,6 +40,7 @@ mod mcp_store;
 mod opencode_bridge;
 mod opencode_gsd_plugin;
 mod opencode_sessions;
+mod orchestra;
 mod paths;
 mod planning;
 mod planning_gate;
@@ -249,6 +250,15 @@ pub fn run() {
             agent_events::agent_hooks_settings_path,
             agent_events::agent_hooks_endpoint,
             agent_events::agent_hooks_token,
+            orchestra::orchestra_prepare,
+            orchestra::orchestra_reset,
+            orchestra::orchestra_end,
+            orchestra::orchestra_resume,
+            orchestra::orchestra_write_task,
+            orchestra::orchestra_manifest_save,
+            orchestra::orchestra_manifest_list,
+            orchestra::orchestra_manifest_remove,
+            orchestra::orchestra_folder_exists,
             legacy_import::legacy_alethe_status,
             legacy_import::legacy_alethe_read_projects,
             legacy_import::legacy_alethe_copy_accounts,

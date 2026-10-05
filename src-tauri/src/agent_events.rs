@@ -53,6 +53,17 @@ fn wait_for_listener_port() -> Option<u16> {
     }
 }
 
+/// Listener endpoint for other modules (Orchestra), waiting briefly for startup.
+pub(crate) fn current_endpoint() -> Result<String, String> {
+    wait_for_listener_port()
+        .map(listener_endpoint)
+        .ok_or_else(|| "agent listener is not available yet".to_string())
+}
+
+pub(crate) fn current_token() -> String {
+    init_token().to_string()
+}
+
 #[tauri::command]
 pub fn agent_hooks_endpoint() -> Result<String, String> {
     let port = wait_for_listener_port()
@@ -70,7 +81,7 @@ pub fn agent_hooks_settings_path() -> Result<String, String> {
     let port = wait_for_listener_port()
         .ok_or_else(|| "listener de agents ainda nao esta disponivel".to_string())?;
     let endpoint = listener_endpoint(port);
-    let path = std::env::temp_dir().join("alethe-agent-hooks.json");
+    let path = std::env::temp_dir().join("alethe-orchestra-agent-hooks.json");
     let token = init_token();
     let hook = serde_json::json!([
         { "hooks": [ {
@@ -158,6 +169,19 @@ pub fn start_listener(app: AppHandle) {
             // processo real (claude/codex/opencode) via
             // `curl -X POST /spawn -d '{"agent":"codex","task":"...","mode":"exec"}'`.
             // O Alethe emite `agent-spawn`; o front sobe um PTY worker. Campos:
+
+            if url.starts_with("/orchestra/") {
+                let (status, response) = crate::orchestra::handle(&app, &url, &body);
+                let _ = request.respond(
+                    tiny_http::Response::from_string(response)
+                        .with_status_code(status)
+                        .with_header(
+                            tiny_http::Header::from_bytes("Content-Type", "application/json")
+                                .unwrap(),
+                        ),
+                );
+                continue;
+            }
 
             if url.starts_with("/spawn") {
                 match serde_json::from_str::<serde_json::Value>(&body) {

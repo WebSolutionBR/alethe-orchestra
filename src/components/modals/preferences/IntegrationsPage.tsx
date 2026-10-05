@@ -8,15 +8,11 @@ import {
   cliShimUninstall,
 } from '../../../lib/tauri'
 import { useProjectsStore } from '../../../stores/projectsStore'
+import { ScribeSettings } from '../../Orchestra/scribe/ScribeSettings'
 import controls from '../controls.module.css'
 import styles from '../PreferencesModal.module.css'
 import { SettingsSection } from './primitives'
 
-   
-                                                                            
-                                                                           
-                                                       
-   
 function TerminalCommandSection() {
   const t = useT()
   const [status, setStatus] = useState<CliShimStatus | null>(null)
@@ -188,6 +184,8 @@ export function IntegrationsPage() {
         </div>
         <p>{t('prefs.dictationHandyHint')}</p>
       </SettingsSection>
+
+      <ScribeSettings />
     </>
   )
 }

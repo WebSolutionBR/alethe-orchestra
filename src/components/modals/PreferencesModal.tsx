@@ -286,6 +286,13 @@ export function PreferencesModal() {
         keywords: 'dictation voice mic microphone ditado voz microfone handy speech',
       },
       {
+        category: 'integrations',
+        target: 'obsidian-scribe',
+        label: 'Obsidian',
+        description: 'Escriba do Orchestra / Orchestra scribe',
+        keywords: 'obsidian escriba scribe nota sessao session note vault rest api orchestra',
+      },
+      {
         category: 'about',
         target: 'app-version',
         label: t('prefs.aboutVersionTitle'),
@@ -488,22 +495,22 @@ export function PreferencesModal() {
             <div ref={contentRef} className={styles.content}>
               <div className={styles.contentInner}>
                 <ErrorBoundary label="preferences-page">
-                {category === 'account' ? (
-                  <AccountPage
-                    avatarUrl={avatarUrl}
-                    initial={initial}
-                    onManageAccounts={() => openModal('profiles')}
-                  />
-                ) : null}
-                {category === 'appearance' ? <AppearancePage /> : null}
-                {category === 'features' ? <FeaturesPage /> : null}
-                {category === 'terminal' ? <TerminalPage enabledCount={enabledCount} /> : null}
-                {category === 'integrations' ? <IntegrationsPage /> : null}
-                {category === 'multiagent' ? <MultiagentPage /> : null}
-                {category === 'organization' ? <OrganizationPage /> : null}
-                {category === 'about' ? <AboutPage /> : null}
-                {category === 'remoteControl' ? <RemoteControlPage /> : null}
-                {category === 'claudeAccounts' ? <ClaudeAccountsPage /> : null}
+                  {category === 'account' ? (
+                    <AccountPage
+                      avatarUrl={avatarUrl}
+                      initial={initial}
+                      onManageAccounts={() => openModal('profiles')}
+                    />
+                  ) : null}
+                  {category === 'appearance' ? <AppearancePage /> : null}
+                  {category === 'features' ? <FeaturesPage /> : null}
+                  {category === 'terminal' ? <TerminalPage enabledCount={enabledCount} /> : null}
+                  {category === 'integrations' ? <IntegrationsPage /> : null}
+                  {category === 'multiagent' ? <MultiagentPage /> : null}
+                  {category === 'organization' ? <OrganizationPage /> : null}
+                  {category === 'about' ? <AboutPage /> : null}
+                  {category === 'remoteControl' ? <RemoteControlPage /> : null}
+                  {category === 'claudeAccounts' ? <ClaudeAccountsPage /> : null}
                 </ErrorBoundary>
               </div>
             </div>

@@ -37,6 +37,7 @@ mod mcp_catalog;
 mod mcp_health;
 mod mcp_model;
 mod mcp_store;
+mod obsidian;
 mod opencode_bridge;
 mod opencode_gsd_plugin;
 mod opencode_sessions;
@@ -55,6 +56,7 @@ mod remote;
 mod resource_manager;
 mod resources;
 mod scheduler;
+mod scribe_runner;
 mod session_watcher;
 mod skills;
 mod spotify;
@@ -263,6 +265,23 @@ pub fn run() {
             legacy_import::legacy_alethe_read_projects,
             legacy_import::legacy_alethe_copy_accounts,
             legacy_import::legacy_alethe_mark,
+            obsidian::obsidian_detect_vaults,
+            obsidian::obsidian_status,
+            obsidian::obsidian_append,
+            obsidian::obsidian_search,
+            obsidian::obsidian_read,
+            obsidian::obsidian_list,
+            obsidian::obsidian_write_context,
+            obsidian::obsidian_remove_context,
+            obsidian::obsidian_put,
+            obsidian::obsidian_patch_heading,
+            scribe_runner::scribe_author_run,
+            scribe_runner::scribe_author_cancel,
+            scribe_runner::scribe_material_append,
+            scribe_runner::scribe_material_read,
+            scribe_runner::scribe_material_remove,
+            scribe_runner::scribe_vault_index,
+            scribe_runner::scribe_read_sources,
             codex_app_server::codex_app_server_start,
             codex_app_server::codex_app_server_send,
             codex_app_server::codex_app_server_stop,

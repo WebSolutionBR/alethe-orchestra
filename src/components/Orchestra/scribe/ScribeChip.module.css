@@ -1,0 +1,529 @@
+/* The chip takes its state color from --scribe-tone (set inline from theme tokens). */
+.chip {
+  --scribe-tone: var(--agent-obsidian);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 260px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--agent-obsidian);
+  border-radius: 5px;
+  background: var(--agent-obsidian-soft);
+  color: var(--fg);
+  font: 500 12px var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--panel-hover);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.chip[data-state='failing'] {
+  border-color: var(--status-waiting);
+  background: var(--status-waiting-soft);
+}
+
+.chip[data-state='off'] {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+}
+
+.icon {
+  flex: none;
+  color: var(--scribe-tone);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--scribe-tone);
+  font: 11px var(--font-mono);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--scribe-tone);
+}
+
+.dot[data-pulse] {
+  animation: scribePulse 1.2s var(--ease-out-fluid);
+}
+
+.chip[data-state='writing'] .dot {
+  animation: scribeBlink 0.9s ease-in-out infinite;
+}
+
+@keyframes scribePulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--agent-obsidian);
+  }
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes scribeBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-pulse],
+  .chip[data-state='writing'] .dot {
+    animation: none;
+  }
+}
+
+/* Same breakpoints as the rest of the session top bar (container `orchestra-top`). */
+@container orchestra-top (max-width: 1180px) {
+  .name {
+    display: none;
+  }
+}
+
+@container orchestra-top (max-width: 600px) {
+  .stateText {
+    display: none;
+  }
+}
+
+/* ---------- panel ---------- */
+
+.panel {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-top: 2px solid var(--agent-obsidian);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  color: var(--fg);
+  font: 12px/1.45 var(--font-sans);
+  scrollbar-width: thin;
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.badge {
+  font: 11px var(--font-mono);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.iconBtn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-faint);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.role {
+  margin: -4px 0 0;
+  color: var(--fg-faint);
+  font-size: 11.5px;
+}
+
+.warning {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--status-waiting);
+  border-radius: var(--radius-sm);
+  background: var(--status-waiting-soft);
+}
+
+.warning p {
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  color: var(--fg);
+}
+
+.warning p svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--status-waiting);
+}
+
+.detail {
+  overflow-wrap: anywhere;
+  color: var(--fg-muted);
+  font: 11px var(--font-mono);
+}
+
+.actions,
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font: 500 12px var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.primary {
+  border-color: var(--agent-obsidian);
+  background: var(--agent-obsidian-soft);
+  color: var(--fg);
+}
+
+.primary:hover:not(:disabled) {
+  border-color: var(--agent-obsidian);
+}
+
+.facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.facts dt {
+  color: var(--fg-faint);
+}
+
+.facts dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--fg-muted);
+  font: 11.5px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  margin: 0;
+  color: var(--status-offline);
+}
+
+.facts dd.error {
+  color: var(--status-offline);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--agent-obsidian);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
+.preview span {
+  color: var(--fg-faint);
+  font-size: 11px;
+}
+
+.preview p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--fg-muted);
+  font: 11.5px/1.5 var(--font-mono);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+/* ---------- Obsidian context consulted before the session started ---------- */
+
+.chip[data-context='failed'] .icon {
+  color: var(--status-waiting);
+}
+
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+
+.contextHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--fg-faint);
+  font-size: 11px;
+}
+
+.linkBtn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 11px var(--font-sans);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  color: var(--fg);
+}
+
+.linkBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.contextNote {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+.contextWarn {
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--status-waiting);
+  border-radius: var(--radius-sm);
+  background: var(--status-waiting-soft);
+  color: var(--fg);
+  font-size: 11.5px;
+}
+
+.contextWarn svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--status-waiting);
+}
+
+.contextList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contextItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  font: 11.5px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.contextItem svg {
+  flex: none;
+  color: var(--agent-obsidian);
+}
+
+.contextItem:hover:not(:disabled) {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.contextItem:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.contextItem:disabled {
+  cursor: default;
+}
+
+.contextTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextKind {
+  flex: none;
+  color: var(--fg-faint);
+  font: 10.5px var(--font-mono);
+}
+
+/* The session's note in the facts: opens in Obsidian. */
+.noteBtn {
+  overflow: hidden;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--agent-obsidian);
+  font: 11.5px var(--font-mono);
+  text-align: left;
+  text-decoration: underline;
+  text-overflow: ellipsis;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.noteBtn:hover:not(:disabled) {
+  color: var(--fg);
+}
+.noteBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+.noteBtn:disabled {
+  color: var(--fg-muted);
+  text-decoration: none;
+  cursor: default;
+}
+.facts dd[data-tone='error'] {
+  color: var(--status-waiting);
+}
+
+/* What the last synthesis left out. */
+.issueList {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.issueList li {
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Writes that can never go through, kept with their text. */
+.failed {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.failedList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.failedItem {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.failedPath {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font: 11.5px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.failedReason {
+  overflow: hidden;
+  color: var(--status-waiting);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.failedActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* The author is off until the owner turns it on: what it costs, and the switch. */
+.activate {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--agent-obsidian);
+  border-radius: var(--radius-sm);
+  background: var(--agent-obsidian-soft);
+}
+.activateTitle {
+  margin: 0;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+}

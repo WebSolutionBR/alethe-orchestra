@@ -1,6 +1,7 @@
 import { flowPtBR } from '../../../components/Orchestra/i18n/flow'
 import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
 import { projectPtBR } from '../../../components/Orchestra/i18n/project'
+import { scribePtBR } from '../../../components/Orchestra/i18n/scribe'
 import { sessionsPtBR } from '../../../components/Orchestra/i18n/sessions'
 import { hivePtBR } from '../../../components/Orchestra/i18n/hive'
 import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
@@ -2212,5 +2213,6 @@ export const ptBR: Record<MessageKey, string> = {
   ...hivePtBR,
   ...projectPtBR,
   ...sessionsPtBR,
+  ...scribePtBR,
   ...liveTerminalPtBR,
 }

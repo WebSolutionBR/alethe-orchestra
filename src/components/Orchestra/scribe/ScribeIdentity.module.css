@@ -1,0 +1,30 @@
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--agent-obsidian);
+}
+
+.icon {
+  flex: none;
+}
+
+.name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--agent-obsidian);
+  border-radius: var(--radius-sm);
+  background: var(--agent-obsidian-soft);
+  color: var(--agent-obsidian);
+}

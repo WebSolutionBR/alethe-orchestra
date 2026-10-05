@@ -1,6 +1,7 @@
 import { flowEn } from '../../../components/Orchestra/i18n/flow'
 import { usageEn } from '../../../components/Orchestra/usage/i18n'
 import { projectEn } from '../../../components/Orchestra/i18n/project'
+import { scribeEn } from '../../../components/Orchestra/i18n/scribe'
 import { sessionsEn } from '../../../components/Orchestra/i18n/sessions'
 import { hiveEn } from '../../../components/Orchestra/i18n/hive'
 import { missionEn } from '../../../components/Orchestra/i18n/mission'
@@ -2197,6 +2198,7 @@ export const en = {
   ...hiveEn,
   ...projectEn,
   ...sessionsEn,
+  ...scribeEn,
   ...liveTerminalEn,
 } as const
 

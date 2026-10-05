@@ -88,6 +88,20 @@ pub fn open_in_vscode(path: String) -> Result<(), String> {
     result.map(|_| ()).map_err(|e| e.to_string())
 }
 
+/// `obsidian://open?…` only (opens a note): other Obsidian actions, and plugins such as
+/// Advanced URI, can run commands, so they are never handed to the OS.
+fn is_obsidian_open_url(target: &str) -> bool {
+    let Some((scheme, rest)) = target.split_once("://") else {
+        return false;
+    };
+    scheme.eq_ignore_ascii_case("obsidian")
+        && rest.len() > "open?".len()
+        && rest.starts_with("open?")
+        && !target
+            .chars()
+            .any(|c| c.is_whitespace() || c.is_control() || c == '"')
+}
+
 #[tauri::command]
 pub fn open_in_browser(target: String) -> Result<(), String> {
     let trimmed = target.trim();
@@ -95,7 +109,10 @@ pub fn open_in_browser(target: String) -> Result<(), String> {
         return Err("target vazio".to_string());
     }
 
-    let open_target = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+    let open_target = if trimmed.starts_with("http://")
+        || trimmed.starts_with("https://")
+        || is_obsidian_open_url(trimmed)
+    {
         trimmed.to_string()
     } else {
         existing_path_from_user_input(trimmed)?
@@ -875,5 +892,27 @@ mod macos_clipboard {
         } else {
             Ok(ClipboardPayload::Text { text })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_obsidian_open_url;
+
+    #[test]
+    fn only_obsidian_open_urls_reach_the_os() {
+        assert!(is_obsidian_open_url(
+            "obsidian://open?vault=TODO&file=Alethe%20Orchestra%2F2026-10-04%20Orchestra.md"
+        ));
+        assert!(is_obsidian_open_url("OBSIDIAN://open?vault=TODO"));
+        assert!(!is_obsidian_open_url(
+            "obsidian://advanced-uri?vault=TODO&commandid=x"
+        ));
+        assert!(!is_obsidian_open_url("obsidian://new?vault=TODO&content=x"));
+        assert!(!is_obsidian_open_url("obsidian://open"));
+        assert!(!is_obsidian_open_url("obsidian://open?"));
+        assert!(!is_obsidian_open_url("obsidian://open?vault=a b"));
+        assert!(!is_obsidian_open_url("obsidian:open?vault=TODO"));
+        assert!(!is_obsidian_open_url("C:/notes/a.md"));
     }
 }

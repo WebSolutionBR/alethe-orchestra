@@ -6,25 +6,29 @@
   min-width: 0;
   min-height: 0;
   position: relative;
-                                                                     
-                                                                        
   background: var(--bg-sunken);
-  padding: 4px 6px 2px 8px;
   overflow: hidden;
   contain: size layout paint;
 }
 
-                                                                          
 .dropActive {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
+/*
+ * The breathing room lives on .xterm, not on the host: FitAddon sizes the
+ * terminal from its parent's computed box and only subtracts .xterm's own
+ * padding, so padding on the host made xterm 14px wider than its box — the
+ * last columns ran under the scrollbar and the screen covered it, so the
+ * scrollbar could not be dragged.
+ */
 .host :global(.xterm) {
   width: 100%;
   height: 100%;
   max-width: 100%;
   overflow: hidden;
+  padding: 4px 6px 2px 8px;
 }
 
 .host :global(.xterm-screen),

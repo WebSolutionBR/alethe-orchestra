@@ -60,8 +60,9 @@ import {
   writeClipboardText,
   writePty,
 } from '../../lib/tauri'
-import { sliceReplayForRestore } from '../../lib/terminalReplay'
-import { rememberTerminalSize } from '../../lib/terminalSizes'
+import { getMirror, serializeMirror } from '../../lib/terminalMirror'
+import { isReplayTailCut, prepareReplayForRestore } from '../../lib/terminalReplay'
+import { getTerminalSize, rememberTerminalSize, type TerminalSize } from '../../lib/terminalSizes'
 import {
   agentCliCommand,
   type AgentRuntimeProfile,
@@ -71,6 +72,7 @@ import {
 import { useProjectsStore } from '../../stores/projectsStore'
 import { useTerminalsStore } from '../../stores/terminalsStore'
 import { useUiStore } from '../../stores/uiStore'
+import { isFocusReport, swallowReplayedQueries } from './replayQueries'
 import {
   formatDroppedPaths,
   getTerminalScrollbackRows,
@@ -92,6 +94,9 @@ const EARLY_EXIT_MS = 4000
 
 const PANEL_RESYNC_DEBOUNCE_MS = 80
 
+/** How much of the recorded stream a restore without a mirror replays. */
+const REPLAY_MAX_BYTES = 512 * 1024
+
 function isBrowserInputPending(): boolean {
   const scheduling = (
     navigator as Navigator & {
@@ -102,6 +107,16 @@ function isBrowserInputPending(): boolean {
 }
 
 let aiMemoryMissingWarned = false
+
+/**
+ * Whether the backend should keep streaming a PTY's output to the views. A
+ * mirrored PTY always does: other views (the live transcript) read its mirror
+ * and must not drop to the throttled activity channel because this one went
+ * off screen.
+ */
+function keepPtyStreaming(ptyId: string, panelVisible: boolean): boolean {
+  return panelVisible || getMirror(ptyId) !== null
+}
 
 type BootPhase = 'preparing' | 'queued' | 'spawning' | 'attaching' | 'ready'
 
@@ -378,20 +393,77 @@ export function useXtermSession(params: {
     // Scrollback replays go straight to xterm instead of through the frame
     // budget: a few MB of history split into 16 KB slices costs one rendered
     // frame each, which is what made switching panes crawl from the top of the
-    // buffer down to the prompt.
-    const writeReplayAtOnce = (replay: string): Promise<void> =>
+    // buffer down to the prompt. `onParsed` runs right after the replay is
+    // parsed, before any chunk queued behind it.
+    const writeReplayAtOnce = (replay: string, onParsed?: () => void): Promise<void> =>
       new Promise((resolve) => {
         try {
           terminal.write(replay, () => {
+            onParsed?.()
             try {
               terminal.scrollToBottom()
             } catch {}
             resolve()
           })
         } catch {
+          onParsed?.()
           resolve()
         }
       })
+
+    // A replayed history still carries the queries the program sent back then;
+    // they are only swallowed while a replay is being parsed.
+    let replayDepth = 0
+    const replayQueryHooks = swallowReplayedQueries(terminal, () => replayDepth > 0)
+
+    const discardQueuedWrites = () => {
+      pendingWrites = []
+      pendingWriteLength = 0
+      if (writeFrame !== null) {
+        window.cancelAnimationFrame(writeFrame)
+        writeFrame = null
+      }
+      // Whoever waits for the queue to drain must not wait for writes that will never happen.
+      const resolvers = pendingWriteDrainResolvers
+      pendingWriteDrainResolvers = []
+      resolvers.forEach((resolve) => resolve())
+    }
+
+    /**
+     * Replaces the screen with `snapshot`, written at the PTY's own geometry.
+     *
+     * What the program drew carries absolute cursor moves — and, from ConPTY,
+     * runs of spaces encoded as cursor moves — for the width the PTY had, so the
+     * snapshot only lands cell for cell at that width. This view's own size
+     * reaches xterm and the PTY together afterwards (scheduleResize): xterm
+     * reflows what it shows while the program redraws for the new size. Chunks
+     * still queued are part of the snapshot and are dropped; `after` holds the
+     * chunks that arrived once it was taken, written right behind it in order.
+     */
+    const restoreScreen = (
+      snapshot: string,
+      size: TerminalSize | null,
+      after: readonly string[] = [],
+    ): Promise<void> => {
+      discardQueuedWrites()
+      if (size && (terminal.cols !== size.cols || terminal.rows !== size.rows)) {
+        try {
+          terminal.resize(size.cols, size.rows)
+        } catch {
+          fitToContainer()
+        }
+      } else if (!size) {
+        fitToContainer()
+      }
+      // The reset goes through the parser rather than terminal.reset(): anything
+      // xterm still has queued is parsed before it and cleared with the old screen.
+      replayDepth += 1
+      const written = writeReplayAtOnce(`\x1bc${snapshot}`, () => {
+        replayDepth -= 1
+      })
+      for (const chunk of after) queueTerminalWrite(chunk)
+      return written
+    }
 
     const getTerminalLineHeight = () => {
       const row = container.querySelector<HTMLElement>('.xterm-rows > div')
@@ -399,11 +471,19 @@ export function useXtermSession(params: {
     }
 
     const onWheel = (event: WheelEvent) => {
-      // TUIs (claude/codex) entram no buffer `alternate` e ligam mouse tracking.
-
-      // interceptasse o wheel (preventDefault), o evento sumia e nem o host nem
-
-      if (!shouldScrollHostScrollback(terminal.buffer.active.type, event.shiftKey)) return
+      // Full-screen TUIs (claude/codex) and any program tracking the mouse get the
+      // wheel from xterm itself: as mouse reports, or as arrow keys in the
+      // alternate screen. Intercepting it here would scroll a history they never
+      // see while they never receive it.
+      if (
+        !shouldScrollHostScrollback(
+          terminal.buffer.active.type,
+          event.shiftKey,
+          terminal.modes.mouseTrackingMode,
+        )
+      ) {
+        return
+      }
       const lines = getWheelScrollLines(event, getTerminalLineHeight())
       if (lines === 0) return
       event.preventDefault()
@@ -724,33 +804,46 @@ export function useXtermSession(params: {
       scheduleResize()
     }, 150)
 
-    // zero em vez de tentar reconciliar incrementalmente. `reset()` + replay
+    /**
+     * Brings the screen up to date with a PTY this view did not watch from its
+     * first byte (attach) or stopped watching for a while (panel hidden): rebuilt
+     * from scratch rather than reconciled incrementally.
+     */
+    const restoreHistory = async (id: string): Promise<void> => {
+      const mirror = getMirror(id)
+      const snapshot = mirror ? serializeMirror(id) : null
+      if (mirror && snapshot !== null) {
+        // Taken synchronously: every chunk delivered before this line is in the
+        // snapshot and every later one reaches the stream listener, so nothing is
+        // lost or written twice. It is already at the PTY's real size.
+        await restoreScreen(snapshot, { cols: mirror.cols, rows: mirror.rows })
+        return
+      }
+      // No mirror: replay the recorded stream at the size the PTY was last given.
+      const arrivedDuringFetch: string[] = []
+      resyncCaptureRef = arrivedDuringFetch
+      let replay: string
+      try {
+        replay = await attachPty(id, REPLAY_MAX_BYTES)
+      } catch {
+        return
+      } finally {
+        resyncCaptureRef = null
+      }
+      if (disposed) return
+      const prepared = prepareReplayForRestore(replay, {
+        cut: isReplayTailCut(replay, REPLAY_MAX_BYTES),
+      })
+      await restoreScreen(prepared, getTerminalSize(id), arrivedDuringFetch)
+    }
 
     const doResync = async () => {
       const id = ptyIdRef.current
       if (!id || disposed) return
-      try {
-        const arrivedDuringFetch: string[] = []
-        resyncCaptureRef = arrivedDuringFetch
-        const replay = await attachPty(id)
-        resyncCaptureRef = null
-        if (disposed) return
-        terminal.reset()
-        // Same reason as the attach path: a resync usually fires when the pane
-        // comes back on screen, and the window may have been resized while it was
-        // hidden, so the replay must not be written at the stale width.
-        fitToContainer()
-        pendingWrites = []
-        pendingWriteLength = 0
-        if (writeFrame !== null) {
-          window.cancelAnimationFrame(writeFrame)
-          writeFrame = null
-        }
-        if (replay) void writeReplayAtOnce(sliceReplayForRestore(replay))
-        for (const chunk of arrivedDuringFetch) queueTerminalWrite(chunk)
-      } catch {
-        resyncCaptureRef = null
-      }
+      await restoreHistory(id)
+      // The snapshot left xterm at the PTY's size; the pane may have changed while
+      // hidden without a resize being observed.
+      if (!disposed) scheduleResize()
     }
     resyncTerminalRef.current = doResync
 
@@ -794,7 +887,9 @@ export function useXtermSession(params: {
       useTerminalsStore.getState().registerPty(existingId)
       onSpawnedRef.current?.(existingId)
 
-      void setPtyVisible(existingId, isPanelVisibleRef.current).catch(() => {})
+      void setPtyVisible(existingId, keepPtyStreaming(existingId, isPanelVisibleRef.current)).catch(
+        () => {},
+      )
 
       if (command === 'claude' || command === 'codex' || command === 'opencode') {
         completionMonitor = new AgentCompletionMonitor({
@@ -815,27 +910,13 @@ export function useXtermSession(params: {
       // program believed it had drawn no longer matched the one on display.
       if (!(await registerPtyStreamListeners(existingId))) return
 
-      if (isPanelVisibleRef.current) {
-        const arrivedDuringFetch: string[] = []
-        resyncCaptureRef = arrivedDuringFetch
-        const replay = await attachPty(existingId).catch(() => '')
-        resyncCaptureRef = null
+      // The history is written at the PTY's own size (see restoreScreen); the PTY
+      // is resized to this view by the scheduleResize() further down, once it is
+      // written, so the program is not asked to redraw in the middle of it. With a
+      // mirror the restore costs nothing, so a view that mounts hidden gets it too.
+      if (getMirror(existingId) || isPanelVisibleRef.current) {
+        await restoreHistory(existingId)
         if (disposed) return
-        // A recorded stream only replays faithfully from a known screen state,
-        // so the terminal is cleared first and the replay starts at the last
-        // point the program cleared the screen itself.
-        terminal.reset()
-        // The recorded stream carries absolute cursor moves made at the width the
-        // program was drawing at. Replaying it into a terminal that is still at the
-        // mount-time geometry lands those moves on the wrong columns, and xterm's
-        // reflow when the real size arrives afterwards leaves the block drawn twice.
-        // Only the local geometry is settled here: the PTY is resized by the
-        // scheduleResize() further down, so the program is not asked to redraw while
-        // the replay is still being written.
-        fitToContainer()
-        if (replay) await writeReplayAtOnce(sliceReplayForRestore(replay))
-        if (disposed) return
-        for (const chunk of arrivedDuringFetch) queueTerminalWrite(chunk)
       }
 
       const exitUnlisten = await listenPtyExit(existingId, (payload) => {
@@ -870,6 +951,9 @@ export function useXtermSession(params: {
 
     terminal.onData((data) => {
       if (readOnly) return
+      // A replay that turns focus reporting back on makes xterm report the focus
+      // state right away; a restore must not send the program anything.
+      if (replayDepth > 0 && isFocusReport(data)) return
       const id = ptyIdRef.current
       if (!id) return
       useTerminalsStore.getState().recordIo(id)
@@ -1171,6 +1255,9 @@ export function useXtermSession(params: {
           releaseSpawnSlot()
         }
         console.info(`[pty-launch] ${command ?? 'shell'} spawn OK id=${response.id}`)
+        // Its birth size, so a view that attaches later replays its first frames
+        // at the width they were drawn at even before the first resize.
+        rememberTerminalSize(response.id, terminal.cols, terminal.rows)
         spawnedAtRef.current = Date.now()
         usedResumeRef.current = Boolean(resumeId)
         if (disposed) return
@@ -1179,9 +1266,12 @@ export function useXtermSession(params: {
         useTerminalsStore.getState().registerPty(response.id)
         onSpawnedRef.current?.(response.id)
 
-        // visibilidade correta desde o primeiro lote (ex.: pane aberto num
-
-        void setPtyVisible(response.id, isPanelVisibleRef.current).catch(() => {})
+        // Visibility is right from the first batch (a pane spawned in a background tab streams as
+        // activity only).
+        void setPtyVisible(
+          response.id,
+          keepPtyStreaming(response.id, isPanelVisibleRef.current),
+        ).catch(() => {})
         if (command && cwd && launch.sessionId) {
           // Owned by the tab as well as the PTY: the PTY id changes on every
           // respawn, and a claim only reachable through a dead PTY id would make
@@ -1488,6 +1578,7 @@ export function useXtermSession(params: {
       unlistenDragDrop?.()
       linkProviderDisposable?.dispose()
       linkScrollDisposable?.dispose()
+      replayQueryHooks.forEach((hook) => hook.dispose())
       completionMonitor?.dispose()
       completionMonitor = null
       setLinkActions(null)
@@ -1519,7 +1610,7 @@ export function useXtermSession(params: {
     const ioAtNow = () => useTerminalsStore.getState().byPtyId[ptyId]?.lastIoAt ?? 0
     if (!isPanelVisible) lastIoWhenHiddenRef.current = ioAtNow()
 
-    void setPtyVisible(ptyId, isPanelVisible)
+    void setPtyVisible(ptyId, keepPtyStreaming(ptyId, isPanelVisible))
       .catch(() => false)
       .then((applied) => {
         if (!applied && isPanelVisible) {

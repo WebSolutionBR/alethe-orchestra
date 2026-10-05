@@ -25,6 +25,16 @@ describe('getWheelScrollLines', () => {
     expect(getWheelScrollLines({ deltaMode: 1, deltaY: 3 }, 20)).toBe(3)
     expect(getWheelScrollLines({ deltaMode: 2, deltaY: -1 }, 20)).toBe(-10)
   })
+
+  it('reads a Windows Shift+wheel, which arrives as a sideways scroll, as lines', () => {
+    // Chromium on Windows turns Shift+wheel into deltaX with no deltaY.
+    expect(getWheelScrollLines({ deltaMode: 1, deltaY: 0, deltaX: -3, shiftKey: true }, 20)).toBe(
+      -3,
+    )
+    expect(getWheelScrollLines({ deltaMode: 0, deltaY: 0, deltaX: 40, shiftKey: true }, 20)).toBe(2)
+    // Without Shift a sideways scroll is not a vertical one.
+    expect(getWheelScrollLines({ deltaMode: 1, deltaY: 0, deltaX: -3 }, 20)).toBe(0)
+  })
 })
 
 describe('getTerminalScrollbackRows', () => {
@@ -52,6 +62,24 @@ describe('shouldScrollHostScrollback', () => {
   it('lets Shift+wheel force host scrollback even in the alternate buffer', () => {
     expect(shouldScrollHostScrollback('alternate', true)).toBe(true)
     expect(shouldScrollHostScrollback('normal', true)).toBe(true)
+  })
+
+  it('hands the wheel to a program that tracks the mouse, in either buffer', () => {
+    // A restored full-screen agent that tracks the mouse must get the wheel as mouse
+    // reports; scrolling the view's own history instead left the agent unscrollable.
+    expect(shouldScrollHostScrollback('normal', false, 'any')).toBe(false)
+    expect(shouldScrollHostScrollback('normal', false, 'vt200')).toBe(false)
+    expect(shouldScrollHostScrollback('alternate', false, 'drag')).toBe(false)
+  })
+
+  it('treats X10 tracking as no tracking, since it never reports the wheel', () => {
+    expect(shouldScrollHostScrollback('normal', false, 'x10')).toBe(true)
+    expect(shouldScrollHostScrollback('alternate', false, 'x10')).toBe(false)
+  })
+
+  it('keeps Shift+wheel on the history over a program that tracks the mouse', () => {
+    expect(shouldScrollHostScrollback('normal', true, 'any')).toBe(true)
+    expect(shouldScrollHostScrollback('alternate', true, 'any')).toBe(true)
   })
 })
 

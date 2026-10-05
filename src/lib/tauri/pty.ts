@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
+import { getMirror } from '../terminalMirror/store'
 import { getTerminalSize } from '../terminalSizes'
 
 export type SpawnPtyArgs = {
@@ -45,8 +46,20 @@ export async function writePty(id: string, data: string): Promise<void> {
   await invoke('write_pty', { id, data })
 }
 
+/** Latest resize request per PTY: resize_pty calls can settle out of order. */
+const pendingMirrorResize = new Map<string, number>()
+/** Request numbers are never reused, so a late answer can never pass for a newer request. */
+let resizeRequests = 0
+
 export async function resizePty(id: string, cols: number, rows: number): Promise<void> {
+  const request = ++resizeRequests
+  pendingMirrorResize.set(id, request)
   await invoke('resize_pty', { id, cols, rows })
+  // Keep the PTY's mirror at the size the backend just applied, unless a newer request superseded
+  // this one while it was in flight.
+  if (pendingMirrorResize.get(id) !== request) return
+  pendingMirrorResize.delete(id)
+  getMirror(id)?.resize(cols, rows)
 }
 
 export async function killPty(id: string): Promise<void> {

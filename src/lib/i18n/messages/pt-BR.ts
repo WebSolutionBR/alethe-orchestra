@@ -6,6 +6,7 @@ import { hivePtBR } from '../../../components/Orchestra/i18n/hive'
 import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
 import { terminalsPtBR } from '../../../components/Orchestra/i18n/terminals'
 import { timelinePtBR } from '../../../components/Orchestra/i18n/timeline'
+import { liveTerminalPtBR } from '../../../components/LiveTerminal/i18n'
 import type { MessageKey } from './en'
 
 export const ptBR: Record<MessageKey, string> = {
@@ -2211,4 +2212,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...hivePtBR,
   ...projectPtBR,
   ...sessionsPtBR,
+  ...liveTerminalPtBR,
 }

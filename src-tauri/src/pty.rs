@@ -105,6 +105,63 @@ fn activity_emit_due(last_activity_emit: Option<Instant>, interval_ms: u128) -> 
     }
 }
 
+/// Output of a PTY no view is showing, batched into `pty://activity` events instead of
+/// `pty://data`. Every byte goes out exactly once and in order: when the interval is due, when the
+/// batch reaches its cap, when the PTY turns visible again, when the reader goes quiet and at the
+/// end of the stream. The frontend's terminal mirrors rebuild hidden PTYs from these batches, so
+/// nothing may be dropped.
+struct ActivityBatch {
+    pending: String,
+    last_emit: Option<Instant>,
+}
+
+impl ActivityBatch {
+    /// Bounds the memory a hidden PTY holds between batches; reaching it sends the batch early.
+    const CAP: usize = 256 * 1024;
+
+    fn new() -> Self {
+        Self {
+            pending: String::new(),
+            last_emit: None,
+        }
+    }
+
+    /// Queues hidden output and returns the batch to emit now, if one is due.
+    fn push(&mut self, text: &str) -> Option<String> {
+        self.pending.push_str(text);
+        if self.pending.len() >= Self::CAP
+            || activity_emit_due(self.last_emit, PTY_ACTIVITY_EMIT_INTERVAL_MS)
+        {
+            return self.take();
+        }
+        None
+    }
+
+    /// Everything still pending, if anything.
+    fn flush(&mut self) -> Option<String> {
+        if self.pending.is_empty() {
+            return None;
+        }
+        self.take()
+    }
+
+    /// How long the reader may wait for more output before the pending batch must go out.
+    fn flush_in(&self) -> Option<Duration> {
+        if self.pending.is_empty() {
+            return None;
+        }
+        let interval = Duration::from_millis(PTY_ACTIVITY_EMIT_INTERVAL_MS as u64);
+        Some(self.last_emit.map_or(Duration::ZERO, |last| {
+            interval.saturating_sub(last.elapsed())
+        }))
+    }
+
+    fn take(&mut self) -> Option<String> {
+        self.last_emit = Some(Instant::now());
+        Some(std::mem::take(&mut self.pending))
+    }
+}
+
 pub struct PtySession {
     pub pty_id: String,
 
@@ -438,13 +495,11 @@ pub async fn spawn_pty(
         let mut batch: Vec<u8> = Vec::new();
                                                                        
                                                                            
-        let mut last_activity_emit: Option<Instant> = None;
+        let mut activity = ActivityBatch::new();
                                                                          
                                                                               
                                                                             
                                                          
-        let mut activity_pending = String::new();
-        const ACTIVITY_PENDING_CAP: usize = 256 * 1024;
 
                                                                           
                                                                              
@@ -458,7 +513,7 @@ pub async fn spawn_pty(
                                                                                
         // amostrar o stream faria um agente em segundo plano nunca sair de
                                                                        
-        let mut emit_data_or_activity = |text: &str| {
+        let emit_data_or_activity = |activity: &mut ActivityBatch, text: &str| {
                                                                            
                                                                              
                                                                   
@@ -466,22 +521,16 @@ pub async fn spawn_pty(
                 serde_json::json!({ "type": "pty_output", "ptyId": &remote_pty_id, "text": text })
             });
             if thread_visible.load(Ordering::Relaxed) {
-                if !activity_pending.is_empty() {
-                    activity_pending.clear();
+                // Output batched while hidden goes out first, so listeners that follow both
+                // events (the terminal mirrors) see the stream whole and in order.
+                if let Some(pending) = activity.flush() {
+                    let _ = event_app.emit(&activity_event_name, pending.as_str());
                 }
                 let _ = event_app.emit(&event_name, text);
                 return;
             }
-            activity_pending.push_str(text);
-            if activity_pending.len() > ACTIVITY_PENDING_CAP {
-                let drop_to = activity_pending.len() - ACTIVITY_PENDING_CAP;
-                let boundary = align_to_char_boundary(activity_pending.as_bytes(), drop_to);
-                activity_pending.drain(..boundary);
-            }
-            if activity_emit_due(last_activity_emit, PTY_ACTIVITY_EMIT_INTERVAL_MS) {
-                let _ = event_app.emit(&activity_event_name, activity_pending.as_str());
-                activity_pending.clear();
-                last_activity_emit = Some(Instant::now());
+            if let Some(due) = activity.push(text) {
+                let _ = event_app.emit(&activity_event_name, due.as_str());
             }
         };
 
@@ -500,7 +549,24 @@ pub async fn spawn_pty(
         loop {
                                                                              
                                                                              
-            let Some(first) = rx.recv().await else { break };
+            // With hidden output pending, wait for more only until its batch is due: a PTY that
+            // goes quiet must not keep its last frame back.
+            let first = match activity.flush_in() {
+                Some(wait) => match tokio::time::timeout(wait, rx.recv()).await {
+                    Ok(Some(chunk)) => chunk,
+                    Ok(None) => break,
+                    Err(_) => {
+                        if let Some(pending) = activity.flush() {
+                            let _ = event_app.emit(&activity_event_name, pending.as_str());
+                        }
+                        continue;
+                    }
+                },
+                None => match rx.recv().await {
+                    Some(chunk) => chunk,
+                    None => break,
+                },
+            };
             batch.extend_from_slice(&first);
 
                                                                            
@@ -580,7 +646,7 @@ pub async fn spawn_pty(
                 if valid > 0 {
                                                                             
                     let text = unsafe { std::str::from_utf8_unchecked(&batch[..valid]) };
-                    emit_data_or_activity(text);
+                    emit_data_or_activity(&mut activity, text);
                 }
                 if valid < count {
                     carry.extend_from_slice(&batch[valid..]);
@@ -591,7 +657,7 @@ pub async fn spawn_pty(
                 if valid > 0 {
                                                                             
                     let text = unsafe { std::str::from_utf8_unchecked(&carry[..valid]) };
-                    emit_data_or_activity(text);
+                    emit_data_or_activity(&mut activity, text);
                     carry.drain(..valid);
                 }
             }
@@ -601,7 +667,7 @@ pub async fn spawn_pty(
                                                                       
             if carry.len() > 3 {
                 let lossy = String::from_utf8_lossy(&carry).into_owned();
-                emit_data_or_activity(lossy.as_str());
+                emit_data_or_activity(&mut activity, lossy.as_str());
                 carry.clear();
             }
 
@@ -609,6 +675,11 @@ pub async fn spawn_pty(
 
                                                                      
             tokio::time::sleep(Duration::from_millis(2)).await;
+        }
+
+        // Hidden output still batched goes out before the tail, keeping the stream order.
+        if let Some(pending) = activity.flush() {
+            let _ = event_app.emit(&activity_event_name, pending.as_str());
         }
 
         // Flush de qualquer cauda restante no fim do stream.
@@ -1509,7 +1580,15 @@ pub fn cleanup_orphan_scrollback(app: &AppHandle) {
     if projects_text.is_empty() {
         return;
     }
-    let Ok(entries) = fs::read_dir(&dir) else {
+    // An orchestration cut short by closing the app keeps its agents' transcripts while its
+    // manifest exists (see `orchestra::kept_scrollback_prefixes`).
+    let kept = crate::orchestra::kept_scrollback_prefixes(app);
+    sweep_orphan_scrollback(&dir, &projects_text, &kept);
+}
+
+/// Deletes the `.bin` files in `dir` named neither in `projects_text` nor by a `kept` prefix.
+fn sweep_orphan_scrollback(dir: &Path, projects_text: &str, kept: &[String]) {
+    let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
     for entry in entries.flatten() {
@@ -1520,7 +1599,8 @@ pub fn cleanup_orphan_scrollback(app: &AppHandle) {
         let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        if !projects_text.contains(stem) {
+        let kept_by_orchestra = kept.iter().any(|prefix| stem.starts_with(prefix.as_str()));
+        if !projects_text.contains(stem) && !kept_by_orchestra {
             let _ = fs::remove_file(&path);
         }
     }
@@ -1680,6 +1760,59 @@ mod tests {
     }
 
     #[test]
+    fn activity_batch_sends_the_first_chunk_then_holds_the_rest_until_due() {
+        let mut batch = ActivityBatch::new();
+        assert_eq!(batch.flush_in(), None);
+        assert_eq!(batch.push("a").as_deref(), Some("a"));
+        assert_eq!(batch.push("b"), None);
+        assert_eq!(batch.push("c"), None);
+        let wait = batch.flush_in().expect("pending output has a deadline");
+        assert!(wait <= Duration::from_millis(PTY_ACTIVITY_EMIT_INTERVAL_MS as u64));
+
+        // Once the interval passed, the next chunk carries everything held so far.
+        batch.last_emit =
+            Some(Instant::now() - Duration::from_millis(PTY_ACTIVITY_EMIT_INTERVAL_MS as u64 + 1));
+        assert_eq!(batch.flush_in(), Some(Duration::ZERO));
+        assert_eq!(batch.push("d").as_deref(), Some("bcd"));
+        assert_eq!(batch.flush(), None);
+        assert_eq!(batch.flush_in(), None);
+    }
+
+    #[test]
+    fn activity_batch_flush_returns_what_a_quiet_or_visible_pty_held_back() {
+        let mut batch = ActivityBatch::new();
+        batch.push("frame 1");
+        assert_eq!(batch.push(" frame 2"), None);
+        assert_eq!(batch.flush().as_deref(), Some(" frame 2"));
+        assert_eq!(batch.flush(), None);
+    }
+
+    #[test]
+    fn activity_batch_sends_at_the_cap_and_never_drops_output() {
+        let mut batch = ActivityBatch::new();
+        let mut sent = String::new();
+        let mut expected = String::new();
+        sent.push_str(&batch.push("start").expect("first chunk goes out"));
+        expected.push_str("start");
+        let chunk = "x".repeat(64 * 1024);
+        let mut early = 0;
+        for i in 0..10 {
+            let text = format!("{i}{chunk}");
+            expected.push_str(&text);
+            if let Some(out) = batch.push(&text) {
+                assert!(out.len() >= ActivityBatch::CAP);
+                early += 1;
+                sent.push_str(&out);
+            }
+        }
+        assert!(early >= 2, "a batch over the cap goes out without waiting");
+        if let Some(rest) = batch.flush() {
+            sent.push_str(&rest);
+        }
+        assert_eq!(sent, expected);
+    }
+
+    #[test]
     fn valid_utf8_prefix_carry_reassembles_split_char() {
         let full = "xé".as_bytes(); // [b'x', 0xC3, 0xA9]
         let first = &full[..2]; // "x" + 0xC3
@@ -1689,5 +1822,39 @@ mod tests {
         let mut carry = first[valid..].to_vec();
         carry.extend_from_slice(&full[2..]); // + 0xA9
         assert_eq!(valid_utf8_prefix_len(&carry), carry.len());
+    }
+
+    #[test]
+    fn orphan_sweep_keeps_project_and_resumable_orchestra_scrollback() {
+        let dir = std::env::temp_dir().join(format!("pty-sweep-test-{}", nanoid::nanoid!(10)));
+        fs::create_dir_all(&dir).unwrap();
+        for name in [
+            "term-1.bin",
+            "term-2.bin",
+            "orchestra-oaaaaaaa-claude-1-1700000000000.bin",
+            "orchestra-obbbbbbb-claude-1-1700000000001.bin",
+            "notes.txt",
+        ] {
+            fs::write(dir.join(name), "x").unwrap();
+        }
+        let projects_text = r#"{"terminals":[{"id":"term-1"}]}"#;
+        let kept = vec!["orchestra-oaaaaaaa-".to_string()];
+
+        sweep_orphan_scrollback(&dir, projects_text, &kept);
+
+        let mut left: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(
+            left,
+            [
+                "notes.txt",
+                "orchestra-oaaaaaaa-claude-1-1700000000000.bin",
+                "term-1.bin",
+            ]
+        );
     }
 }

@@ -1,0 +1,16 @@
+/* Fills the drawer body or the grid cell; the terminal view inside sizes itself to this box. */
+.host {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The live transcript scrolls inside its own box, never the ancestors around it. */
+.view {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}

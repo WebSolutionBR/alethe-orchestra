@@ -6,6 +6,7 @@ import { hiveEn } from '../../../components/Orchestra/i18n/hive'
 import { missionEn } from '../../../components/Orchestra/i18n/mission'
 import { terminalsEn } from '../../../components/Orchestra/i18n/terminals'
 import { timelineEn } from '../../../components/Orchestra/i18n/timeline'
+import { liveTerminalEn } from '../../../components/LiveTerminal/i18n'
 
 export const en = {
   /* ---- loading ---- */
@@ -2196,6 +2197,7 @@ export const en = {
   ...hiveEn,
   ...projectEn,
   ...sessionsEn,
+  ...liveTerminalEn,
 } as const
 
 export type MessageKey = keyof typeof en

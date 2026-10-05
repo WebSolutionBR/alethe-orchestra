@@ -1,0 +1,37 @@
+/* Creative agent identity: colors only through the --agent-creative tokens. */
+
+/* Beats the start screen's amber `.switchOn` (that one warns about autonomy; this is not a risk). */
+button.switchOn {
+  border-color: var(--agent-creative);
+  background: var(--agent-creative-soft);
+}
+
+button.switchOn .knob {
+  background: var(--agent-creative);
+}
+
+.icon {
+  flex: none;
+  color: var(--agent-creative);
+}
+
+.mark {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  color: var(--agent-creative);
+  font: 500 11px/1 var(--font-sans);
+  white-space: nowrap;
+}
+
+.chip {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--agent-creative-soft);
+}
+
+.inline {
+  margin-left: 5px;
+  vertical-align: -1px;
+}

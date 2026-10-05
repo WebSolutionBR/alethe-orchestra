@@ -1,0 +1,117 @@
+/* Start screen additions; the base layout lives in ../Orchestra.module.css. */
+
+.modeGroup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.switchLabel {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* A plain "on" (alerts), instead of the base amber that warns about autonomous mode. */
+button.switchOk {
+  border-color: var(--status-working);
+  background: var(--status-working-soft);
+}
+
+button.switchOk .knob {
+  background: var(--status-working);
+}
+
+/* Keyboard focus on the start screen's controls; the base styles only change a border. */
+.switchFocus:focus-visible,
+button.folderFocus:focus-visible,
+textarea.goalFocus:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+button.folderFocus:focus-visible {
+  outline-offset: -2px;
+}
+
+.folderNow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.folderLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.folderLead {
+  font: 12px var(--font-sans);
+  color: var(--fg-muted);
+}
+
+.folderPath {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 12px var(--font-mono);
+  color: var(--fg);
+}
+
+.origin {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: 500 11px var(--font-sans);
+  color: var(--fg-faint);
+}
+
+.originWarn {
+  border-color: var(--status-waiting);
+  background: var(--status-waiting-soft);
+  color: var(--status-waiting);
+}
+
+.folderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inherited {
+  display: inline-flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 0;
+  font: 12px/1.5 var(--font-sans);
+  color: var(--status-waiting);
+}
+
+.inherited svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.empty {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.blocker {
+  margin: 0;
+  font: 12px/1.4 var(--font-sans);
+  color: var(--fg-faint);
+  text-align: right;
+}

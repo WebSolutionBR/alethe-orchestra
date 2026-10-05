@@ -1,8 +1,11 @@
+import { creativePtBR } from '../../../components/Orchestra/creative/i18n'
 import { flowPtBR } from '../../../components/Orchestra/i18n/flow'
 import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
 import { projectPtBR } from '../../../components/Orchestra/i18n/project'
 import { scribePtBR } from '../../../components/Orchestra/i18n/scribe'
 import { sessionsPtBR } from '../../../components/Orchestra/i18n/sessions'
+import { startPtBR } from '../../../components/Orchestra/start/i18n'
+import { attentionPtBR } from '../../../components/Orchestra/attention/i18n'
 import { hivePtBR } from '../../../components/Orchestra/i18n/hive'
 import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
 import { terminalsPtBR } from '../../../components/Orchestra/i18n/terminals'
@@ -2214,5 +2217,8 @@ export const ptBR: Record<MessageKey, string> = {
   ...projectPtBR,
   ...sessionsPtBR,
   ...scribePtBR,
+  ...creativePtBR,
+  ...startPtBR,
+  ...attentionPtBR,
   ...liveTerminalPtBR,
 }

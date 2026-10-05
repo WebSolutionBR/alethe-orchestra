@@ -1,8 +1,11 @@
+import { creativeEn } from '../../../components/Orchestra/creative/i18n'
 import { flowEn } from '../../../components/Orchestra/i18n/flow'
 import { usageEn } from '../../../components/Orchestra/usage/i18n'
 import { projectEn } from '../../../components/Orchestra/i18n/project'
 import { scribeEn } from '../../../components/Orchestra/i18n/scribe'
 import { sessionsEn } from '../../../components/Orchestra/i18n/sessions'
+import { startEn } from '../../../components/Orchestra/start/i18n'
+import { attentionEn } from '../../../components/Orchestra/attention/i18n'
 import { hiveEn } from '../../../components/Orchestra/i18n/hive'
 import { missionEn } from '../../../components/Orchestra/i18n/mission'
 import { terminalsEn } from '../../../components/Orchestra/i18n/terminals'
@@ -2199,6 +2202,9 @@ export const en = {
   ...projectEn,
   ...sessionsEn,
   ...scribeEn,
+  ...creativeEn,
+  ...startEn,
+  ...attentionEn,
   ...liveTerminalEn,
 } as const
 

@@ -156,7 +156,7 @@ fn resolve_clone_target(requested: &str, normalized_url: &str) -> Result<String,
     let base = if trimmed.is_empty() {
         dirs_next::home_dir()
             .ok_or_else(|| "Não foi possível localizar a pasta do usuário".to_string())?
-            .join("Alethe")
+            .join("Alethe Orchestra")
     } else {
         std::path::PathBuf::from(trimmed)
     };

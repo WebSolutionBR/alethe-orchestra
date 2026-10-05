@@ -77,7 +77,7 @@ export function AboutPage() {
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <strong style={{ fontSize: 14 }}>Alethe</strong>
-            <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>com.kc1t.alethe</span>
+            <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>com.websolution.alethe-orchestra</span>
           </div>
           <span
             style={{

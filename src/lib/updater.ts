@@ -1,29 +1,27 @@
 import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 
-                                                                   
 export type UpdateInfo = {
   version: string
   currentVersion: string
   /** Release notes (corpo do `latest.json`), se houver. */
   notes: string | null
-                                                             
+
   date: string | null
 }
 
 export type UpdateProgress = { downloaded: number; total: number }
 
-                                                                               
-                                                                                  
 let pending: Update | null = null
 
-   
-                                                                               
-                                                                              
-                                                                           
-                                                                         
-   
+/** Alethe Orchestra is a fork without a release channel: never query the upstream feed. */
+const UPDATES_ENABLED = false
+
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  if (!UPDATES_ENABLED) {
+    pending = null
+    return null
+  }
   const update = await check()
   if (!update) {
     pending = null
@@ -38,10 +36,6 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
   }
 }
 
-   
-                                                                                 
-                                                                             
-   
 export async function installPendingUpdate(
   onProgress?: (progress: UpdateProgress) => void,
 ): Promise<void> {
@@ -63,6 +57,6 @@ export async function installPendingUpdate(
         break
     }
   })
-                                                                       
+
   await relaunch()
 }

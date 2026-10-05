@@ -18,9 +18,9 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 #[cfg(windows)]
-const SHIM_FILE_NAME: &str = "alethe.cmd";
+const SHIM_FILE_NAME: &str = "alethe-orchestra.cmd";
 #[cfg(not(windows))]
-const SHIM_FILE_NAME: &str = "alethe";
+const SHIM_FILE_NAME: &str = "alethe-orchestra";
 
 #[derive(Serialize, Default)]
 pub struct CliShimStatus {
@@ -40,7 +40,7 @@ fn shim_bin_dir() -> Result<PathBuf, String> {
     {
         let base = dirs_next::data_local_dir()
             .ok_or_else(|| "não foi possível resolver LOCALAPPDATA".to_string())?;
-        Ok(base.join("Alethe").join("bin"))
+        Ok(base.join("Alethe Orchestra").join("bin"))
     }
     #[cfg(not(windows))]
     {

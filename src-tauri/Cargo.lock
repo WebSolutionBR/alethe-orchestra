@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "alethe"
+name = "alethe-orchestra"
 version = "1.7.8"
 dependencies = [
  "base64 0.22.1",

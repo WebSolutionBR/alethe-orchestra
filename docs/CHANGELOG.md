@@ -12,6 +12,179 @@ Notable user-facing changes to **Alethe** are documented here. The format is bas
 
 ### Added
 
+- **Orchestra view.** A new top-level view (sidebar toolbar orbit icon or main menu → *Orchestra*)
+  runs an **orchestrator** Claude Code session that you drive, which splits a goal into tasks and
+  delegates them to **worker** Claude sessions (`claude-1`…`claude-N`) in the same folder. Pick a
+  project folder (or any folder), optionally type the goal, and choose autonomous mode (on by
+  default; it passes `--dangerously-skip-permissions` to every agent) or supervised mode.
+  - **Six switchable visualizations** of the same live data, via the segmented switcher in the top
+    bar or `Alt+1`…`Alt+6` (the last one is remembered): *Constellation* (orchestrator in the
+    center, workers around it, messages travelling along the edges and a filterable message bus),
+    *Mission control*, *Flow* (dependency DAG), *Terminals* (every agent's real terminal in a grid),
+    *Timeline* and *Hive*.
+  - Click any agent to open a resizable side panel with its **real terminal** and a box to send it
+    a message; the top bar shows the goal, elapsed time, overall progress and worker count, and the
+    status line counts agents and bus messages. *Stop* closes that orchestration's agent sessions
+    after confirming.
+  - The agents coordinate through a bundled **`orch` CLI bridge** (`orch spawn`, `orch send`,
+    `orch report`): workers report progress and status, message each other and the orchestrator,
+    and can wait for another worker with `--after`. Per-agent **Claude Code hooks** feed tool calls,
+    edited files and activity (thinking, reading, editing, testing, blocked) into the views.
+  - Orchestra sessions are kept protected from the RAM supervisor and stream normally while the
+    view is open; everything else in Alethe works exactly as before.
+- **Several orchestrations at once.** Each running orchestration has its own tab above the
+  Orchestra view, showing its project, goal, overall progress and a live status (working, blocked
+  with the number of blocked workers, or done); a tab that gets blocked or finishes while it is off
+  screen stays highlighted until you look at it. **+** starts another one, for the same or another
+  project, while the others keep running; **×**, a middle click or `Delete` on a tab stops a
+  running orchestration (the same question as its *Stop* button; it stays on screen, readable) and
+  closes one that is already stopped; `Alt+PageUp` / `Alt+PageDown` cycle the tabs. Each orchestration has its own orchestrator and its
+  own workers numbered from `claude-1`. Picking a project in the sidebar shows that project's most
+  recent orchestration, or its start screen when it has none, and clicking a tab selects its project.
+  - **Side by side:** the *Side by side* button shows two orchestrations next to each other, each
+    with its own view, agent panel and status line, split by a draggable divider (arrow keys work
+    too, and the divider position is remembered). The pane you last clicked owns the keyboard
+    (`Alt+1`…`Alt+6`, `Esc`) and has a subtle outline; clicking a tab shows it in that pane.
+  - The top bar adapts to narrow panes: it drops the view labels, then the goal, then the usage
+    meters, and never overflows.
+- **The Obsidian scribe is visible in every orchestration.** The fixed role that writes each
+  session's notes in Obsidian now has Obsidian's identity (its purple, a crystal icon and a clear
+  name, *Obsidian scribe*) and is always on screen, yet never counted as a worker. A chip in the
+  session top bar shows its state (listening, writing, N pending, failing or off); click it to see
+  today's note, the last write, the blocks written and the last error, and to open the note in
+  Obsidian, retry now or jump to its settings. Every view shows it too: a node docked under the
+  orchestrator in *Constellation* and *Flow*, a card in *Mission control*, a tile with the blocks it
+  wrote in *Terminals*, a lane with a tick per write in *Timeline* and a badge in *Hive*. Each
+  written block also appears on the session's message bus as `obsidian → <note>`.
+- **Creative agent.** A new *Creative agent* switch on the Orchestra start screen (on by default,
+  remembered) asks the orchestrator to keep one extra worker in the `criativo` area for the whole
+  session. It studies the goal and the product and sends the orchestrator proposals ranked by
+  impact and effort: useful features, clean design and the easy-to-miss fundamentals (empty and
+  error states, undo, persistence, shortcuts, accessibility, i18n, performance, progress feedback,
+  data safety). It never edits another worker's files and builds only what the orchestrator
+  approves. Creative workers have their own pink color and a spark icon.
+- **Orchestra alerts.** You get a notice (in the app, or from Windows while Alethe is in the
+  background) when an agent asks for a permission or an answer, with the question itself, when an
+  agent stops before finishing, when all workers of an orchestration are done, and when the
+  orchestrator is idle waiting for your reply. Notices that arrive together come as one, the same
+  agent is not repeated within a minute, and nothing is sent for the orchestration you are looking
+  at. The Orchestra button in the sidebar counts what is waiting for you (stopped orchestrations are
+  left out), screen readers hear each notice in the session's status line, and the *Alerts* switch
+  on the start screen silences them.
+- **Obsidian is consulted before every orchestration starts.** Before the orchestrator starts
+  (up to 5 s, never blocking the start), the Orchestra reads the day's session note, the notes of
+  its folder and the notes related to the project, the session folder and the goal, and saves the
+  most relevant parts to a context file. The orchestrator is told to read it before splitting the
+  work, every worker gets its path, and every agent is asked to consult Obsidian before starting
+  (reading a whole area's notes when it has a history). The scribe chip's panel lists the notes
+  consulted, each opening in Obsidian, and warns when Obsidian could not be consulted; the
+  session's start note in Obsidian names them too. Turn it off, or set how many notes it keeps, in
+  Preferences → Integrations → *Obsidian scribe*.
+- **Stopped orchestrations stay readable, with a report.** *Stop* now stops the agents of an
+  orchestration but keeps it on screen, read-only, with its tab greyed out: every view, the bus and
+  every agent's full transcript stay there (copyable and exportable) until you *Close* it. The stop
+  confirmation names the goal and the start time. A new *Report* button (also while it runs, as a
+  snapshot) shows the goal, the duration and, per worker, its area, final state (done, failed,
+  stopped…), duration, files and last note, plus the failures; copy it as Markdown, export it as
+  `.md` or `.json`, or hand it to the Obsidian scribe, which files it in the session's note.
+- **Per-agent controls in the Orchestra.** The agent side panel and every *Terminals* cell have
+  *Interrupt* (sends Esc), *Restart* (a new terminal, from its task), *Resume* (its own Claude
+  conversation, `claude --resume`, when known) and *Export transcript* (the whole transcript as a
+  text file). A failed agent's card offers *Resume* / *Restart*; the orchestrator is told, and
+  workers held because it had failed go back to waiting for it. A second *Restart* while one is
+  under way, or any while the orchestration is stopping, does nothing, and a second *Stop* is the
+  same Stop.
+- **Live transcript or classic terminal in the Orchestra.** The agent side panel and every cell of
+  the *Terminals* view show the agent as a **live transcript** (the default: scroll, select, copy,
+  paste, type and search like in the real terminal) or as the **classic terminal**. Switch with the
+  discreet button in the panel or cell header, or `Ctrl+Shift+L`; it is one remembered preference
+  for every Orchestra terminal. When an agent's session ends, its whole transcript stays readable
+  and copyable until the orchestration is closed, instead of only its last activity lines. The
+  classic terminal in the side panel now uses the terminal theme from Preferences.
+  - The live transcript reads the agent's terminal buffer at its real size, so letters, spaces and
+    symbols always stay in their columns. It follows new output and offers *↓ N new lines* when you
+    scroll up (`Shift+PageUp`/`PageDown`, `Ctrl+Home`/`End`); copying drops trailing spaces and
+    joins wrapped lines; right-click copies a selection or pastes (texts, Explorer files and
+    clipboard images), `Shift`+right-click or the Menu key opens *Copy / Paste / Select all / Find*;
+    `Ctrl+F` finds with a match counter; `Ctrl`+click opens links; full-screen programs get the
+    mouse wheel.
+- **Orchestrations survive closing Alethe.** While an orchestration runs, Alethe keeps its record
+  in app data: goal, folder, project and mode; each agent's area, task, dependencies, state,
+  history, account, model, effort and Claude conversation; and the last bus messages. When the app
+  closes (or crashes) with orchestrations running, the Orchestra view opens with an *Interrupted
+  orchestration* strip showing each one's folder and mode: *View record* shows what was saved,
+  read-only; *Resume* relaunches the orchestrator and every unfinished worker in the same folder,
+  on the account, model and effort each one ran with, with `claude --resume` (a worker that never
+  got going, or whose conversation cannot be found, starts its task again), tells the orchestrator
+  what came back, marks undelivered messages as failed so they can be sent again, and numbers new
+  workers after the highest `claude-N`; *Discard* deletes the record. Workers that had failed stay
+  failed, to be restarted from their panels, and finished ones stay finished (a message to one
+  fails at once instead of waiting for a terminal). Resuming an autonomous orchestration asks first, and
+  one whose folder is gone never runs elsewhere: the strip says so and offers *Choose folder*.
+  Unreadable records can still be discarded. Their terminal transcripts are kept until then.
+- **`orch` takes any text.** `orch send`, `orch spawn` and `orch report` accept `--file <path>` and
+  `--stdin`, so long text, or text with quotes, `&`, `|`, `>`, `%` or line breaks, arrives intact;
+  `orch` now runs straight from bash and PowerShell (only `orch.cmd` still goes through cmd.exe);
+  and `orch note` records an agent's decision and its reasons for the Obsidian scribe. Messages,
+  tasks and notes keep up to 16,000 characters, and `orch` says when a text was cut. Each agent's
+  task (and the orchestrator's goal) now arrives as a file the agent reads instead of on its
+  command line, line breaks and symbols included.
+
+### Changed
+
+- **The Obsidian scribe writes knowledge notes in your own pattern, not logs.** It no longer
+  appends event blocks to the vault: what happens in each session (requests, decisions, reports,
+  messages, files touched, checks, `orch note`) is kept as local material in the app data folder,
+  secrets masked. An author, Claude Code run without a window and read-only, turns it into the
+  session's diary note (`Diário/AAAA/MM - Mês/Sessão AAAA-MM-DD — <title>.md`, configurable), a
+  subject note when the theme deserves one, and links in the hubs — following the template and your
+  note rules read live from the vault, with the agents' transcripts and task files to understand
+  why. The author is **off until you turn it on** (the scribe chip offers it and says what it
+  costs): every pass spends the session account's usage. Once on, it writes a final pass when the
+  session ends or its agents are stopped and when you click **Write note now**; writing after each
+  worker is an option, off by default. Each pass has a turn limit and a spending ceiling, the
+  panel shows the estimated cost of the last pass and of the session, and a final pass that fails
+  after running is tried once more, then kept under *Not written* with the session material to copy
+  instead of retrying on every start; one that could not run (Obsidian closed) runs when Obsidian
+  answers again. The author can only read the vault and its own folder, where the session's
+  transcripts are linked and its task files copied: every Claude account folder, the SSH and cloud
+  key folders and the vault's plugin folder are denied, and these locks are always passed — a
+  Claude Code that cannot honor them is refused rather than run with fewer. One author at a time,
+  with a time limit. The app checks every plan before writing: links only to notes that exist, your notes only
+  ever added to (never rewritten or deleted), whole-note writes only to notes the scribe created and
+  nobody changed since. The panel shows the session's note, what the author is doing, the last
+  synthesis and anything that could not be written (to copy or discard); Preferences → Integrations
+  → *Obsidian scribe* sets its account, model, effort, triggers, quiet period, time limit, turn
+  limit, spending ceiling and paths. Agents are told to record context, decision and why, validation and gotcha (never a
+  command log), and no longer where the Local REST API key lives. Writes that time out are never
+  duplicated, a write that can never succeed no longer blocks the queue, the scribe saves its state
+  when Alethe closes (the final pass of running sessions runs after the next start), and only the
+  main window runs it.
+- **Readable colors and a full keyboard in the Orchestra.** The *Light* and *Min Light* themes get
+  their own agent and status colors (the dark ones fell to about 2:1 there), with the working
+  orange, the blocked amber and the failed red (now darker) clearly apart; the status colors the
+  Orchestra writes as text were lightened just enough in the dark themes, so every theme keeps at
+  least 4.5:1 on the background and on cards, blocked and failed badges included. Filled danger
+  buttons across the app (uninstall, remove, delete, revoke) get their own deeper red, so their
+  label stays readable in every theme, hovered too. Faint text (hints, counts, paths) is readable
+  again in *Min Light* and *Min Dark* (at least 3:1, still lighter than secondary text). Every
+  Orchestra control
+  shows the same focus ring; the agent panel's edge and the *Terminals* split resize with the arrow
+  keys; `Ctrl+Shift+1`…`9` focuses a worker's terminal in *Terminals* (`Ctrl+Shift+0` the
+  orchestrator's); `Tab` stays inside the message composer; *Mission control* and *Flow* cards read
+  their state and progress to screen readers; and with reduced motion on, the *Constellation*
+  spinner stands still, the app's transitions stop moving things and its animations finish at
+  once.
+- **Orchestra start screen.** Autonomous mode and the creative agent sit together in a *Mode*
+  section; autonomous mode always starts on, with its risk read out by screen readers. Each
+  project keeps its unsent goal across view switches and restarts until the orchestration starts,
+  and starting without a goal opens the orchestrator terminal to type it there. With no projects
+  there is a *New project* button, and a disabled *Start* says what is missing.
+- **Alethe Orchestra is an isolated fork.** It ships under its own identifier
+  (`com.websolution.alethe-orchestra`), so its data, profiles and settings live apart from a regular
+  Alethe install and both can run side by side. The auto-updater is disabled (it would otherwise
+  pull upstream Alethe builds), and the PTY roots and CLI shim directory are separate from Alethe's.
+
 - **Claude accounts stay live on their own.** An account's access token only lasts a few hours and
   used to be renewed only when a terminal ran under it, so accounts nobody had opened since the
   night before showed "no token configured" / "usage unavailable" the next morning. Usage polling
@@ -43,6 +216,109 @@ Notable user-facing changes to **Alethe** are documented here. The format is bas
 
 ### Fixed
 
+- **Closing Alethe tells the truth about running orchestrations.** The close dialog says how many
+  are running and which of them can be resumed on the next start (one whose record could not be
+  saved is named apart), instead of promising that every conversation can be resumed.
+- **Orchestra agents never start in the wrong folder.** A launch whose folder no longer exists now
+  fails with the reason instead of running in the home folder.
+- **The Orchestra starts in the folder you picked.** *Other folder* was ignored when the project
+  already had a folder. The start screen now says where the folder comes from (the project folder,
+  picked here, or borrowed from another project of its group, with a warning) and *Back to the
+  project folder* forgets the pick. The account, model and effort pickers show their dropdown
+  arrow again.
+- Output from terminals that are not on screen is no longer held back or dropped. A hidden agent's
+  last lines before it went quiet used to wait until it printed something else, a burst of more
+  than 256 KB lost its beginning, and whatever was pending when the terminal came back on screen
+  was discarded. Now all of it arrives, in order, within half a second, so an agent's live
+  transcript stays complete and background activity indicators react on time.
+- **Full-screen programs keep a scrollable transcript.** Claude Code runs on the terminal's
+  alternate screen the whole time and repaints it in place, so an agent's live transcript held only
+  the visible screen: search, copy and *Select all* saw just that, and a stopped agent could not be
+  scrolled. The transcript now keeps every line that scrolls out of the program's screen, without
+  copying a line twice when the program scrolls its own view or the panel is resized, and marks
+  where the program's current screen begins. The wheel still goes to a running program
+  (`Shift`+wheel scrolls the kept history); once the agent stops, the wheel scrolls the history.
+  When the program leaves full screen (`/exit`, a double `Ctrl+C`, a crash), its session and last
+  screen stay in the transcript and in *Export*, where the session began.
+- **An Orchestra agent that goes down is no longer silent.** A worker that exits (or never
+  launches) before reporting done is shown as *failed*, with its exit code and last note, in every
+  view; it no longer counts toward "all workers done", the status line counts the failures, and
+  the tab turns to an error when the orchestrator stops or an agent cannot start (the error strip
+  names the agent and can be dismissed). The orchestrator is told in its terminal, and a worker
+  waiting for the failed one with `--after` is held with the reason and two ways out: *Start
+  anyway* or *Cancel*. A launch that shows no sign of life within 30 seconds counts as failed.
+- **Nothing you type in the Orchestra gets lost.** Every message on the bus shows whether it is
+  queued (for a worker that has not started yet, or that has a dialog open; it goes in once its
+  prompt takes input), sent, delivered
+  (the agent took it as its next prompt) or not delivered, with the reason and *Resend* on the same
+  line. An agent messaging a gone or unknown agent is told so. Drafts are kept per agent (the side
+  panel and the Hive panel share them, so a draft never goes to another agent), and the quick bus
+  field and the composer with its attachments keep theirs across view and session switches. Two
+  messages to one terminal never interleave, a failed write never leaves it in paste mode, and
+  control characters in relayed text can no longer act as keys.
+- **Honest agent states.** An agent asking for a permission or an answer is shown as blocked with
+  the real question (Mission control cards offer *Open terminal*, and *Reply* only to an agent that
+  reported itself blocked and waits for a message), and it is no longer
+  stuck as blocked once the tool runs; an agent waiting at its prompt shows as idle, not blocked. A
+  new agent counts as thinking only once its terminal shows a sign of life. Blocked and failed carry
+  a glyph (`!`, `✕`) besides their color, the selection ring in *Constellation* is neutral, the
+  Hive side panel follows the selection instead of the mouse, and the autonomous/supervised tag
+  stays visible in narrow panes. A session started without a goal takes the orchestrator's first
+  prompt as its goal.
+- **A message never answers a permission dialog.** Claude Code draws a permission request (or a
+  question with options) where its prompt was and tells hooks about it only seconds later; a
+  message, a notice or a *Reply* pasted meanwhile ended with Enter, which picks the option under
+  the cursor: *Yes*. Messages and notices now wait in the queue while a dialog is on the agent's
+  screen, and go in once it closes. A permission card shows the options of the dialog actually on
+  screen (*Allow once*, the others as Claude Code words them, *Deny (Esc)*); each sends only that
+  option's keys, only while the dialog still offers it, and Enter only once its cursor is on that
+  option. When the dialog cannot be read, the card opens the agent's terminal and sends nothing.
+- **Restarting the orchestrator no longer plans the goal again.** It continues its own Claude
+  conversation (`claude --resume`) when known, and either way it is told where every worker stands
+  (id, area, state, last note) and not to plan the goal again or spawn workers for what is running
+  or done. An orchestrator started over after a resume is pointed at its goal without being asked
+  to plan it.
+- **The panel of an agent whose terminal ended never starts a stray `claude`.** A worker that ended
+  after reporting done, or whose terminal is gone, shows its transcript read-only in the side panel,
+  as in *Terminals*; only a terminal the app confirms is running gets an interactive view. Messages
+  to such a worker fail at once instead of waiting forever, a message to *all* skips it, and an
+  agent writing to it is told.
+- Orchestra agents start at the size their terminal is shown at (the last side panel or
+  *Terminals* cell, remembered for the orchestrator and for workers) and their output is recorded
+  from the very first byte at the terminal's real width, so a new agent's first screens no longer
+  come out scrambled when you open it.
+- Opening an agent's terminal again (side panel, *Terminals*, or any pane coming back on screen) no
+  longer shows its text scrambled: words glued together ("Accessingworkspace:"), lines pushed to
+  the right, a character lost at the wrap and the same dialog twice. Restoring stripped the cursor
+  moves ConPTY uses in place of spaces and joined lines without returning to the left edge; the
+  history is now rebuilt from the agent's live buffer when there is one, or replayed as recorded at
+  the width the terminal really has, and only then fitted to the pane. Restoring also stopped
+  answering the terminal queries recorded in the history again, which sent stray input such as
+  `[?1;2c` to the agent.
+- The mouse wheel scrolls agents that run full screen (Claude Code, Codex) again after their
+  terminal is reopened. The restore dropped the alternate screen, mouse tracking and bracketed
+  paste the agent had turned on, so the wheel scrolled an empty history instead of reaching it; any
+  program that tracks the mouse now gets the wheel, and `Shift`+wheel still scrolls the history.
+- Terminal scrollbars can be dragged again. The terminal's padding was not counted when fitting it
+  to the pane, so the text ran up to 14 px wider than its box: the last column could hide under the
+  scrollbar and a drag on the scrollbar selected text instead of scrolling.
+- The Orchestra session fills the window again. With no error message on screen, the canvas and
+  the agent terminal were squeezed into a thin strip under a giant, almost empty status line; they
+  now take all the height between the top bar and the status line, across the full width, and the
+  agent side panel gives its terminal every pixel left under its header. The message bus, the
+  Timeline lanes and the Hive side panel can be dragged up to the space actually available (always
+  leaving room for the canvas) and shrink with the window instead of overflowing it; the Timeline
+  lanes handle now moves the way it is dragged instead of backwards.
+- Orchestra agents get their full instructions and task on Windows PowerShell 5.1. Arguments
+  containing double quotes reached the agent split apart, so the agents lost their instructions and
+  task (the orchestrator only received "spawn" and every worker only "report"); they now arrive
+  intact. A goal or task with a typographic apostrophe (’) no longer keeps the agent from starting.
+- The Obsidian scribe actually writes the session notes. With no vault set in Preferences (the
+  default), every write was silently skipped, so nothing was ever recorded. The scribe now adopts
+  Obsidian's open vault (or the only one) at startup and whenever a session starts, keeps blocks
+  queued until Obsidian answers, and when it still cannot write (no vault, plugin missing, Obsidian
+  closed, key rejected) its chip turns into a warning with the reason and one-click *Detect again*
+  and *Open settings*.
 - The window no longer freezes for 20-60 seconds when it is minimized over a Remote Desktop
   session. Chromium's native window occlusion detection (inside the WebView2 browser process)
   stalls with no live display surface and blocks the UI pipeline until the window is restored.

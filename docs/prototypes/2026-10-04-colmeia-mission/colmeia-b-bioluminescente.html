@@ -1,0 +1,3903 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colmeia B · Bioluminescente</title>
+<meta name="description" content="Protótipo da Colmeia do Alethe Orchestra: células orgânicas bioluminescentes no fundo do mar, presas a um orquestrador água-viva.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* =========================================================================
+   Tokens — "abismo" (escuro, padrão) e "lagoa" (claro)
+   ========================================================================= */
+:root{
+  --font-ui:'Outfit','Segoe UI',system-ui,sans-serif;
+  --font-display:'Readex Pro','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --ease-io:cubic-bezier(0.45,0,0.55,1);
+  --bus-w:316px;--panel-w:384px;--top-h:88px;--foot-h:150px;
+}
+:root,[data-theme="dark"]{
+  color-scheme:dark;
+  --abyss:radial-gradient(125% 95% at 50% 42%,#08232B 0%,#061A1F 34%,#04111A 66%,#03080C 100%);
+  --bg-0:#03080C;
+  --ink:#E9FBFF;--ink-2:#BBD7DC;--ink-3:#93B6BD;
+  --text-halo:rgba(3,10,14,.92);
+  --line:rgba(160,245,255,.09);
+  --glass:rgba(8,27,34,.64);--glass-2:rgba(6,20,26,.92);--glass-border:rgba(160,245,255,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 18px 50px rgba(0,0,0,.5);
+  --chip:rgba(160,245,255,.06);--chip-2:rgba(160,245,255,.13);--chip-border:rgba(160,245,255,.15);
+  --accent:#00FFFF;--accent-ink:#03080C;
+  --term-bg:rgba(2,9,12,.55);--term-tool:#7DF9FF;--term-ok:#B5FF6A;--term-err:#FF8A96;--term-think:#C4B5FD;
+  --c-starting:#7DF9FF;--c-thinking:#A78BFA;--c-reading:#00FFFF;--c-editing:#8FFF00;--c-testing:#55B8FF;--c-blocked:#FFB020;--c-waiting:#86A6AD;--c-done:#B8FFE6;--c-exited:#FF5C6C;--c-idle:#86A6AD;--c-creative:#FF6AFF;--c-orch:#00FFFF;--c-orch-2:#A78BFA;--c-scribe:#8B6CEF;--c-scribe-ink:#C4B5FD;
+  --nuc-ink:#03080C;--hot-op:1;--spec-a:.32;
+  --mem-a0:.05;--mem-a1:.10;--mem-a2:.26;--mem-a3:.46;
+  --halo-a0:.40;--halo-a1:.15;--halo-a2:.045;
+  --tent:#5FF6FF;--thread:#DDF6F4;--ghost:rgba(120,230,255,.12);--shard:#0D1418;--facet-line:rgba(255,255,255,.32);
+  --focus:#FFFFFF;
+  --glow-1:rgba(0,255,255,.10);--glow-2:rgba(86,0,255,.24);--glow-3:rgba(255,106,255,.08);--glow-4:rgba(0,190,255,.07);
+  --ray:rgba(140,255,255,.05);
+  --caustic-img:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0085' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0 0 0.2 1 0.2 1 0.2 0 0 0 0'/%3E%3C/feComponentTransfer%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --caustic-op:.10;
+  --grain-img:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.7 0 0 0 -0.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");--grain-op:.07;
+  --k-task:#00FFFF;--k-report:#8FFF00;--k-block:#FFB020;--k-answer:#7DF9FF;--k-fail:#FF5C6C;--k-idea:#FF6AFF;--k-scribe:#C4B5FD;--k-chat:#A78BFA;--k-user:#FFFFFF;
+  --warn-bg:rgba(255,176,32,.10);--fail-bg:rgba(255,92,108,.08);--sp-core:#FFFFFF;--tip-bg:rgba(4,15,20,.96);
+  --lure:radial-gradient(closest-side,rgba(150,255,255,.13),rgba(0,255,255,.04) 55%,transparent);
+}
+[data-theme="light"]{
+  color-scheme:light;
+  --abyss:radial-gradient(125% 95% at 50% 34%,#F6FCFB 0%,#EAF6F4 44%,#DCEFEB 78%,#D0E8E3 100%);
+  --bg-0:#D0E8E3;
+  --ink:#072A2F;--ink-2:#1F474D;--ink-3:#355E64;
+  --text-halo:rgba(236,248,246,.94);
+  --line:rgba(7,60,66,.10);
+  --glass:rgba(255,255,255,.66);--glass-2:rgba(255,255,255,.92);--glass-border:rgba(7,60,66,.14);--glass-hi:rgba(255,255,255,.85);--glass-shadow:0 16px 40px rgba(7,60,66,.13);
+  --chip:rgba(7,60,66,.05);--chip-2:rgba(7,60,66,.10);--chip-border:rgba(7,60,66,.16);
+  --accent:#006B75;--accent-ink:#FFFFFF;
+  --term-bg:rgba(255,255,255,.72);--term-tool:#00616A;--term-ok:#2F5F00;--term-err:#A3201A;--term-think:#5B3FD0;
+  --c-starting:#2C6A8A;--c-thinking:#5B3FD0;--c-reading:#00707A;--c-editing:#3A7400;--c-testing:#1D5FC2;--c-blocked:#8A4F00;--c-waiting:#4D6A70;--c-done:#0B6E58;--c-exited:#B3261E;--c-idle:#4D6A70;--c-creative:#A3168F;--c-orch:#006B75;--c-orch-2:#5B3FD0;--c-scribe:#6C4EE0;--c-scribe-ink:#5B3FD0;
+  --nuc-ink:#FFFFFF;--hot-op:0;--spec-a:.75;
+  --mem-a0:.05;--mem-a1:.08;--mem-a2:.16;--mem-a3:.30;
+  --halo-a0:.17;--halo-a1:.06;--halo-a2:.02;
+  --tent:#0A6E78;--thread:#3A5F65;--ghost:rgba(7,90,96,.12);--shard:#27393C;--facet-line:rgba(255,255,255,.6);
+  --focus:#072A2F;
+  --glow-1:rgba(0,170,170,.14);--glow-2:rgba(108,78,224,.10);--glow-3:rgba(255,106,255,.09);--glow-4:rgba(0,140,200,.08);
+  --ray:rgba(255,255,255,.6);
+  --caustic-img:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0085' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0 0 0.2 1 0.2 1 0.2 0 0 0 0'/%3E%3C/feComponentTransfer%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --caustic-op:.5;
+  --grain-img:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.7 0 0 0 -0.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");--grain-op:.06;
+  --k-task:#00707A;--k-report:#3A7400;--k-block:#8A4F00;--k-answer:#2C6A8A;--k-fail:#B3261E;--k-idea:#A3168F;--k-scribe:#5B3FD0;--k-chat:#5B3FD0;--k-user:#072A2F;
+  --warn-bg:rgba(138,79,0,.08);--fail-bg:rgba(179,38,30,.07);--sp-core:#FFFFFF;--tip-bg:rgba(255,255,255,.97);
+  --lure:radial-gradient(closest-side,rgba(0,110,120,.09),rgba(0,110,120,.03) 55%,transparent);
+}
+[data-ck="starting"]{--c:var(--c-starting)}[data-ck="thinking"]{--c:var(--c-thinking)}[data-ck="reading"]{--c:var(--c-reading)}[data-ck="editing"]{--c:var(--c-editing)}[data-ck="testing"]{--c:var(--c-testing)}[data-ck="blocked"]{--c:var(--c-blocked)}[data-ck="waiting"]{--c:var(--c-waiting)}[data-ck="done"]{--c:var(--c-done)}[data-ck="exited"]{--c:var(--c-exited)}[data-ck="idle"]{--c:var(--c-idle)}[data-ck="creative"]{--c:var(--c-creative)}[data-ck="orch"]{--c:var(--c-orch)}[data-ck="scribe"]{--c:var(--c-scribe)}
+
+/* =========================================================================
+   Base
+   ========================================================================= */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--bg-0)}
+body{overflow:hidden;font:400 14px/1.45 var(--font-ui);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;cursor:pointer}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+kbd{font:500 11px/1 var(--font-mono);padding:2px 5px;border-radius:5px;border:1px solid var(--chip-border);background:var(--chip);color:var(--ink-2)}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- abismo: manchas, raios, cáusticas, plâncton, granulado ---------- */
+.abyss{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:var(--abyss)}
+.glow{position:absolute;border-radius:50%;will-change:transform}
+.g1{width:70vmax;height:70vmax;left:-22vmax;top:-30vmax;background:radial-gradient(closest-side,var(--glow-1),transparent);animation:drift-a 52s var(--ease-io) infinite alternate}
+.g2{width:80vmax;height:80vmax;right:-36vmax;top:-8vmax;background:radial-gradient(closest-side,var(--glow-2),transparent);animation:drift-b 64s var(--ease-io) infinite alternate}
+.g3{width:64vmax;height:64vmax;left:10vmax;bottom:-44vmax;background:radial-gradient(closest-side,var(--glow-3),transparent);animation:drift-c 58s var(--ease-io) infinite alternate}
+.g4{width:58vmax;height:58vmax;left:calc(50% - 29vmax);top:calc(50% - 29vmax);background:radial-gradient(closest-side,var(--glow-4),transparent);animation:drift-d 40s var(--ease-io) infinite alternate}
+@keyframes drift-a{to{transform:translate3d(9vmax,7vmax,0) scale(1.1)}}
+@keyframes drift-b{to{transform:translate3d(-8vmax,10vmax,0) scale(.92)}}
+@keyframes drift-c{to{transform:translate3d(-10vmax,-6vmax,0) scale(1.08)}}
+@keyframes drift-d{to{transform:translate3d(2vmax,-3vmax,0) scale(1.15)}}
+.rays{position:absolute;inset:0;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%)}
+.rays i{position:absolute;top:-20%;height:130%;background:linear-gradient(90deg,transparent,var(--ray) 50%,transparent);transform-origin:50% 0;animation:sway 22s var(--ease-io) infinite alternate}
+.rays i:nth-child(1){left:16%;width:15vw;transform:rotate(14deg)}
+.rays i:nth-child(2){left:44%;width:8vw;transform:rotate(18deg);animation-duration:17s;animation-delay:-7s}
+.rays i:nth-child(3){left:66%;width:12vw;transform:rotate(22deg);animation-duration:26s;animation-delay:-13s}
+@keyframes sway{from{transform:rotate(11deg)}to{transform:rotate(24deg)}}
+.caustics{position:absolute;inset:-30%;background-image:var(--caustic-img);opacity:var(--caustic-op);-webkit-mask-image:radial-gradient(60% 55% at 50% 30%,#000 15%,transparent 85%);mask-image:radial-gradient(60% 55% at 50% 30%,#000 15%,transparent 85%);will-change:transform}
+.c1{background-size:560px 560px;animation:cd-a 60s var(--ease-io) infinite alternate}
+.c2{background-size:880px 880px;opacity:calc(var(--caustic-op) * .7);animation:cd-b 80s var(--ease-io) infinite alternate}
+@keyframes cd-a{to{transform:translate3d(-140px,90px,0) rotate(2deg)}}
+@keyframes cd-b{to{transform:translate3d(160px,-60px,0) rotate(-3deg)}}
+#plankton{position:fixed;inset:0;z-index:1;pointer-events:none;width:100%;height:100%}
+.grain{position:fixed;inset:0;z-index:3;pointer-events:none;background-image:var(--grain-img);background-size:160px 160px;opacity:var(--grain-op)}
+#lure{position:fixed;left:0;top:0;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;pointer-events:none;z-index:4;background:var(--lure);opacity:0;transition:opacity .5s var(--ease);will-change:transform}
+#lure.on{opacity:1}
+#lure::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--c-orch);box-shadow:0 0 10px 3px var(--c-orch);opacity:.55}
+
+/* ---------- cena ---------- */
+#stage{position:fixed;inset:0;z-index:2;touch-action:none;cursor:grab;outline:none}
+#stage.dragging{cursor:grabbing}
+#scene{display:block;width:100%;height:100%}
+.ghost{fill:none;stroke:var(--ghost);stroke-width:1.2}
+.ghost.r0{stroke-dasharray:2 6}
+.ghost.r2{opacity:.5}
+
+.tent .t-glow{fill:none;stroke:var(--tent);stroke-width:8;stroke-opacity:.1;stroke-linecap:round}
+.tent .t-core{fill:none;stroke:var(--tent);stroke-width:1.5;stroke-opacity:.58;stroke-linecap:round}
+.tent .t-beads{fill:none;stroke:var(--c);stroke-width:3.8;stroke-linecap:round;stroke-dasharray:.1 14;stroke-opacity:1}
+.tent .t-fray{fill:none;stroke:var(--c-exited);stroke-width:1.2;stroke-linecap:round;stroke-opacity:.8}
+.tent[data-state="waiting"] .t-core{stroke-dasharray:3 6;stroke-opacity:.35}
+.tent[data-state="waiting"] .t-beads,.tent[data-state="done"] .t-beads,.tent[data-state="exited"] .t-beads{display:none}
+.tent[data-state="done"] .t-core{stroke-opacity:.3}
+.tent[data-state="blocked"] .t-core{stroke:var(--c-blocked);stroke-opacity:.8}
+.tent[data-state="blocked"] .t-glow{stroke:var(--c-blocked);stroke-opacity:.18}
+.tent[data-state="exited"] .t-core{stroke:var(--c-exited);stroke-opacity:.5}
+.tent[data-state="exited"] .t-glow{stroke-opacity:0}
+.tent:not([data-state="exited"]) .t-fray{display:none}
+[data-theme="light"] .tent .t-glow{stroke-opacity:.05}
+.stalk{fill:none;stroke:var(--c-scribe);stroke-width:1.4;stroke-opacity:.6;stroke-dasharray:.1 5;stroke-linecap:round}
+
+.thread .th-glow{fill:none;stroke:var(--thread);stroke-width:4;stroke-opacity:.08}
+.thread .th-line{fill:none;stroke:var(--thread);stroke-width:1.05;stroke-opacity:.85}
+.thread .th-drop{fill:var(--thread)}
+.thread .th-label{font:500 9.5px var(--font-mono);fill:var(--ink-2);text-anchor:middle;paint-order:stroke;stroke:var(--text-halo);stroke-width:4px;stroke-linejoin:round}
+
+.cell{cursor:pointer;outline:none}
+.cell *{pointer-events:none}
+.cell .hit,.cell .act,.cell .act *{pointer-events:all}
+.cell .hit{fill:transparent}
+.cell .mem-glow{fill:none;stroke:var(--c);stroke-width:9;stroke-opacity:.17;stroke-linejoin:round}
+.cell .mem-inner{fill:none;stroke:var(--c);stroke-width:1;stroke-opacity:.32}
+.cell:is([data-state="done"],[data-state="exited"],[data-state="waiting"],[data-state="blocked"]) .mem-inner{display:none}
+.cell .mem-fill{stroke:none}
+.cell .mem-stroke{fill:none;stroke:var(--c);stroke-width:1.7;stroke-opacity:.95;stroke-linejoin:round}
+.cell[data-state="waiting"] .mem-stroke{stroke-dasharray:5 5;stroke-opacity:.85}
+.cell[data-state="waiting"] .mem-glow{stroke-opacity:.04}
+.cell[data-state="done"] .mem-stroke{stroke-width:2.2}
+.cell[data-state="exited"] :is(.mem-glow,.mem-fill,.mem-stroke,.inner){opacity:0}
+.cell .sonar{fill:none;stroke:var(--c);stroke-width:1.7}
+.cell .alert-ring{fill:none;stroke:var(--c);stroke-width:1.5;stroke-dasharray:3 7;stroke-linecap:round}
+.cell .wave{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round}
+.cell .wraps{fill:none;stroke:var(--c);stroke-width:1.2;stroke-opacity:.42}
+.cell .equator{fill:none;stroke:var(--c);stroke-width:1.5;stroke-dasharray:3 4;stroke-opacity:.85}
+.cell .thought{fill:none;stroke:var(--c);stroke-width:2;stroke-dasharray:.1 7;stroke-linecap:round;stroke-opacity:.8}
+.cell .org{fill:var(--c);fill-opacity:.55}
+.cell .cilia{fill:none;stroke:var(--c);stroke-width:1.5;stroke-linecap:round;stroke-opacity:.42}
+.cell .cilia.hot{stroke-opacity:1;stroke-width:2.1}
+.cell .facet{fill:var(--c);stroke:var(--facet-line);stroke-width:.8;stroke-linejoin:round}
+.cell .table{fill:var(--c);fill-opacity:.94;stroke:var(--facet-line);stroke-width:1}
+.cell .shard{fill:var(--shard);fill-opacity:.95;stroke:var(--c-exited);stroke-width:1.3;stroke-opacity:.85;stroke-linejoin:round}
+.cell .nuc-core{fill:var(--c)}
+.cell .nuc-hot{opacity:var(--hot-op)}
+.cell .twin{fill:var(--c);fill-opacity:.9}
+.cell .pct{font-family:var(--font-display);font-weight:600;fill:var(--nuc-ink);text-anchor:middle;dominant-baseline:central;letter-spacing:-.02em}
+.cell .glyph{font-family:var(--font-display);font-weight:700;font-size:26px;text-anchor:middle;dominant-baseline:central;fill:var(--c);paint-order:stroke;stroke:var(--text-halo);stroke-width:4px;stroke-linejoin:round}
+.cell[data-state="done"] .glyph{fill:var(--nuc-ink);stroke:none;font-size:23px}
+.cell .subpct{font:600 11.5px var(--font-display);fill:var(--ink-2);text-anchor:middle;paint-order:stroke;stroke:var(--text-halo);stroke-width:3px}
+.cell .spark{fill:var(--sp-core)}
+.cell .burst{fill:none;stroke:var(--c);stroke-width:1.6;stroke-linecap:round}
+.lbl-name{font-family:var(--font-display);font-weight:600;font-size:14px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--text-halo);stroke-width:4px;stroke-linejoin:round}
+.lbl-state{font-family:var(--font-ui);font-weight:500;font-size:12.5px;fill:var(--ink-2);text-anchor:middle;paint-order:stroke;stroke:var(--text-halo);stroke-width:4px;stroke-linejoin:round}
+.lbl-state .si{fill:var(--c);font-weight:700}
+.role-scribe .lbl-state{fill:var(--c-scribe-ink)}
+.sel-ring{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-dasharray:2 8;stroke-linecap:round;opacity:0}
+.sel-dot{fill:var(--ink);opacity:0}
+.cell.selected :is(.sel-ring,.sel-dot){opacity:.9}
+.focus-ring{fill:none;stroke:var(--focus);stroke-width:2.5;opacity:0}
+.cell:focus-visible .focus-ring{opacity:1}
+.cell.hover .mem-stroke{stroke-width:2.6}
+.act{cursor:pointer;outline:none}
+.act rect{stroke-width:1.5}
+.act.ok rect{fill:var(--c-blocked);stroke:var(--c-blocked)}
+.act.ok text{fill:var(--nuc-ink)}
+.act.no rect{fill:var(--glass-2);stroke:var(--c-blocked)}
+.act.no text{fill:var(--ink)}
+.act text{font:700 12px var(--font-ui);text-anchor:middle;dominant-baseline:central}
+.act:hover rect{stroke:var(--focus)}
+.act:focus-visible rect{stroke:var(--focus);stroke-width:3}
+
+/* visibilidade por estado (forma + movimento, nunca só cor) */
+.cell:not([data-state="testing"]) .sonar{display:none}
+.cell:not([data-state="reading"]) .wave{display:none}
+.cell:not([data-state="editing"]) .cilia{display:none}
+.cell:not([data-state="blocked"]) :is(.alert-ring,.acts){display:none}
+.cell:not([data-state="waiting"]) .wraps{display:none}
+.cell:not([data-state="thinking"]) .thought{display:none}
+.cell:not([data-state="starting"]) :is(.equator,.twin){display:none}
+.cell:not([data-state="done"]) .facets{display:none}
+.cell:not([data-state="exited"]) :is(.shards,.subpct){display:none}
+.cell:is([data-state="starting"],[data-state="waiting"],[data-state="done"],[data-state="exited"],[data-state="blocked"]) .nucleus{display:none}
+.cell:not(:is([data-state="waiting"],[data-state="done"],[data-state="exited"])) .glyph{display:none}
+.cell:is([data-state="done"],[data-state="exited"],[data-state="waiting"]) .org{display:none}
+.cell.role-orchestrator:not([data-state="done"]) .nucleus{display:inline}
+.role-orchestrator .canal{fill:none;stroke:var(--c);stroke-width:1;stroke-opacity:.2}
+.role-orchestrator .ringcanal{fill:none;stroke:var(--c);stroke-width:1.2;stroke-opacity:.28}
+.role-orchestrator .gonad{fill:none;stroke:var(--c-orch-2);stroke-width:4.5;stroke-opacity:.8}
+.role-orchestrator .gonad-glow{fill:none;stroke:var(--c-orch-2);stroke-width:12;stroke-opacity:.13}
+.role-orchestrator .fringe{fill:none;stroke:var(--c);stroke-width:1.1;stroke-opacity:.5;stroke-linecap:round}
+.role-orchestrator[data-state="done"] .deco{opacity:.22}
+.role-orchestrator[data-state="done"] .fringe{display:none}
+.role-scribe .gem-face{fill:var(--c-scribe)}
+.role-scribe .gem-line{fill:none;stroke:var(--facet-line);stroke-width:.8;stroke-linejoin:round}
+.role-scribe .gem-rim{fill:none;stroke:var(--c-scribe-ink);stroke-width:1.3;stroke-linejoin:round}
+.role-scribe .count{font:700 12.5px var(--font-display);fill:#FFFFFF;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:#24165E;stroke-width:3px;stroke-linejoin:round}
+.role-scribe .ring-w{fill:none;stroke:var(--c-scribe-ink);stroke-width:1.4}
+
+.spore .sp-core{fill:var(--sp-core)}
+[data-theme="light"] .spore .sp-core{fill:var(--k)}
+.spore .sp-trail{fill:var(--k)}
+.ripple{fill:none;stroke-width:1.7}
+
+/* =========================================================================
+   Vidro: barra superior, correnteza (bus), painel do agente, rodapé
+   ========================================================================= */
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);border:1px solid var(--glass-border);border-radius:14px;box-shadow:inset 0 1px 0 var(--glass-hi),var(--glass-shadow)}
+.topbar{position:fixed;z-index:10;top:14px;left:16px;right:16px;display:flex;gap:10px;align-items:stretch;pointer-events:none}
+.topbar>*{pointer-events:auto}
+.island{display:flex;align-items:center;gap:12px;padding:8px 14px;min-height:60px}
+.brand{flex:1 1 0;min-width:0}
+.logo{width:36px;height:36px;flex:none;overflow:visible}
+.brand-t{min-width:0}
+.brand h1{margin:0;font:600 17px/1.15 var(--font-display);letter-spacing:-.01em;white-space:nowrap}
+.brand h1 span{font:500 12.5px var(--font-ui);color:var(--ink-2);margin-left:6px;letter-spacing:.02em}
+.goal{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal b{font-weight:600;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;letter-spacing:.08em;margin-right:6px}
+.pulse{flex:none;gap:12px}
+.overall{display:grid;grid-template-columns:auto 1fr;align-items:end;column-gap:8px;min-width:132px}
+.ov-num{font:600 25px/1 var(--font-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ov-label{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;line-height:1.15}
+.ov-label b{display:block;font:500 11.5px var(--font-display);text-transform:none;letter-spacing:0;color:var(--ink-2)}
+.tide{grid-column:1/-1;height:4px;margin-top:7px;border-radius:4px;background:var(--chip-2);overflow:hidden;position:relative}
+.tide i{position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--c-orch-2),var(--c-reading) 60%,var(--c-editing));border-radius:4px}
+.counts{display:flex;gap:3px;margin:0;padding:0;list-style:none}
+.cnt{position:relative;display:flex;align-items:center;justify-content:center;gap:4px;min-width:39px;height:32px;padding:0 6px;border-radius:9px;background:var(--chip);border:1px solid var(--chip-border);font:600 13px var(--font-display);font-variant-numeric:tabular-nums;color:var(--ink)}
+.cnt .ci{font-size:13px;color:var(--c)}
+.cnt.zero{background:transparent;border-color:transparent;color:var(--ink-3)}
+.cnt.zero .ci{color:var(--ink-3)}
+.cnt.alarm{border-color:var(--c-blocked);box-shadow:0 0 0 0 rgba(255,176,32,.5);animation:alarm 1.3s var(--ease-io) infinite}
+@keyframes alarm{50%{box-shadow:0 0 0 4px rgba(255,176,32,.18)}}
+.cnt:hover::after{content:attr(data-label);position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;font:500 12px var(--font-ui);padding:4px 8px;border-radius:7px;background:var(--glass-2);border:1px solid var(--glass-border);color:var(--ink);z-index:2}
+.scribe-pill{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:9px;border:1px solid var(--chip-border);background:var(--chip);font:600 13px var(--font-display);color:var(--c-scribe-ink);white-space:nowrap}
+.scribe-pill.flash{animation:pillflash .9s var(--ease)}
+@keyframes pillflash{30%{background:rgba(139,108,239,.35)}}
+.controls{flex:none;gap:8px}
+.seg{display:flex;padding:3px;border-radius:11px;background:var(--chip);border:1px solid var(--chip-border)}
+.seg button{border:0;background:transparent;height:30px;padding:0 9px;border-radius:8px;font:600 12.5px var(--font-display);color:var(--ink-2);transition:background .25s var(--ease),color .25s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--chip-border);background:var(--chip);font:600 13px var(--font-ui);color:var(--ink);white-space:nowrap;transition:background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease)}
+.btn:hover{background:var(--chip-2)}
+.btn:active{transform:scale(.97)}
+.btn.icon{width:36px;padding:0}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.sm{height:28px;padding:0 10px;font-size:12px;border-radius:8px}
+.btn.ok{background:var(--c-blocked);color:var(--nuc-ink);border-color:transparent}
+.btn.no{border-color:var(--c-blocked)}
+#pauseBtn[aria-pressed="true"]{border-color:var(--accent);background:var(--chip-2)}
+.paused-pill{position:fixed;z-index:9;top:calc(var(--top-h) + 6px);left:50%;transform:translateX(-50%);padding:7px 14px;border-radius:999px;font:600 13px var(--font-ui);display:flex;gap:8px;align-items:center;animation:in .5s var(--ease) both}
+@keyframes in{from{opacity:0;transform:translate(-50%,-6px);filter:blur(6px)}to{opacity:1;transform:translate(-50%,0);filter:none}}
+
+.side{position:fixed;z-index:10;top:var(--top-h);bottom:var(--foot-h);display:flex;flex-direction:column;min-height:0}
+#bus{left:16px;width:var(--bus-w);padding:14px 10px 8px 12px}
+.side-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:0 4px}
+.side h2{margin:0;font:600 16px/1.2 var(--font-display);letter-spacing:-.01em}
+.sub{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.filters{display:flex;flex-wrap:wrap;gap:4px;margin:10px 2px 6px}
+.flt{height:28px;min-width:30px;padding:0 8px;border-radius:8px;border:1px solid var(--chip-border);background:transparent;color:var(--ink-2);font:600 12.5px var(--font-ui);transition:background .25s var(--ease),color .25s var(--ease)}
+.flt:hover{background:var(--chip)}
+.flt[aria-pressed="true"]{background:var(--chip-2);color:var(--ink);border-color:var(--ink-3)}
+.only{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin:2px 4px 8px;cursor:pointer;user-select:none}
+.only input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.bus-list{list-style:none;margin:0;padding:0 4px 0 0;overflow-y:auto;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:var(--chip-2) transparent}
+.msg{display:grid;grid-template-columns:26px 1fr;gap:9px;padding:8px 6px 8px 4px;border-top:1px solid var(--line);border-radius:10px;cursor:pointer;transition:background .25s var(--ease)}
+.msg:hover{background:var(--chip)}
+.msg:first-child{border-top-color:transparent}
+.m-ic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--font-display);color:var(--k);border:1px solid var(--k);background:var(--chip);box-shadow:0 0 12px -3px var(--k)}
+.m-body{min-width:0}
+.m-top{display:flex;align-items:baseline;gap:5px;min-width:0}
+.m-from,.m-to{font:600 12.5px var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:104px}
+.m-arrow{color:var(--ink-3);font-size:12px}
+.m-top time{margin-left:auto;padding-left:6px;font:500 11px var(--font-mono);color:var(--ink-3)}
+.m-text{margin:2px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.38;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.msg[data-kind="block"]{background:var(--warn-bg);border-radius:10px}
+.msg[data-kind="fail"]{background:var(--fail-bg);border-radius:10px}
+.bus-empty{padding:18px 8px;color:var(--ink-3);font-size:12.5px;text-align:center}
+
+#panel{right:16px;width:var(--panel-w);padding:14px 14px 12px;gap:10px;animation:panel-in .55s var(--ease) both}
+@keyframes panel-in{from{opacity:0;transform:translateX(26px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+.p-head{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center}
+.p-badge{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:700 18px var(--font-display);color:var(--c);border:2px solid var(--c);background:var(--chip);box-shadow:0 0 18px -4px var(--c)}
+.p-badge[data-state="waiting"]{border-style:dashed;box-shadow:none}
+.p-badge[data-state="exited"]{border-style:dotted;box-shadow:none}
+.p-badge[data-state="done"]{border-width:3px}
+.p-badge[data-state="blocked"]{border-width:3px;animation:alarm 1.3s var(--ease-io) infinite}
+.p-title{min-width:0}
+.p-title h2{margin:0;font:600 20px/1.15 var(--font-display);letter-spacing:-.01em;outline:none}
+.p-title p{margin:2px 0 0;font-size:12.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-task{margin:0;font-size:13.5px;color:var(--ink);line-height:1.45}
+.p-stats{display:grid;grid-template-columns:1.5fr 1fr .9fr .78fr;gap:6px}
+.stat{padding:7px 9px;border-radius:10px;background:var(--chip);border:1px solid var(--chip-border);min-width:0}
+.stat .k{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3)}
+.stat .v{display:block;margin-top:1px;font:600 13.5px/1.25 var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.stat .v i{font-style:normal;color:var(--c)}
+.pbar{height:3px;margin-top:5px;border-radius:3px;background:var(--chip-2);overflow:hidden}
+.pbar i{display:block;height:100%;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--c)}
+.p-perm{padding:10px 12px;border-radius:12px;border:1.5px solid var(--c-blocked);background:var(--warn-bg)}
+.p-perm h3{margin:0 0 4px;font:600 13.5px var(--font-display);color:var(--ink)}
+.p-perm h3 i{font-style:normal;color:var(--c-blocked);margin-right:4px}
+.p-perm code{display:block;font:500 12px/1.45 var(--font-mono);color:var(--ink);word-break:break-word}
+.p-perm .row{display:flex;gap:8px;margin-top:9px;align-items:center;flex-wrap:wrap}
+.p-perm .auto{margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+.p-dep{margin:0;font-size:12.5px;color:var(--ink-2)}
+.p-dep b{font:600 12.5px var(--font-mono);color:var(--ink)}
+.p-files{font-size:12.5px}
+.p-files summary{cursor:pointer;font:600 12.5px var(--font-display);color:var(--ink-2);list-style:none;display:flex;gap:6px;align-items:center}
+.p-files summary::-webkit-details-marker{display:none}
+.p-files summary::before{content:'▸';font-size:10px;transition:transform .25s var(--ease)}
+.p-files[open] summary::before{transform:rotate(90deg)}
+.p-files ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px}
+.p-files li{font:500 11.5px var(--font-mono);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-files li b{font:600 11px var(--font-ui);color:var(--c-editing);margin-right:4px}
+.p-tx-head{display:flex;align-items:center;gap:8px}
+.p-tx-head h3{margin:0;font:600 13.5px var(--font-display);flex:1}
+.copied{font-size:12px;color:var(--term-ok);opacity:0;transition:opacity .3s var(--ease)}
+.copied.show{opacity:1}
+.p-tx-wrap{position:relative;flex:1;min-height:110px;display:flex}
+.p-tx{flex:1;overflow:auto;margin:0;padding:9px 10px 12px;border-radius:10px;background:var(--term-bg);border:1px solid var(--chip-border);font:400 11.8px/1.55 var(--font-mono);color:var(--ink-2);white-space:pre-wrap;word-break:break-word;scrollbar-width:thin;scrollbar-color:var(--chip-2) transparent}
+.ln{padding-left:46px;text-indent:-46px}
+.ln-t{display:inline-block;width:42px;text-indent:0;color:var(--ink-3);font-size:10.5px}
+.ln.k-tool{color:var(--term-tool)}.ln.k-ok{color:var(--term-ok)}.ln.k-error{color:var(--term-err)}.ln.k-note{color:var(--ink-3)}.ln.k-prompt{color:var(--ink);font-weight:600}.ln.k-think{color:var(--term-think);font-style:italic}
+.newlines{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--accent);background:var(--glass-2);color:var(--ink);font:600 12px var(--font-ui);box-shadow:0 6px 18px rgba(0,0,0,.3);animation:in .4s var(--ease) both}
+.p-form{display:flex;gap:6px}
+.p-form input{flex:1;min-width:0;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--chip-border);background:var(--term-bg);color:var(--ink)}
+.p-form input::placeholder{color:var(--ink-3);opacity:1}
+
+.zoombar{position:fixed;z-index:9;left:calc(16px + var(--bus-w) + 12px);bottom:var(--foot-h);display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;border-radius:12px}
+.zoombar button{width:34px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:600 17px var(--font-display);transition:background .25s var(--ease)}
+.zoombar button:hover{background:var(--chip-2)}
+.zoombar output{width:40px;padding:2px 0;text-align:center;font:600 11px var(--font-display);color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+#foot{position:fixed;z-index:10;left:16px;right:16px;bottom:14px;padding:10px 16px 11px;display:grid;grid-template-columns:200px 1fr 1fr;gap:22px;align-items:start}
+.foot-h h2{margin:0;font:600 14px/1.2 var(--font-display)}
+.foot-h p{margin:3px 0 7px;font-size:12px;color:var(--ink-3);line-height:1.35}
+#foot h3{margin:0 0 5px;font:600 12.5px var(--font-display);display:flex;gap:6px;align-items:baseline}
+#foot h3 .ic{font-weight:700}
+#foot .can .ic{color:var(--c-editing)}
+#foot .clash .ic{color:var(--c-blocked)}
+#foot h3 small{font:500 12px var(--font-ui);color:var(--ink-2)}
+#foot ul{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+#foot li{font-size:12.5px;color:var(--ink-2);line-height:1.35;padding-left:14px;position:relative}
+#foot li::before{content:'';position:absolute;left:2px;top:.52em;width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+#foot code{font:500 11.5px var(--font-mono);color:var(--ink)}
+#foot.collapsed{grid-template-columns:1fr auto;align-items:center;padding:7px 12px 7px 16px}
+#foot.collapsed .foot-col{display:none}
+#foot.collapsed .foot-h p{display:none}
+.foot-sum{display:none;font-size:12.5px;color:var(--ink-2)}
+.foot-sum b{font:600 12.5px var(--font-display);color:var(--ink)}
+#foot.collapsed .foot-sum{display:inline}
+#foot.collapsed .foot-h{display:flex;gap:12px;align-items:center}
+.foot-h .btn{margin-top:2px}
+
+.tip{position:fixed;z-index:20;left:0;top:0;max-width:270px;padding:10px 12px;background:var(--tip-bg);border-top:2px solid var(--c,var(--accent));box-shadow:0 14px 34px rgba(0,0,0,.42),inset 0 1px 0 var(--glass-hi);pointer-events:none;font-size:12.5px;color:var(--ink-2)}
+.tip-h{display:flex;align-items:baseline;gap:8px}
+.tip-h b{font:600 14px var(--font-display);color:var(--ink)}
+.tip-h span{font-size:12px;color:var(--ink-3)}
+.tip-s{margin-top:3px;font:600 13px var(--font-display);color:var(--ink)}
+.tip-s i{font-style:normal;color:var(--c);margin-right:3px}
+.tip p{margin:4px 0 0;line-height:1.4}
+.tip .tip-k{color:var(--ink-3);font-size:11.5px}
+.tip .tip-perm{color:var(--ink)}
+
+.help-wrap{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(2,8,12,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fade .35s var(--ease) both}
+[data-theme="light"] .help-wrap{background:rgba(7,42,47,.18)}
+@keyframes fade{from{opacity:0}}
+.help{width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;padding:20px 22px;background:var(--glass-2);animation:pop .5s var(--ease) both}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98);filter:blur(6px)}}
+.help header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.help h2{margin:0;font:600 19px var(--font-display)}
+.help h3{margin:0 0 8px;font:600 13px var(--font-display);color:var(--ink-2);text-transform:uppercase;letter-spacing:.07em}
+.help-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:22px}
+.help dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;align-items:baseline}
+.help dt{white-space:nowrap}
+.help dd{margin:0;color:var(--ink-2)}
+.legend{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:13px}
+.legend li{display:grid;grid-template-columns:22px 1fr;gap:8px;color:var(--ink-2)}
+.legend li i{font-style:normal;font-weight:700;color:var(--c);text-align:center}
+.legend li b{color:var(--ink);font-weight:600}
+.help code{font:500 12px var(--font-mono);color:var(--ink);white-space:nowrap}
+
+/* ---------- responsivo e modos ---------- */
+@media (max-width:1320px){.goal{display:none}.brand h1 span{display:none}}
+@media (max-width:1180px){:root{--bus-w:270px;--panel-w:340px}.scribe-pill .lbl{display:none}}
+@media (max-width:980px){#bus{display:none}.zoombar{left:16px}:root{--panel-w:320px}.counts{flex-wrap:wrap}}
+@media (max-height:760px){#foot:not(.collapsed) .foot-col li:nth-child(n+4){display:none}}
+.embed #bus,.embed #panel,.embed #foot,.embed .controls,.embed .zoombar,.embed .paused-pill,.embed #lure,.embed .goal,.embed .scribe-pill .lbl{display:none!important}
+.embed .topbar{top:10px;left:10px;right:10px;gap:6px}
+.embed .island{min-height:44px;padding:5px 10px;gap:8px}
+.embed .brand{flex:0 1 auto}
+.embed .logo{width:26px;height:26px}
+.embed .brand h1{font-size:14px}
+.embed .brand h1 span{display:none}
+.embed .pulse{flex:1 1 auto;min-width:0}
+.embed .overall{min-width:70px}
+.embed .ov-num{font-size:18px}
+.embed .ov-label{display:none}
+.embed .cnt{min-width:30px;height:26px;padding:0 4px;font-size:11.5px}
+.embed .cnt .ci{font-size:11px}
+.embed #stage{cursor:default}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  #lure{display:none}
+}
+.reduced *,.reduced *::before,.reduced *::after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<pre id="__errors" hidden></pre>
+<script>
+  window.addEventListener('error', (e) => { const p = document.getElementById('__errors'); p.textContent += (e.message || e) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+  window.addEventListener('unhandledrejection', (e) => { const p = document.getElementById('__errors'); p.textContent += 'promise: ' + (e.reason && e.reason.message || e.reason) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+</script>
+
+<div class="abyss" aria-hidden="true">
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div>
+  <div class="rays"><i></i><i></i><i></i></div>
+  <div class="caustics c1"></div><div class="caustics c2"></div>
+</div>
+<canvas id="plankton" aria-hidden="true"></canvas>
+
+<main id="stage" aria-label="Cena da Colmeia">
+  <svg id="scene" role="group" aria-label="Colmeia: orquestrador água-viva no centro, workers em volta e escriba logo abaixo"></svg>
+</main>
+<div class="grain" aria-hidden="true"></div>
+<div id="lure" aria-hidden="true"></div>
+
+<header class="topbar" id="topbar">
+  <div class="island brand glass">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <defs>
+        <radialGradient id="lgBell" cx="50%" cy="34%" r="66%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+          <stop offset=".42" style="stop-color:var(--c-orch);stop-opacity:.7"/>
+          <stop offset="1" style="stop-color:var(--c-orch-2);stop-opacity:.18"/>
+        </radialGradient>
+      </defs>
+      <g fill="none" stroke-linecap="round" style="stroke:var(--c-orch)">
+        <path d="M12.5 21.5c-.8 4 1.8 6.2.6 10.5" stroke-width="1.3" opacity=".75"/>
+        <path d="M17 22c-.6 4.6 2 7 1 12" stroke-width="1.3" opacity=".9"/>
+        <path d="M22.5 22c.8 4.4-1.6 6.6-.4 11.5" stroke-width="1.3" opacity=".9"/>
+        <path d="M27.5 21.5c.9 3.8-1.4 6-.2 9.8" stroke-width="1.3" opacity=".75"/>
+      </g>
+      <path d="M6.5 21C6.5 12 12.5 6 20 6s13.5 6 13.5 15c-2.2-1.1-3.6.9-5.6-.2-2 1.4-3.6-.6-5.4.6-1.8-1.2-3.4.8-5.2-.6-2 1.1-3.4-.9-5.6.2z" fill="url(#lgBell)" style="stroke:var(--c-orch)" stroke-width="1.1"/>
+      <circle cx="20" cy="14" r="2.4" fill="#ffffff" opacity=".9"/>
+    </svg>
+    <div class="brand-t">
+      <h1>Colmeia <span>B · Bioluminescente</span></h1>
+      <p class="goal" id="goal"><b>Objetivo</b><span id="goalText"></span></p>
+    </div>
+  </div>
+  <div class="island pulse glass" role="group" aria-label="Progresso da sessão">
+    <div class="overall">
+      <span class="ov-num" id="ovNum">0%</span>
+      <span class="ov-label">progresso geral<b id="ovClock">sessão 1 · 00:00</b></span>
+      <div class="tide" aria-hidden="true"><i id="tideFill"></i></div>
+    </div>
+    <ul class="counts" id="counts" aria-label="Workers por estado"></ul>
+    <span class="scribe-pill" id="scribePill" title="Gravações do escriba no Obsidian"><span aria-hidden="true">◆</span><span id="scribeN">0</span><span class="lbl" id="scribeLbl">gravações</span></span>
+  </div>
+  <div class="island controls glass" role="toolbar" aria-label="Controles da simulação">
+    <div class="seg" role="group" aria-label="Velocidade" id="speedSeg"></div>
+    <button class="btn" id="pauseBtn" type="button" aria-pressed="false" aria-label="Pausar (Espaço)"><span aria-hidden="true" id="pauseIc">⏸</span><span id="pauseTx">Pausar</span></button>
+    <button class="btn icon" id="themeBtn" type="button" aria-label="Alternar tema claro/escuro (T)"><span aria-hidden="true" id="themeIc">☀</span></button>
+    <button class="btn icon" id="helpBtn" type="button" aria-label="Atalhos e legenda (?)"><span aria-hidden="true">?</span></button>
+  </div>
+</header>
+<div class="paused-pill glass" id="pausedPill" hidden><span aria-hidden="true">⏸</span> Pausado · <kbd>Espaço</kbd> continua</div>
+
+<aside id="bus" class="side glass" aria-label="Correnteza: bus de mensagens">
+  <div class="side-head">
+    <div>
+      <h2>Correnteza</h2>
+      <p class="sub"><span id="busCount">0</span> mensagens · <span id="busShowing">tudo</span></p>
+    </div>
+  </div>
+  <div class="filters" id="filters" role="group" aria-label="Filtrar mensagens por tipo"></div>
+  <label class="only"><input type="checkbox" id="onlySel"> só do agente selecionado</label>
+  <ol class="bus-list" id="busList"></ol>
+</aside>
+
+<div class="zoombar glass" role="group" aria-label="Zoom da cena: arraste a água para mover, roda do mouse aproxima, duplo clique ajusta" title="Arraste para mover · roda aproxima · duplo clique ajusta">
+  <button type="button" id="zIn" aria-label="Aproximar" title="Aproximar">+</button>
+  <output id="zPct" aria-live="off">100%</output>
+  <button type="button" id="zOut" aria-label="Afastar" title="Afastar">−</button>
+  <button type="button" id="zFit" aria-label="Ajustar a vista (F)" title="Ajustar a vista (F)">⤢</button>
+</div>
+
+<aside id="panel" class="side glass" aria-labelledby="pName" hidden>
+  <div class="p-head">
+    <div class="p-badge" id="pBadge" aria-hidden="true">✻</div>
+    <div class="p-title"><h2 id="pName" tabindex="-1">orquestrador</h2><p id="pRole"></p></div>
+    <button class="btn icon" id="pClose" type="button" aria-label="Fechar painel (Esc)"><span aria-hidden="true">✕</span></button>
+  </div>
+  <p class="p-task" id="pTask"></p>
+  <div class="p-stats">
+    <div class="stat" id="pStateBox"><span class="k">Estado</span><span class="v" id="pState"></span></div>
+    <div class="stat" id="pProgBox"><span class="k" id="pProgK">Progresso</span><span class="v" id="pProg">0%</span><div class="pbar"><i id="pBar"></i></div></div>
+    <div class="stat"><span class="k" id="pTokK">Tokens</span><span class="v" id="pTok">0</span></div>
+    <div class="stat"><span class="k">Tempo</span><span class="v" id="pTime">00:00</span></div>
+  </div>
+  <div class="p-perm" id="pPerm" hidden role="group" aria-labelledby="pPermH">
+    <h3 id="pPermH"><i aria-hidden="true">⏸</i>Pede permissão</h3>
+    <code id="pPermD"></code>
+    <div class="row">
+      <button class="btn sm ok" id="pApprove" type="button">✓ Aprovar <kbd>A</kbd></button>
+      <button class="btn sm no" id="pDeny" type="button">✕ Negar <kbd>N</kbd></button>
+      <span class="auto" id="pAuto"></span>
+    </div>
+  </div>
+  <p class="p-dep" id="pDep" hidden></p>
+  <details class="p-files" id="pFilesBox" open><summary>Arquivos <span id="pFilesN"></span></summary><ul id="pFiles"></ul></details>
+  <div class="p-tx-head">
+    <h3>Transcrição</h3>
+    <span class="copied" id="pCopied" role="status" aria-live="polite"></span>
+    <button class="btn sm" id="pCopy" type="button">Copiar <kbd>C</kbd></button>
+  </div>
+  <div class="p-tx-wrap">
+    <div class="p-tx" id="pTx" tabindex="0" aria-label="Transcrição do agente"></div>
+    <button class="newlines" id="pNew" type="button" hidden>↓ novas linhas</button>
+  </div>
+  <form class="p-form" id="pForm" autocomplete="off">
+    <label for="pMsg" class="sr-only">Mensagem para o agente</label>
+    <input id="pMsg" type="text" placeholder="Mensagem para o agente…">
+    <button class="btn primary" type="submit">Enviar</button>
+  </form>
+</aside>
+
+<footer id="foot" class="glass">
+  <div class="foot-h">
+    <h2>Para o dono decidir</h2>
+    <p>O que esta variante leva ao app e onde ela fura a regra de hoje.</p>
+    <span class="foot-sum"><b>✓ 4</b> dá para levar ao app · <b>⚠ 4</b> conflitam com a regra atual · a decisão é do dono</span>
+    <button class="btn sm" id="footToggle" type="button" aria-expanded="true" aria-controls="footCan footClash">Recolher</button>
+  </div>
+  <section class="foot-col can" id="footCan" aria-labelledby="footCanH">
+    <h3 id="footCanH"><span class="ic" aria-hidden="true">✓</span>Dá para levar ao app</h3>
+    <ul>
+      <li>Núcleo com raio = progresso no lugar do “líquido”, nas mesmas posições axiais do HiveView.</li>
+      <li>Estado sem cor: espinhos, casulo tracejado, cristal e cacos, sempre com ícone e rótulo do motor.</li>
+      <li>Fio de seda do <code>--after</code> e esporos do bus pelos tentáculos (o app já anima pulsos em SVG).</li>
+      <li>Aprovar/Negar dentro da própria célula, transcrição que gruda no fim e as teclas A, N, C e F.</li>
+    </ul>
+  </section>
+  <section class="foot-col clash" id="footClash" aria-labelledby="footClashH">
+    <h3 id="footClashH"><span class="ic" aria-hidden="true">⚠</span>Conflita com a regra atual <small>· a decisão é do dono</small></h3>
+    <ul>
+      <li>Gradiente em quase tudo (abismo, halos, membranas, núcleos): o design system proíbe gradiente.</li>
+      <li>Cores fora do <code>theme.css</code> (#00FFFF, #8FFF00, #FF6AFF, âmbar, #EAF6F4): pediria tokens novos.</li>
+      <li>Fontes do Google (Outfit, Readex Pro, JetBrains Mono): o app hoje só usa fontes do sistema.</li>
+      <li>Vidro, granulado e plâncton em canvas pesam no webview; textos fixos em pt-BR, fora do <code>t()</code>.</li>
+    </ul>
+  </section>
+</footer>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<div class="help-wrap" id="help" hidden>
+  <div class="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <header><h2 id="helpTitle">Atalhos e legenda</h2><button class="btn icon" id="helpClose" type="button" aria-label="Fechar ajuda (Esc)"><span aria-hidden="true">✕</span></button></header>
+    <div class="help-grid">
+      <section>
+        <h3>Teclado e mouse</h3>
+        <dl>
+          <dt><kbd>Espaço</kbd></dt><dd>pausar / continuar</dd>
+          <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>velocidade 0,5× · 1× · 2× · 4×</dd>
+          <dt><kbd>0</kbd> <kbd>1</kbd>–<kbd>9</kbd></dt><dd>orquestrador · claude-1 a claude-9</dd>
+          <dt><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd></dt><dd>vai para a célula vizinha naquela direção</dd>
+          <dt><kbd>Enter</kbd></dt><dd>abre a célula focada</dd>
+          <dt><kbd>Esc</kbd></dt><dd>fecha o painel</dd>
+          <dt><kbd>A</kbd> <kbd>N</kbd></dt><dd>aprova / nega o selecionado bloqueado</dd>
+          <dt><kbd>C</kbd></dt><dd>copia a transcrição do selecionado</dd>
+          <dt><kbd>F</kbd></dt><dd>ajusta a vista (ou duplo clique na água)</dd>
+          <dt><kbd>T</kbd></dt><dd>abismo (escuro) ↔ lagoa (claro)</dd>
+          <dt><kbd>?</kbd></dt><dd>esta ajuda</dd>
+          <dt>mouse</dt><dd>arrastar move · roda (com ou sem Ctrl) aproxima · duplo clique numa célula aproxima nela</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Como ler cada célula</h3>
+        <ul class="legend">
+          <li data-ck="starting"><i>◌</i><span><b>iniciando</b> · mitose: a célula se divide em dois lobos</span></li>
+          <li data-ck="thinking"><i>✻</i><span><b>pensando</b> · membrana respirando devagar, anel pontilhado por dentro</span></li>
+          <li data-ck="reading"><i>◎</i><span><b>lendo</b> · ondas atravessam a célula</span></li>
+          <li data-ck="editing"><i>✎</i><span><b>editando</b> · cílios batendo rápido na borda</span></li>
+          <li data-ck="testing"><i>▶</i><span><b>testando</b> · anéis de sonar concêntricos</span></li>
+          <li data-ck="blocked"><i>⏸</i><span><b>bloqueado</b> · espinhos + Aprovar/Negar dentro dela</span></li>
+          <li data-ck="waiting"><i>⧗</i><span><b>aguardando</b> · casulo tracejado preso por fio de seda (<code>--after</code>)</span></li>
+          <li data-ck="done"><i>✓</i><span><b>concluído</b> · calcifica num cristal facetado</span></li>
+          <li data-ck="exited"><i>✕</i><span><b>falhou</b> · escurece e se parte em cacos</span></li>
+          <li data-ck="scribe"><i>◆</i><span><b>escriba</b> · cristal roxo que acende a cada gravação</span></li>
+        </ul>
+        <p class="sub" style="margin-top:10px">O núcleo luminoso cresce com o progresso. Esporos são mensagens do bus correndo pelos tentáculos.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+/* <sim-engine> Motor de simulação dos protótipos da Orquestra (Colmeia e Mission Control).
+   Fonte única: prototipos/_fonte/sim-engine.js. Cada variante leva uma cópia inline entre os
+   marcadores <sim-engine> e </sim-engine>; rode `node _fonte/sync-engine.mjs` para atualizar todas.
+   Sem dependências e sem DOM: as variantes desenham, o motor só simula a orquestração. */
+;(function (global) {
+  'use strict'
+
+  /** Estados reais da Orquestra. Ícone + rótulo + `motion` garantem leitura sem depender de cor. */
+  const STATES = {
+    starting: { label: 'iniciando', icon: '◌', busy: true, motion: 'spin' },
+    thinking: { label: 'pensando', icon: '✻', busy: true, motion: 'breathe' },
+    reading: { label: 'lendo', icon: '◎', busy: true, motion: 'scan' },
+    editing: { label: 'editando', icon: '✎', busy: true, motion: 'type' },
+    testing: { label: 'testando', icon: '▶', busy: true, motion: 'tick' },
+    blocked: { label: 'bloqueado', icon: '⏸', busy: false, motion: 'alert' },
+    waiting: { label: 'aguardando', icon: '⧗', busy: false, motion: 'none' },
+    done: { label: 'concluído', icon: '✓', busy: false, motion: 'none' },
+    exited: { label: 'falhou', icon: '✕', busy: false, motion: 'none' },
+    idle: { label: 'ocioso', icon: '·', busy: false, motion: 'none' },
+  }
+
+  const ROLES = {
+    orchestrator: 'orquestrador',
+    worker: 'worker',
+    creative: 'criativo',
+    scribe: 'escriba Obsidian',
+  }
+
+  const GOAL = 'Terminal próprio na Orquestra: rolar, copiar e acabar com o texto embaralhado'
+  const PROJECT = 'alethe-orchestra'
+  const NOTE = '2026-10-04 Orchestra.md'
+
+  /** A equipe do cenário (a sessão real de 04/10/2026, comprimida em ~3 minutos). */
+  const PLAN = [
+    {
+      id: 'claude-2',
+      area: 'espelho-core',
+      task: 'Um terminal headless por PTY, sempre no tamanho real do PTY',
+      files: ['src/lib/terminalMirror/mirror.ts', 'src/lib/terminalMirror/lines.ts', 'src-tauri/src/pty.rs'],
+      duration: 52,
+      spawnAt: 3,
+      blockAt: 0.34,
+      permission: { tool: 'Edit', detail: 'src-tauri/src/pty.rs: emitir o pendente antes do clear' },
+    },
+    {
+      id: 'claude-1',
+      area: 'xterm-clássico',
+      task: 'Restaurar o histórico pelo espelho, sem replay em outra largura',
+      files: ['src/components/XTermView/useXtermSession.ts', 'src/lib/terminalReplay.ts'],
+      duration: 64,
+      spawnAt: 3.6,
+      failAt: 0.58,
+    },
+    {
+      id: 'claude-5',
+      area: 'obsidian-contexto',
+      task: 'Consultar o Obsidian antes de cada orquestração começar',
+      files: ['src-tauri/src/obsidian.rs', 'src/components/Orchestra/scribe/context.ts'],
+      duration: 58,
+      spawnAt: 4.2,
+    },
+    {
+      id: 'claude-6',
+      area: 'agente-criativo',
+      role: 'creative',
+      task: 'Propor recursos úteis e o que costuma passar despercebido',
+      files: ['docs/ideias-orquestra.md'],
+      duration: 80,
+      spawnAt: 4.8,
+    },
+    {
+      id: 'claude-3',
+      area: 'live-terminal-ui',
+      task: 'Renderizador DOM com grade exata, seleção, busca e links',
+      files: ['src/components/LiveTerminal/index.tsx', 'src/components/LiveTerminal/cells.ts', 'src/components/LiveTerminal/layout.ts'],
+      duration: 56,
+      spawnAt: 5.6,
+      after: 'claude-2',
+    },
+    {
+      id: 'claude-4',
+      area: 'integração',
+      task: 'LiveTerminal no painel do agente e nas células da visão Terminais',
+      files: ['src/components/Orchestra/AgentTerminal.tsx', 'src/stores/orchestraStore.ts'],
+      duration: 38,
+      spawnAt: 6.4,
+      after: 'claude-3',
+    },
+  ]
+
+  const RETRY = {
+    id: 'claude-7',
+    area: 'xterm-clássico · retomada',
+    task: 'Retomar de onde o claude-1 parou e corrigir a restauração',
+    files: ['src/components/XTermView/useXtermSession.ts'],
+    duration: 30,
+  }
+
+  const IDEAS = [
+    'atalho para copiar a última resposta de um agente',
+    'estado vazio do bus com exemplos de comando',
+    'desfazer “parar orquestração” por 5 s',
+    'aviso quando um worker fica 2 min sem reportar',
+    'exportar a sessão inteira como nota do Obsidian',
+  ]
+
+  const THINK = [
+    'Pensando no menor caminho que não quebra o contrato…',
+    'Comparando com o que o XTermView já faz…',
+    'Conferindo o histórico do embaralhamento (7 causas)…',
+    'Separando o que é pure function do que é DOM…',
+    'Lendo o contrato 00-contrato-live-terminal.md…',
+  ]
+
+  function seeded(seed) {
+    let s = seed >>> 0 || 1
+    return () => {
+      s ^= s << 13
+      s ^= s >>> 17
+      s ^= s << 5
+      return ((s >>> 0) % 1000003) / 1000003
+    }
+  }
+
+  function clock(seconds) {
+    const s = Math.max(0, Math.floor(seconds))
+    const m = Math.floor(s / 60)
+    return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  }
+
+  function tokens(n) {
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2).replace('.', ',')}M`
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace('.', ',')}k`
+    return String(Math.round(n))
+  }
+
+  /** Copia texto; usa a Clipboard API e cai para execCommand fora de contexto seguro. */
+  function copyText(text) {
+    if (global.navigator && navigator.clipboard && global.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).catch(() => legacyCopy(text))
+    }
+    return Promise.resolve(legacyCopy(text))
+  }
+
+  function legacyCopy(text) {
+    if (typeof document === 'undefined') return false
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch (error) {
+      ok = false
+    }
+    area.remove()
+    return ok
+  }
+
+  function create(options) {
+    const opts = Object.assign({ speed: 1, seed: 7, loop: true, autoApproveAfter: 14 }, options)
+    const listeners = new Map()
+    let rand = seeded(opts.seed)
+    let speed = opts.speed
+    let paused = false
+    let running = false
+    let frame = null
+    let last = 0
+    let session = 0
+    let world = null
+
+    function emit(type, payload) {
+      const event = Object.assign({ type, t: world ? world.t : 0 }, payload)
+      for (const key of [type, '*']) {
+        const set = listeners.get(key)
+        if (set) for (const fn of [...set]) {
+          try {
+            fn(event)
+          } catch (error) {
+            if (global.console) console.error('[sim] listener', error)
+          }
+        }
+      }
+    }
+
+    function on(type, fn) {
+      if (!listeners.has(type)) listeners.set(type, new Set())
+      listeners.get(type).add(fn)
+      return () => listeners.get(type).delete(fn)
+    }
+
+    function makeAgent(def, role, hue) {
+      return {
+        id: def.id,
+        role,
+        area: def.area,
+        task: def.task,
+        files: def.files ? def.files.slice() : [],
+        touched: [],
+        state: role === 'scribe' ? 'idle' : 'starting',
+        progress: 0,
+        after: def.after || null,
+        hue,
+        duration: def.duration || 60,
+        blockAt: def.blockAt,
+        failAt: def.failAt,
+        permission: null,
+        pendingPermission: def.permission || null,
+        lines: [],
+        tokens: 0,
+        startedAt: world.t,
+        endedAt: null,
+        nextLine: 0,
+        phaseUntil: 0,
+        reported: 0,
+        unread: 0,
+      }
+    }
+
+    function fresh() {
+      session += 1
+      rand = seeded(opts.seed + session * 97)
+      world = {
+        t: 0,
+        session,
+        goal: GOAL,
+        project: PROJECT,
+        agents: [],
+        byId: new Map(),
+        bus: [],
+        scribe: { note: NOTE, writes: 0, last: null, writing: false },
+        timeline: [],
+        finishedAt: null,
+        nextMessageId: 1,
+        spawned: new Set(),
+        retried: false,
+        ideas: 0,
+      }
+      const orch = makeAgent(
+        { id: 'orchestrator', area: 'orquestração', task: 'Dividir a meta, despachar workers, responder bloqueios e fechar a sessão', duration: 999 },
+        'orchestrator',
+        0,
+      )
+      orch.state = 'starting'
+      add(orch)
+      const scribe = makeAgent({ id: 'obsidian', area: 'escriba', task: `Registrar a sessão em ${NOTE}`, duration: 999 }, 'scribe', 0)
+      add(scribe)
+      schedule(0.6, () => setState(orch, 'reading'))
+      schedule(0.8, () => line(orch, 'tool', '⏺ Read(Alethe Orchestra/2026-10-04 Orchestra.md)'))
+      schedule(1.2, () => line(orch, 'note', '  ⎿  Contexto do Obsidian: 3 notas lidas'))
+      schedule(1.4, () => scribeWrite('Sessão iniciada · objetivo e contexto'))
+      schedule(1.8, () => setState(orch, 'thinking'))
+      schedule(2.0, () => line(orch, 'think', '✻ Dividindo a meta em 6 frentes com posse de arquivos disjunta…'))
+      for (const def of PLAN) schedule(def.spawnAt, () => spawn(def))
+    }
+
+    function add(agent) {
+      world.agents.push(agent)
+      world.byId.set(agent.id, agent)
+    }
+
+    const queue = []
+    function schedule(at, fn) {
+      queue.push({ at, fn })
+      queue.sort((a, b) => a.at - b.at)
+    }
+
+    function spawn(def) {
+      if (world.spawned.has(def.id)) return
+      world.spawned.add(def.id)
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      const agent = makeAgent(def, def.role || 'worker', workers.length + 1)
+      add(agent)
+      const orch = world.byId.get('orchestrator')
+      line(orch, 'tool', `⏺ Bash(orch spawn ${agent.id}${agent.after ? ` --after ${agent.after}` : ''})`)
+      message('orchestrator', agent.id, `tarefa: ${agent.task}`, 'task')
+      emit('spawn', { agent })
+      line(agent, 'prompt', `> ${agent.task}`)
+      if (agent.after) {
+        const dep = world.byId.get(agent.after)
+        if (!dep || dep.state !== 'done') {
+          setState(agent, 'waiting')
+          line(agent, 'note', `  aguardando ${agent.after} terminar (--after)`)
+          return
+        }
+      }
+      setState(agent, 'starting')
+      agent.phaseUntil = world.t + 1.2
+    }
+
+    function setState(agent, next) {
+      if (agent.state === next) return
+      const from = agent.state
+      agent.state = next
+      if (next === 'done' || next === 'exited') agent.endedAt = world.t
+      world.timeline.push({ at: world.t, id: agent.id, state: next })
+      if (world.timeline.length > 600) world.timeline.splice(0, world.timeline.length - 600)
+      emit('state', { agent, from, to: next })
+    }
+
+    function line(agent, kind, text) {
+      const entry = { at: world.t, kind, text }
+      agent.lines.push(entry)
+      if (agent.lines.length > 400) agent.lines.splice(0, agent.lines.length - 400)
+      agent.unread += 1
+      emit('line', { agent, line: entry })
+    }
+
+    function message(from, to, text, kind) {
+      const entry = { id: world.nextMessageId++, at: world.t, from, to, text, kind: kind || 'chat' }
+      world.bus.push(entry)
+      if (world.bus.length > 250) world.bus.splice(0, world.bus.length - 250)
+      emit('message', { message: entry })
+      return entry
+    }
+
+    function scribeWrite(text) {
+      const scribe = world.byId.get('obsidian')
+      world.scribe.writes += 1
+      world.scribe.last = { at: world.t, text }
+      world.scribe.writing = true
+      setState(scribe, 'editing')
+      line(scribe, 'tool', `⏺ Append(${NOTE})`)
+      line(scribe, 'ok', `  ⎿  ${text}`)
+      message('obsidian', NOTE, text, 'scribe')
+      emit('scribe', { write: world.scribe.last, count: world.scribe.writes })
+      schedule(world.t + 1.4, () => {
+        world.scribe.writing = false
+        setState(scribe, 'idle')
+      })
+    }
+
+    function pick(list) {
+      return list[Math.floor(rand() * list.length) % list.length]
+    }
+
+    function workPhase(agent) {
+      const p = agent.progress / 100
+      if (p < 0.12) return rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.72) return rand() < 0.7 ? 'editing' : rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.9) return 'testing'
+      return 'editing'
+    }
+
+    function narrate(agent) {
+      const file = pick(agent.files.length ? agent.files : ['README.md'])
+      switch (agent.state) {
+        case 'starting':
+          line(agent, 'note', '  iniciando Claude Code…')
+          break
+        case 'thinking':
+          line(agent, 'think', `✻ ${pick(THINK)}`)
+          break
+        case 'reading':
+          line(agent, 'tool', `⏺ Read(${file})`)
+          line(agent, 'note', `  ⎿  Read ${80 + Math.floor(rand() * 400)} lines`)
+          break
+        case 'editing': {
+          const plus = 4 + Math.floor(rand() * 60)
+          const minus = Math.floor(rand() * 20)
+          line(agent, 'tool', `⏺ Update(${file})`)
+          line(agent, 'ok', `  ⎿  Updated ${file} with ${plus} additions and ${minus} removals`)
+          if (!agent.touched.includes(file)) agent.touched.push(file)
+          break
+        }
+        case 'testing': {
+          const files = 3 + Math.floor(rand() * 6)
+          const tests = 20 + Math.floor(rand() * 70)
+          line(agent, 'tool', '⏺ Bash(npx vitest run)')
+          line(agent, 'ok', `  ⎿  ✓ ${tests} passed (${files} files)`)
+          break
+        }
+        default:
+          break
+      }
+    }
+
+    function report(agent) {
+      const step = Math.floor(agent.progress / 25) * 25
+      if (step <= agent.reported || step === 0 || step >= 100) return
+      agent.reported = step
+      const label = STATES[agent.state] ? STATES[agent.state].label : agent.state
+      line(agent, 'tool', `⏺ Bash(orch report ${step} ${agent.state} "${agent.area}")`)
+      message(agent.id, 'orchestrator', `${step}% · ${label}: ${agent.area}`, 'report')
+    }
+
+    function finish(agent) {
+      agent.progress = 100
+      setState(agent, 'done')
+      line(agent, 'tool', `⏺ Bash(orch report 100 done "${agent.area} pronto")`)
+      line(agent, 'ok', '  ⎿  ✓ tsc limpo · testes ok · seção registrada no Obsidian')
+      message(agent.id, 'orchestrator', `100% · concluído: ${agent.area}`, 'report')
+      scribeWrite(`${agent.id} · ${agent.area} concluído`)
+      for (const other of world.agents) {
+        if (other.after === agent.id && other.state === 'waiting') {
+          message('orchestrator', other.id, `${agent.id} terminou: pode começar`, 'task')
+          setState(other, 'starting')
+          other.startedAt = world.t
+          other.phaseUntil = world.t + 1.2
+          line(other, 'note', `  ${agent.id} terminou; começando agora`)
+        }
+      }
+    }
+
+    function fail(agent) {
+      agent.failing = false
+      setState(agent, 'exited')
+      line(agent, 'error', '  ⎿  ✕ 2 failed · restaura o histórico em 80 colunas')
+      line(agent, 'error', '  processo encerrado com código 1')
+      message(agent.id, 'orchestrator', 'falhei: 2 testes de restauração; o PTY encerrou', 'fail')
+      scribeWrite(`${agent.id} falhou · substituto a caminho`)
+      const orch = world.byId.get('orchestrator')
+      schedule(world.t + 2.2, () => {
+        line(orch, 'think', `✻ ${agent.id} caiu; mando um substituto que continua do estado atual`)
+        if (!world.retried) {
+          world.retried = true
+          spawn(Object.assign({}, RETRY))
+        }
+      })
+    }
+
+    function block(agent) {
+      agent.permission = agent.pendingPermission || { tool: 'Bash', detail: 'npm install' }
+      agent.pendingPermission = null
+      agent.blockedAt = world.t
+      setState(agent, 'blocked')
+      line(agent, 'error', `⏸ Permissão: ${agent.permission.tool}(${agent.permission.detail})`)
+      line(agent, 'note', '  aguardando aprovação (A aprova, N nega)')
+      message(agent.id, 'orchestrator', `pede permissão: ${agent.permission.tool} ${agent.permission.detail}`, 'block')
+      emit('permission', { agent, request: agent.permission })
+    }
+
+    function resolve(id, approved, by) {
+      const agent = world.byId.get(id)
+      if (!agent || agent.state !== 'blocked') return false
+      const request = agent.permission
+      agent.permission = null
+      message(by === 'auto' ? 'orchestrator' : 'você', agent.id, approved ? 'aprovado, pode seguir' : 'negado: siga sem tocar nesse arquivo', 'answer')
+      line(agent, approved ? 'ok' : 'error', approved ? '  ✓ aprovado' : '  ✕ negado; seguindo por outro caminho')
+      setState(agent, approved ? 'editing' : 'thinking')
+      agent.phaseUntil = world.t + 2
+      emit('resolved', { agent, approved, request })
+      return true
+    }
+
+    function stepAgent(agent, dt) {
+      if (agent.role === 'scribe' || agent.role === 'orchestrator') return
+      if (!STATES[agent.state].busy || agent.failing) return
+      if (agent.state === 'starting') {
+        if (world.t >= agent.phaseUntil) setState(agent, 'reading')
+        return
+      }
+      const rate = (100 / agent.duration) * (0.75 + rand() * 0.5)
+      agent.progress = Math.min(100, agent.progress + rate * dt)
+      agent.tokens += (60 + rand() * 140) * dt
+      if (agent.blockAt && agent.pendingPermission && agent.progress >= agent.blockAt * 100) {
+        block(agent)
+        return
+      }
+      if (agent.failAt && agent.progress >= agent.failAt * 100) {
+        agent.failAt = null
+        agent.failing = true
+        setState(agent, 'testing')
+        line(agent, 'tool', '⏺ Bash(npx vitest run src/components/XTermView)')
+        schedule(world.t + 1.6, () => fail(agent))
+        return
+      }
+      if (agent.id === 'claude-3' && !world.chatted && agent.progress > 30) {
+        world.chatted = true
+        message('claude-3', 'claude-4', 'deixo data-live-terminal na raiz e no textarea, combinado?', 'chat')
+        schedule(world.t + 2, () => message('claude-4', 'claude-3', 'combinado: uso para focar a célula e para o Esc', 'chat'))
+      }
+      if (agent.progress >= 100) {
+        finish(agent)
+        return
+      }
+      if (world.t >= agent.phaseUntil) {
+        setState(agent, workPhase(agent))
+        agent.phaseUntil = world.t + 2.5 + rand() * 4
+      }
+      if (world.t >= agent.nextLine) {
+        narrate(agent)
+        agent.nextLine = world.t + 1.4 + rand() * 2.6
+      }
+      report(agent)
+      if (agent.role === 'creative' && world.ideas < IDEAS.length && agent.progress > 12 + world.ideas * 16) {
+        const idea = IDEAS[world.ideas]
+        world.ideas += 1
+        line(agent, 'ok', `💡 proposta ${world.ideas}: ${idea}`)
+        message(agent.id, 'orchestrator', `proposta: ${idea}`, 'idea')
+      }
+    }
+
+    function stepOrchestrator(dt) {
+      const orch = world.byId.get('orchestrator')
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      orch.tokens += 30 * dt
+      if (world.finishedAt !== null) return
+      const blocked = workers.find((a) => a.state === 'blocked')
+      if (blocked && opts.autoApproveAfter > 0 && world.t - blocked.blockedAt > opts.autoApproveAfter) {
+        line(orch, 'think', `✻ ${blocked.id} esperou demais; aprovo (edição dentro da posse dele)`)
+        resolve(blocked.id, true, 'auto')
+      }
+      if (world.t < 7) return
+      if (workers.length > 0 && workers.every((a) => a.state === 'done' || (a.state === 'exited' && world.retried))) {
+        world.finishedAt = world.t
+        setState(orch, 'testing')
+        line(orch, 'tool', '⏺ Bash(npm test)')
+        schedule(world.t + 2.5, () => {
+          line(orch, 'ok', '  ⎿  ✓ 856 passed (96 files) · tsc limpo')
+          setState(orch, 'done')
+          message('orchestrator', 'você', 'tudo pronto: 6 frentes concluídas, 1 retomada', 'report')
+          scribeWrite('Fechamento da sessão · verificação final ok')
+          if (opts.loop) schedule(world.t + 9, () => reset())
+        })
+        return
+      }
+      if (orch.state !== 'thinking' && orch.state !== 'reading' && world.t > (orch.phaseUntil || 0)) {
+        setState(orch, rand() < 0.6 ? 'thinking' : 'reading')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+      } else if (world.t > (orch.phaseUntil || 0)) {
+        setState(orch, orch.state === 'thinking' ? 'reading' : 'thinking')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+        if (rand() < 0.5) line(orch, 'think', `✻ ${pick(['Conferindo os reports…', 'Respondendo o bus…', 'Revisando a posse de arquivos…'])}`)
+      }
+    }
+
+    function advance(dt) {
+      world.t += dt
+      while (queue.length && queue[0].at <= world.t) queue.shift().fn()
+      for (const agent of world.agents) stepAgent(agent, dt)
+      stepOrchestrator(dt)
+      emit('tick', { dt })
+    }
+
+    // Relógio por timer (~30 Hz), não por requestAnimationFrame: segue rodando em miniaturas e no
+    // Edge headless (onde o rAF quase não dispara). As variantes animam com CSS e redesenham no 'tick'.
+    const TICK_MS = 33
+    const now = () => (global.performance && performance.now ? performance.now() : Date.now())
+
+    function loop() {
+      frame = null
+      if (!running) return
+      const current = now()
+      const dt = last ? Math.min(0.25, (current - last) / 1000) : 0
+      last = current
+      if (!paused && dt > 0) advance(dt * speed)
+      frame = setTimeout(loop, TICK_MS)
+    }
+
+    function start() {
+      if (running) return api
+      running = true
+      last = 0
+      frame = setTimeout(loop, 0)
+      return api
+    }
+
+    function stop() {
+      running = false
+      if (frame !== null) clearTimeout(frame)
+      frame = null
+    }
+
+    function reset() {
+      queue.length = 0
+      fresh()
+      emit('reset', {})
+    }
+
+    function counts() {
+      const out = {}
+      for (const key of Object.keys(STATES)) out[key] = 0
+      for (const agent of world.agents) if (agent.role !== 'scribe') out[agent.state] += 1
+      return out
+    }
+
+    function overall() {
+      const workers = world.agents.filter((a) => (a.role === 'worker' || a.role === 'creative') && !(a.state === 'exited' && world.retried))
+      if (!workers.length) return 0
+      return workers.reduce((sum, a) => sum + a.progress, 0) / workers.length
+    }
+
+    const api = {
+      STATES,
+      ROLES,
+      on,
+      start,
+      stop,
+      reset,
+      pause() {
+        paused = true
+        emit('pause', { paused })
+      },
+      resume() {
+        paused = false
+        emit('pause', { paused })
+      },
+      toggle() {
+        paused = !paused
+        emit('pause', { paused })
+        return paused
+      },
+      get paused() {
+        return paused
+      },
+      get speed() {
+        return speed
+      },
+      setSpeed(value) {
+        speed = Math.max(0.25, Math.min(8, value))
+        emit('speed', { speed })
+      },
+      /** Avança a simulação na mão (útil com pausa ou em testes). */
+      step(seconds) {
+        advance(seconds)
+      },
+      get t() {
+        return world.t
+      },
+      get session() {
+        return world.session
+      },
+      get goal() {
+        return world.goal
+      },
+      get project() {
+        return world.project
+      },
+      get agents() {
+        return world.agents
+      },
+      get workers() {
+        return world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      },
+      get bus() {
+        return world.bus
+      },
+      get scribe() {
+        return world.scribe
+      },
+      get timeline() {
+        return world.timeline
+      },
+      agent(id) {
+        return world.byId.get(id) || null
+      },
+      overall,
+      counts,
+      approve(id) {
+        return resolve(id, true, 'você')
+      },
+      deny(id) {
+        return resolve(id, false, 'você')
+      },
+      /** Mensagem do usuário a um agente: entra no bus e o agente responde. */
+      send(to, text) {
+        const agent = world.byId.get(to)
+        if (!agent || !text) return null
+        const entry = message('você', to, text, 'user')
+        line(agent, 'prompt', `> ${text}`)
+        schedule(world.t + 1.4, () => {
+          const reply = agent.state === 'done' ? 'já terminei; posso revisar se quiser' : 'entendido, incorporo agora'
+          line(agent, 'ok', `⏺ ${reply}`)
+          message(to, 'você', reply, 'chat')
+        })
+        return entry
+      },
+      transcript(id) {
+        const agent = world.byId.get(id)
+        return agent ? agent.lines.map((l) => l.text).join('\n') : ''
+      },
+      clock,
+      tokens,
+      copyText,
+    }
+
+    fresh()
+    return api
+  }
+
+  global.AletheSim = { create, STATES, ROLES, clock, tokens, copyText }
+})(typeof window !== 'undefined' ? window : globalThis)
+/* </sim-engine> */
+</script>
+<script>
+;(() => {
+  'use strict'
+
+  /* =======================================================================
+     Básicos
+     ======================================================================= */
+  const NS = 'http://www.w3.org/2000/svg'
+  const root = document.documentElement
+  const qs = new URLSearchParams(location.search)
+  const EMBED = qs.get('embed') === '1'
+  const STATES = AletheSim.STATES
+  const TAU = Math.PI * 2
+  const SQ3 = Math.sqrt(3)
+  const N = 64
+  const COS = new Float64Array(N)
+  const SIN = new Float64Array(N)
+  for (let i = 0; i < N; i++) {
+    COS[i] = Math.cos((i * TAU) / N)
+    SIN[i] = Math.sin((i * TAU) / N)
+  }
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v)
+  const lerp = (a, b, t) => a + (b - a) * t
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+  const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
+  const easeInOut = (t) => -(Math.cos(Math.PI * t) - 1) / 2
+  const f1 = (n) => String(Math.round(n * 10) / 10)
+  const $ = (id) => document.getElementById(id)
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c])
+
+  function S(tag, attrs, parent) {
+    const el = document.createElementNS(NS, tag)
+    if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k])
+    if (parent) parent.appendChild(el)
+    return el
+  }
+  function setA(el, name, value) {
+    const key = '_a_' + name
+    if (el[key] !== value) {
+      el.setAttribute(name, value)
+      el[key] = value
+    }
+  }
+  function hashStr(s) {
+    let h = 2166136261 >>> 0
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i)
+      h = Math.imul(h, 16777619) >>> 0
+    }
+    return h
+  }
+  function rng(seed) {
+    let a = seed >>> 0 || 1
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0
+      let t = a
+      t = Math.imul(t ^ (t >>> 15), t | 1)
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+  }
+  const store = {
+    get(k) {
+      try { return window.localStorage.getItem(k) } catch (e) { return null }
+    },
+    set(k, v) {
+      try { window.localStorage.setItem(k, v) } catch (e) { /* sem armazenamento: segue sem lembrar */ }
+    },
+  }
+
+  const mqReduce = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
+  let REDUCED = !!(mqReduce && mqReduce.matches)
+  const FINE = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: fine)').matches
+
+  /* tema: ?theme força; senão o último escolhido; padrão = abismo (escuro) */
+  const forcedTheme = qs.get('theme')
+  let theme = forcedTheme === 'light' || forcedTheme === 'dark' ? forcedTheme : store.get('colmeia-b.theme') === 'light' ? 'light' : 'dark'
+  root.dataset.theme = theme
+  root.classList.toggle('embed', EMBED)
+  root.classList.toggle('reduced', REDUCED)
+
+  /* =======================================================================
+     Motor
+     ======================================================================= */
+  let speed0 = parseFloat(qs.get('speed'))
+  if (!isFinite(speed0) || speed0 <= 0) speed0 = 1
+  speed0 = clamp(speed0, 0.25, 8)
+  const sim = AletheSim.create({ speed: speed0, seed: 7, loop: true })
+  sim.on('tick', () => { document.documentElement.dataset.simT = String(Math.round(sim.t)) })
+
+  const ROLE_LABEL = { orchestrator: 'orquestrador', worker: 'worker', creative: 'criativo', scribe: 'escriba Obsidian' }
+  const SPEEDS = [0.5, 1, 2, 4]
+  const COUNT_STATES = ['starting', 'thinking', 'reading', 'editing', 'testing', 'blocked', 'waiting', 'done', 'exited']
+  const KINDS = {
+    task: { icon: '➜', label: 'tarefa', group: 'task' },
+    report: { icon: '◔', label: 'report', group: 'report' },
+    block: { icon: '⏸', label: 'pedido de permissão', group: 'perm' },
+    answer: { icon: '↩', label: 'resposta', group: 'perm' },
+    fail: { icon: '✕', label: 'falha', group: 'fail' },
+    idea: { icon: '✦', label: 'ideia', group: 'idea' },
+    scribe: { icon: '◆', label: 'gravação do escriba', group: 'scribe' },
+    chat: { icon: '⇄', label: 'conversa', group: 'chat' },
+    user: { icon: '✉', label: 'mensagem sua', group: 'chat' },
+  }
+  const FILTERS = [
+    ['all', 'Tudo', 'Tudo', 'tudo'],
+    ['task', '➜', 'Tarefas', 'tarefas'],
+    ['report', '◔', 'Reports', 'reports'],
+    ['perm', '⏸', 'Permissões e respostas', 'permissões'],
+    ['fail', '✕', 'Falhas', 'falhas'],
+    ['idea', '✦', 'Ideias do criativo', 'ideias'],
+    ['scribe', '◆', 'Gravações do escriba', 'escriba'],
+    ['chat', '⇄', 'Conversas e mensagens suas', 'conversas'],
+  ]
+  function nameOf(id) {
+    if (id === 'orchestrator') return 'orquestrador'
+    if (id === 'obsidian') return 'escriba'
+    if (id === 'você') return 'você'
+    if (sim.scribe && id === sim.scribe.note) return 'nota do Obsidian'
+    return id
+  }
+  function colorKey(a) {
+    if (a.role === 'scribe') return 'scribe'
+    const s = a.state
+    if (s === 'blocked' || s === 'exited' || s === 'waiting') return s
+    if (a.role === 'creative') return 'creative'
+    if (a.role === 'orchestrator') return s === 'done' ? 'done' : 'orch'
+    return STATES[s] ? s : 'idle'
+  }
+  const stateOf = (s) => STATES[s] || STATES.idle
+  const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many)
+
+  /* =======================================================================
+     Geometria do favo (axial, ponta para cima)
+     ======================================================================= */
+  const D = 200
+  const RW = 60
+  const RO = 88
+  const RS = 21
+  const SCRIBE_AT = { x: 0, y: 124 }
+  const axial = (q, r) => ({ x: D * (q + r / 2), y: D * (SQ3 / 2) * r })
+  const WALK = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]]
+  function ringHex(n) {
+    const out = []
+    let q = 0
+    let r = -n
+    for (const [dq, dr] of WALK) {
+      for (let s = 0; s < n; s++) {
+        out.push({ q, r })
+        q += dq
+        r += dr
+      }
+    }
+    return out
+  }
+  const SLOTS = []
+  {
+    const r1 = ringHex(1)
+    const order = r1.slice(1).concat([r1[0]]) // NE, E, SE, SW, W, NW
+    order.forEach((h) => SLOTS.push(Object.assign({ ring: 1, key: h.q + ',' + h.r }, h, axial(h.q, h.r))))
+    ringHex(2).forEach((h) => SLOTS.push(Object.assign({ ring: 2, key: h.q + ',' + h.r }, h, axial(h.q, h.r))))
+  }
+
+  /* =======================================================================
+     SVG: camadas e gradientes
+     ======================================================================= */
+  const stage = $('stage')
+  const scene = $('scene')
+  const defs = S('defs', null, scene)
+  const worldG = S('g', { class: 'world' }, scene)
+  const L = {
+    ghosts: S('g', { class: 'ghosts' }, worldG),
+    tents: S('g', { class: 'tents' }, worldG),
+    threads: S('g', { class: 'threads' }, worldG),
+    cells: S('g', { class: 'cells' }, worldG),
+    fx: S('g', { class: 'fx' }, worldG),
+    spores: S('g', { class: 'spores' }, worldG),
+  }
+  function gstop(g, off, color, op) {
+    const s = S('stop', { offset: off }, g)
+    s.style.stopColor = color
+    s.style.stopOpacity = op
+  }
+  const CKS = ['starting', 'thinking', 'reading', 'editing', 'testing', 'blocked', 'waiting', 'done', 'exited', 'idle', 'creative', 'orch', 'scribe']
+  for (const ck of CKS) {
+    const col = 'var(--c-' + ck + ')'
+    const m = S('radialGradient', { id: 'mem-' + ck, cx: '50%', cy: '50%', r: '50%' }, defs)
+    gstop(m, '0', col, 'var(--mem-a0)')
+    gstop(m, '0.6', col, 'var(--mem-a1)')
+    gstop(m, '0.86', col, 'var(--mem-a2)')
+    gstop(m, '1', col, 'var(--mem-a3)')
+    const h = S('radialGradient', { id: 'halo-' + ck, cx: '50%', cy: '50%', r: '50%' }, defs)
+    gstop(h, '0', col, 'var(--halo-a0)')
+    gstop(h, '0.34', col, 'var(--halo-a1)')
+    gstop(h, '0.62', col, 'var(--halo-a2)')
+    gstop(h, '1', col, '0')
+  }
+  {
+    const hot = S('radialGradient', { id: 'hot', cx: '42%', cy: '38%', r: '62%' }, defs)
+    gstop(hot, '0', '#ffffff', '0.96')
+    gstop(hot, '0.5', '#ffffff', '0.4')
+    gstop(hot, '1', '#ffffff', '0')
+    const spec = S('radialGradient', { id: 'spec', cx: '50%', cy: '50%', r: '50%' }, defs)
+    gstop(spec, '0', '#ffffff', 'var(--spec-a)')
+    gstop(spec, '1', '#ffffff', '0')
+  }
+  for (const k of Object.keys(KINDS)) {
+    const g = S('radialGradient', { id: 'sp-' + k, cx: '50%', cy: '50%', r: '50%' }, defs)
+    gstop(g, '0', 'var(--k-' + k + ')', '0.85')
+    gstop(g, '0.35', 'var(--k-' + k + ')', '0.32')
+    gstop(g, '1', 'var(--k-' + k + ')', '0')
+  }
+
+  function roundedHex(cx, cy, rad, round) {
+    const pts = []
+    for (let k = 0; k < 6; k++) {
+      const a = (Math.PI / 180) * (60 * k - 90)
+      pts.push([cx + rad * Math.cos(a), cy + rad * Math.sin(a)])
+    }
+    let d = ''
+    for (let k = 0; k < 6; k++) {
+      const p = pts[k]
+      const prev = pts[(k + 5) % 6]
+      const next = pts[(k + 1) % 6]
+      d += (k ? 'L' : 'M') + f1(lerp(p[0], prev[0], round)) + ' ' + f1(lerp(p[1], prev[1], round))
+      d += 'Q' + f1(p[0]) + ' ' + f1(p[1]) + ' ' + f1(lerp(p[0], next[0], round)) + ' ' + f1(lerp(p[1], next[1], round))
+    }
+    return d + 'Z'
+  }
+  S('path', { class: 'ghost r0', d: roundedHex(0, 0, (D / SQ3) * 0.9, 0.24) }, L.ghosts)
+  for (const s of SLOTS) S('path', { class: 'ghost r' + s.ring, d: roundedHex(s.x, s.y, (D / SQ3) * 0.9, 0.24) }, L.ghosts)
+
+  /* =======================================================================
+     Estado visual
+     ======================================================================= */
+  const vis = new Map()
+  let orchV = null
+  let scribeV = null
+  let selected = null
+  let hovered = null
+  let vt = 0 // relógio visual (s): para na pausa
+  let lastTs = 0
+  let lastFrame = 0
+  let lastUi = 0
+  const view = { x: 0, y: 0, k: 1 }
+  let viewAnim = null
+  let autoFit = true
+  const threads = new Map()
+  const spores = []
+  const ripples = []
+  let stalk = null
+
+  function chooseSlot(agent) {
+    const used = new Set()
+    for (const v of vis.values()) if (v.slot) used.add(v.slot.key)
+    const free = SLOTS.filter((s) => !used.has(s.key))
+    if (!free.length) return { x: 0, y: -D * 3, key: 'x' + agent.id, ring: 3 }
+    let anchor = null
+    if (agent.after && vis.get(agent.after) && vis.get(agent.after).slot) anchor = vis.get(agent.after)
+    else {
+      const failed = [...vis.values()].filter((v) => v.slot && v.agent.state === 'exited')
+      if (failed.length) anchor = failed[failed.length - 1]
+    }
+    if (anchor) {
+      // distância arredondada: empates (vizinho no anel 1 × no anel 2) ficam com o anel mais interno
+      const dist = (s) => Math.round(Math.hypot(s.x - anchor.x, s.y - anchor.y))
+      free.sort((a, b) => dist(a) - dist(b) || a.ring - b.ring || a.y - b.y)
+    }
+    return free[0]
+  }
+
+  function axisOf(v) {
+    const dep = v.agent.after && vis.get(v.agent.after)
+    if (dep) return Math.atan2(dep.y - v.y, dep.x - v.x)
+    return Math.atan2(v.y, v.x)
+  }
+
+  function ensureVisual(agent) {
+    if (!agent) return null
+    let v = vis.get(agent.id)
+    if (v) {
+      v.agent = agent
+      return v
+    }
+    v = makeVisual(agent)
+    return v
+  }
+
+  function makeVisual(agent) {
+    const role = agent.role
+    const seed = hashStr(agent.id)
+    const r = rng(seed)
+    const v = {
+      id: agent.id, agent, role, seed, key: 'c' + seed.toString(36),
+      s1: r() * TAU, s2: r() * TAU, s3: r() * TAU, s4: r() * TAU,
+      bornAt: vt, budding: false, lastState: null, stateAt: vt, dp: 0,
+      flashAt: -99, sparkAt: -99, failAt: null, doneAt: null,
+      px: 0, py: 0, sc: 1, tf: '', radii: new Float64Array(N), tr: new Float64Array(N),
+      sharp: false, morphRate: 6, dynamic: true, settled: false, axis: 0, pulse: 1, tp: null,
+    }
+    if (role === 'orchestrator') {
+      v.R = RO
+      v.x = 0
+      v.y = 0
+    } else if (role === 'scribe') {
+      v.R = RS
+      v.x = SCRIBE_AT.x
+      v.y = SCRIBE_AT.y
+    } else {
+      v.R = RW
+      const s = chooseSlot(agent)
+      v.slot = s
+      v.x = s.x
+      v.y = s.y
+      v.budding = !REDUCED
+    }
+    v.px = v.budding ? 0 : v.x
+    v.py = v.budding ? 0 : v.y
+    v.sc = v.budding ? 0.22 : 1
+    v.above = v.slot ? v.y < -1 : false
+    v.axis = axisOf(v)
+    v.radii.fill(v.R * (v.budding ? 0.4 : 1))
+    if (role === 'orchestrator') buildOrch(v)
+    else if (role === 'scribe') buildScribe(v)
+    else buildWorker(v)
+    vis.set(v.id, v)
+    if (role === 'orchestrator') orchV = v
+    if (role === 'scribe') scribeV = v
+    // ordem: orquestrador embaixo, workers no meio, escriba por cima (e por último no Tab)
+    if (role === 'orchestrator') L.cells.insertBefore(v.g, L.cells.firstChild)
+    else if (role === 'scribe') L.cells.appendChild(v.g)
+    else if (scribeV) L.cells.insertBefore(v.g, scribeV.g)
+    else L.cells.appendChild(v.g)
+    v.g.classList.toggle('selected', selected === v.id)
+    applyState(v)
+    return v
+  }
+
+  function baseCell(v) {
+    const g = S('g', { class: 'cell role-' + v.role, 'data-id': v.id, tabindex: '0', role: 'button' })
+    v.g = g
+    v.halo = S('circle', { class: 'halo', r: f1(v.R * (v.role === 'scribe' ? 2.6 : 2.05)) }, g)
+    return g
+  }
+
+  function addLabels(v, g) {
+    v.name = S('text', { class: 'lbl-name' }, g)
+    v.name.textContent = v.role === 'creative' ? '✦ ' + nameOf(v.id) : nameOf(v.id)
+    v.stateT = S('text', { class: 'lbl-state' }, g)
+    v.si = S('tspan', { class: 'si' }, v.stateT)
+    v.st = S('tspan', { dx: '5' }, v.stateT)
+    if (v.role === 'orchestrator') {
+      v.name.setAttribute('y', f1(-v.R * 0.56))
+      v.stateT.setAttribute('y', f1(v.R * 0.68))
+    } else if (v.role === 'scribe') {
+      v.name.setAttribute('y', f1(v.R + 17))
+      v.stateT.setAttribute('y', f1(v.R + 33))
+    } else if (v.above) {
+      v.name.setAttribute('y', f1(-v.R - 40))
+      v.stateT.setAttribute('y', f1(-v.R - 22))
+    } else {
+      v.name.setAttribute('y', f1(v.R + 29))
+      v.stateT.setAttribute('y', f1(v.R + 47))
+    }
+  }
+
+  function addRings(v, g, rSel) {
+    v.sel = S('circle', { class: 'sel-ring', r: f1(rSel) }, g)
+    v.selDots = [S('circle', { class: 'sel-dot', r: '2.6' }, g), S('circle', { class: 'sel-dot', r: '1.8' }, g)]
+    v.focus = S('circle', { class: 'focus-ring', r: f1(rSel + 7) }, g)
+  }
+
+  function addNucleus(v, g) {
+    v.nuc = S('g', { class: 'nucleus' }, g)
+    v.nucGlow = S('circle', { class: 'nuc-glow', r: '20' }, v.nuc)
+    v.nucCore = S('circle', { class: 'nuc-core', r: '11' }, v.nuc)
+    v.nucHot = S('circle', { class: 'nuc-hot', r: '11', fill: 'url(#hot)' }, v.nuc)
+    v.pct = S('text', { class: 'pct', y: '0.5' }, v.nuc)
+    v.pct.textContent = '0%'
+  }
+
+  function addMembrane(v, g) {
+    v.memGlow = S('path', { class: 'mem-glow' }, g)
+    v.memFill = S('path', { class: 'mem-fill' }, g)
+    v.clipEl = S('clipPath', { id: 'clip-' + v.key }, defs)
+    v.clipPath = S('path', null, v.clipEl)
+    v.inner = S('g', { class: 'inner', 'clip-path': 'url(#clip-' + v.key + ')' }, g)
+    v.spec = S('ellipse', { class: 'spec', cx: f1(-v.R * 0.34), cy: f1(-v.R * 0.42), rx: f1(v.R * 0.36), ry: f1(v.R * 0.17), fill: 'url(#spec)', transform: 'rotate(-28 ' + f1(-v.R * 0.34) + ' ' + f1(-v.R * 0.42) + ')' }, v.inner)
+  }
+
+  function buildWorker(v) {
+    const g = baseCell(v)
+    v.sonar = [0, 1, 2].map(() => S('circle', { class: 'sonar', r: f1(v.R) }, g))
+    v.alert = S('circle', { class: 'alert-ring', r: f1(v.R * 1.42) }, g)
+    addMembrane(v, g)
+    v.orgs = [0, 1, 2, 3].map((i) => S('circle', { class: 'org', r: String(1.4 + (i % 3) * 0.6) }, v.inner))
+    v.waves = [0, 1, 2].map(() => S('path', { class: 'wave' }, v.inner))
+    v.wraps = S('path', { class: 'wraps' }, v.inner)
+    v.equator = S('path', { class: 'equator' }, v.inner)
+    v.thought = S('circle', { class: 'thought', r: f1(v.R * 0.78) }, v.inner)
+    v.memStroke = S('path', { class: 'mem-stroke' }, g)
+    v.memInner = S('path', { class: 'mem-inner', transform: 'scale(0.86)' }, g)
+    v.ciliaDim = S('path', { class: 'cilia' }, g)
+    v.ciliaHot = S('path', { class: 'cilia hot' }, g)
+    v.facets = S('g', { class: 'facets' }, g)
+    v.shards = S('g', { class: 'shards' }, g)
+    addNucleus(v, g)
+    v.twins = [S('circle', { class: 'twin', r: '7' }, g), S('circle', { class: 'twin', r: '7' }, g)]
+    v.glyph = S('text', { class: 'glyph', y: '0' }, g)
+    v.sub = S('text', { class: 'subpct', y: '27' }, g)
+    if (v.role === 'creative') {
+      v.spark = S('path', { class: 'spark', d: 'M0 -7L1.6 -1.6L7 0L1.6 1.6L0 7L-1.6 1.6L-7 0L-1.6 -1.6Z' }, g)
+      v.burst = S('path', { class: 'burst' }, g)
+    }
+    addRings(v, g, v.R * 1.34)
+    v.hit = S('circle', { class: 'hit', r: f1(v.R * 1.1) }, g)
+    addLabels(v, g)
+    // Aprovar / Negar dentro da célula bloqueada
+    v.acts = S('g', { class: 'acts' }, g)
+    v.btnOk = makeAct(v, 'ok', -15, '✓ Aprovar', 'Aprovar o pedido de ' + v.id + ' (A)', () => approve(v.id))
+    v.btnNo = makeAct(v, 'no', 16, '✕ Negar', 'Negar o pedido de ' + v.id + ' (N)', () => deny(v.id))
+    // tentáculo do orquestrador até aqui
+    v.tg = S('g', { class: 'tent' }, L.tents)
+    v.tGlow = S('path', { class: 't-glow' }, v.tg)
+    v.tCore = S('path', { class: 't-core' }, v.tg)
+    v.tBeads = S('path', { class: 't-beads' }, v.tg)
+    v.tFray = S('path', { class: 't-fray' }, v.tg)
+  }
+
+  function makeAct(v, cls, y, label, aria, fn) {
+    const b = S('g', { class: 'act ' + cls, role: 'button', tabindex: '-1', 'aria-label': aria, transform: 'translate(0 ' + y + ')' }, v.acts)
+    S('rect', { x: '-45', y: '-13', width: '90', height: '26', rx: '13' }, b)
+    const t = S('text', { y: '0.5' }, b)
+    t.textContent = label
+    b.addEventListener('pointerdown', (e) => e.stopPropagation())
+    b.addEventListener('click', (e) => {
+      e.stopPropagation()
+      fn()
+    })
+    b.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
+        fn()
+      }
+    })
+    return b
+  }
+
+  function buildOrch(v) {
+    const g = baseCell(v)
+    v.sonar = [0, 1, 2].map(() => S('circle', { class: 'sonar', r: f1(v.R) }, g))
+    addMembrane(v, g)
+    v.waves = [0, 1, 2].map(() => S('path', { class: 'wave' }, v.inner))
+    v.deco = S('g', { class: 'deco' }, v.inner)
+    let canals = ''
+    for (let k = 0; k < 16; k++) {
+      const a = (k * TAU) / 16 + TAU / 32
+      canals += 'M' + f1(Math.cos(a) * v.R * 0.22) + ' ' + f1(Math.sin(a) * v.R * 0.22) + 'L' + f1(Math.cos(a) * v.R * 0.86) + ' ' + f1(Math.sin(a) * v.R * 0.86)
+    }
+    S('path', { class: 'canal', d: canals }, v.deco)
+    S('circle', { class: 'ringcanal', r: f1(v.R * 0.86) }, v.deco)
+    for (let k = 0; k < 4; k++) {
+      const a = Math.PI / 4 + (k * Math.PI) / 2
+      const cx = Math.cos(a) * v.R * 0.37
+      const cy = Math.sin(a) * v.R * 0.37
+      const rot = (a * 180) / Math.PI + 90
+      const attrs = { cx: f1(cx), cy: f1(cy), rx: f1(v.R * 0.2), ry: f1(v.R * 0.12), transform: 'rotate(' + f1(rot) + ' ' + f1(cx) + ' ' + f1(cy) + ')' }
+      S('ellipse', Object.assign({ class: 'gonad-glow' }, attrs), v.deco)
+      S('ellipse', Object.assign({ class: 'gonad' }, attrs), v.deco)
+    }
+    v.memStroke = S('path', { class: 'mem-stroke' }, g)
+    v.fringe = S('path', { class: 'fringe' }, g)
+    v.facets = S('g', { class: 'facets' }, g)
+    addNucleus(v, g)
+    v.glyph = S('text', { class: 'glyph', y: '0' }, g)
+    addRings(v, g, v.R * 1.22)
+    v.hit = S('circle', { class: 'hit', r: f1(v.R * 1.02) }, g)
+    addLabels(v, g)
+  }
+
+  function buildScribe(v) {
+    const g = baseCell(v)
+    v.ringW = S('circle', { class: 'ring-w', r: f1(v.R), opacity: '0' }, g)
+    v.gem = S('g', { class: 'gem' }, g)
+    const P = [[0, -22], [14, -10], [14, 9], [0, 22], [-14, 9], [-14, -10]]
+    const C = [0, -3]
+    const ops = [0.55, 0.85, 0.7, 0.95, 0.62, 0.78]
+    for (let k = 0; k < 6; k++) {
+      const a = P[k]
+      const b = P[(k + 1) % 6]
+      const face = S('path', { class: 'gem-face', d: 'M' + a[0] + ' ' + a[1] + 'L' + b[0] + ' ' + b[1] + 'L' + C[0] + ' ' + C[1] + 'Z' }, v.gem)
+      face.style.fillOpacity = String(ops[k])
+    }
+    S('path', { class: 'gem-line', d: P.map((p) => 'M' + C[0] + ' ' + C[1] + 'L' + p[0] + ' ' + p[1]).join('') }, v.gem)
+    S('path', { class: 'gem-rim', d: 'M' + P.map((p) => p[0] + ' ' + p[1]).join('L') + 'Z' }, v.gem)
+    v.count = S('text', { class: 'count', y: '1' }, v.gem)
+    v.count.textContent = '0'
+    addRings(v, g, v.R * 1.45)
+    v.hit = S('circle', { class: 'hit', r: f1(v.R * 1.6) }, g)
+    addLabels(v, g)
+  }
+
+  /* -------- forma da membrana -------- */
+  function buildCrystal(v) {
+    const r = rng(v.seed ^ 0x9e3779b9)
+    const n = v.role === 'orchestrator' ? 10 : 7
+    const base = Math.floor(r() * N)
+    const set = new Set()
+    for (let k = 0; k < n; k++) {
+      const i = Math.round(base + (k + (r() - 0.5) * 0.36) * (N / n))
+      set.add(((i % N) + N) % N)
+    }
+    const idx = [...set].sort((a, b) => a - b)
+    const rad = idx.map(() => v.R * (0.93 + r() * 0.12))
+    const out = new Float64Array(N)
+    for (let j = 0; j < idx.length; j++) {
+      const i1 = idx[j]
+      const i2 = idx[(j + 1) % idx.length]
+      const r1 = rad[j]
+      const r2 = rad[(j + 1) % idx.length]
+      let span = (i2 - i1 + N) % N
+      if (span === 0) span = N
+      const A = (span * TAU) / N
+      for (let s = 0; s <= span; s++) {
+        const d = (s * TAU) / N
+        out[(i1 + s) % N] = (r1 * r2 * Math.sin(A)) / (r1 * Math.sin(d) + r2 * Math.sin(A - d))
+      }
+    }
+    v.crystalIdx = idx
+    v.crystalRad = rad
+    v.crystalR = out
+    return out
+  }
+
+  function buildFacets(v) {
+    v.facets.textContent = ''
+    if (!v.crystalR) buildCrystal(v)
+    const idx = v.crystalIdx
+    const rad = v.crystalRad
+    const n = idx.length
+    const V = idx.map((i, j) => [rad[j] * COS[i], rad[j] * SIN[i]])
+    const tk = v.role === 'orchestrator' ? 0.4 : 0.46
+    const T = idx.map((i, j) => {
+      const a = (i * TAU) / N + 0.12
+      return [rad[j] * tk * Math.cos(a), rad[j] * tk * Math.sin(a)]
+    })
+    const ops = [0.14, 0.34, 0.2, 0.42, 0.16, 0.3, 0.24, 0.38, 0.18, 0.28]
+    for (let j = 0; j < n; j++) {
+      const k = (j + 1) % n
+      const p = S('path', { class: 'facet', d: 'M' + f1(V[j][0]) + ' ' + f1(V[j][1]) + 'L' + f1(V[k][0]) + ' ' + f1(V[k][1]) + 'L' + f1(T[k][0]) + ' ' + f1(T[k][1]) + 'L' + f1(T[j][0]) + ' ' + f1(T[j][1]) + 'Z' }, v.facets)
+      p.style.fillOpacity = String(ops[j % ops.length])
+    }
+    S('path', { class: 'table', d: 'M' + T.map((p) => f1(p[0]) + ' ' + f1(p[1])).join('L') + 'Z' }, v.facets)
+    v.facets.style.opacity = REDUCED ? '1' : '0'
+  }
+
+  function buildShards(v) {
+    v.shards.textContent = ''
+    const r = rng(v.seed ^ 0x51ed27)
+    const n = 6
+    const base = r() * TAU
+    const cuts = []
+    for (let k = 0; k < n; k++) cuts.push(base + ((k + (r() - 0.5) * 0.4) * TAU) / n)
+    v.shardList = []
+    for (let k = 0; k < n; k++) {
+      const a1 = cuts[k]
+      const a2 = k === n - 1 ? cuts[0] + TAU : cuts[k + 1]
+      const am = (a1 + a2) / 2
+      const pts = []
+      const inner = v.R * (0.06 + r() * 0.1)
+      pts.push([inner * Math.cos(am + (r() - 0.5) * 0.8), inner * Math.sin(am + (r() - 0.5) * 0.8)])
+      const steps = 4
+      for (let s = 0; s <= steps; s++) {
+        const a = lerp(a1, a2, s / steps)
+        const rr = v.R * (s === 0 || s === steps ? 0.95 : 0.9 + r() * 0.1)
+        pts.push([rr * Math.cos(a), rr * Math.sin(a)])
+      }
+      const mid = v.R * (0.45 + r() * 0.12)
+      pts.push([mid * Math.cos(a2 - 0.08), mid * Math.sin(a2 - 0.08)])
+      const el = S('path', { class: 'shard', d: 'M' + pts.map((p) => f1(p[0]) + ' ' + f1(p[1])).join('L') + 'Z' }, v.shards)
+      const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length
+      const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length
+      v.shardList.push({ el, am, rot: (r() - 0.5) * 34, dist: 9 + r() * 11, cx, cy })
+    }
+    v.shardsDone = false
+  }
+
+  function buildWraps(v) {
+    const R = v.R
+    let d = ''
+    for (let k = -2; k <= 2; k++) {
+      const u = k * R * 0.34
+      const p = (x, y) => f1(x) + ' ' + f1(y)
+      d += 'M' + p(u - 7, -R) + 'Q' + p(u + 9, 0) + ' ' + p(u - 7, R)
+    }
+    v.wraps.setAttribute('d', d)
+  }
+
+  function pathFrom(r, sharp) {
+    let d = ''
+    if (sharp) {
+      for (let i = 0; i < N; i++) d += (i ? 'L' : 'M') + f1(r[i] * COS[i]) + ' ' + f1(r[i] * SIN[i])
+      return d + 'Z'
+    }
+    const M = N / 2
+    const xs = new Array(M)
+    const ys = new Array(M)
+    for (let j = 0; j < M; j++) {
+      const i = j * 2
+      xs[j] = r[i] * COS[i]
+      ys[j] = r[i] * SIN[i]
+    }
+    d = 'M' + f1((xs[M - 1] + xs[0]) / 2) + ' ' + f1((ys[M - 1] + ys[0]) / 2)
+    for (let j = 0; j < M; j++) {
+      const k = (j + 1) % M
+      d += 'Q' + f1(xs[j]) + ' ' + f1(ys[j]) + ' ' + f1((xs[j] + xs[k]) / 2) + ' ' + f1((ys[j] + ys[k]) / 2)
+    }
+    return d + 'Z'
+  }
+
+  function bellPulse(T, per) {
+    const ph = (((T % per) + per) % per) / per
+    const c = ph < 0.24 ? easeOutCubic(ph / 0.24) : 1 - easeInOut((ph - 0.24) / 0.76)
+    return 1 - 0.05 * c
+  }
+
+  function computeTarget(v, T) {
+    const a = v.agent
+    const st = a.state
+    const R = v.R
+    const tr = v.tr
+    v.sharp = false
+    v.dynamic = !REDUCED
+    if (v.role === 'orchestrator') {
+      if (st === 'done') {
+        tr.set(v.crystalR || buildCrystal(v))
+        v.sharp = true
+        v.dynamic = false
+        v.pulse = 1
+        return
+      }
+      const pul = REDUCED ? 1 : bellPulse(T + v.s1, st === 'thinking' ? 3.4 : 2.4)
+      v.pulse = pul
+      const t = REDUCED ? 0 : T
+      for (let i = 0; i < N; i++) {
+        const th = (i * TAU) / N
+        const scal = 1 - 0.045 * Math.pow(1 - Math.abs(Math.cos(4 * th)), 3)
+        tr[i] = R * pul * scal * (1 + 0.016 * Math.sin(3 * th + 0.7 * t + v.s2) + 0.01 * Math.sin(5 * th - 0.9 * t + v.s3))
+      }
+      return
+    }
+    switch (st) {
+      case 'blocked': {
+        const pulse = REDUCED ? 0.5 : 0.5 + 0.5 * Math.sin(TAU * T * 1.2)
+        const tip = R * (1.12 + 0.08 * pulse)
+        const val = R * 0.93
+        const mid = (2 * tip * val * Math.cos(TAU / N)) / (tip + val)
+        for (let i = 0; i < N; i++) {
+          const k = i & 3
+          tr[i] = k === 0 ? tip : k === 2 ? val : mid
+        }
+        v.sharp = true
+        return
+      }
+      case 'done':
+        tr.set(v.crystalR || buildCrystal(v))
+        v.sharp = true
+        v.dynamic = false
+        return
+      case 'waiting': {
+        const phi = v.axis + (REDUCED ? 0 : 0.05 * Math.sin((TAU * T) / 7 + v.s1))
+        v.sway = phi
+        const A = R * 0.97
+        const B = R * 0.7
+        for (let i = 0; i < N; i++) {
+          const th = (i * TAU) / N - phi
+          const c = Math.cos(th)
+          const s = Math.sin(th)
+          tr[i] = (A * B) / Math.sqrt(B * B * c * c + A * A * s * s)
+        }
+        return
+      }
+      case 'starting': {
+        const pinch = REDUCED ? 0.2 : 0.19 + 0.07 * Math.sin((TAU * T) / 1.3)
+        v.pinch = pinch
+        for (let i = 0; i < N; i++) tr[i] = R * (0.8 + pinch * Math.cos(2 * ((i * TAU) / N - v.axis)))
+        return
+      }
+      case 'exited':
+        tr.fill(R * 0.9)
+        v.dynamic = false
+        return
+      default: {
+        const t = REDUCED ? 0 : T
+        const breath = st === 'thinking' && !REDUCED ? 1 + 0.055 * Math.sin((TAU * T) / 3.4 + v.s4) : 1
+        v.breath = breath
+        const sp = st === 'editing' ? 1.7 : st === 'testing' ? 1.2 : 1
+        for (let i = 0; i < N; i++) {
+          const th = (i * TAU) / N
+          let r = 1 + 0.03 * Math.sin(2 * th + 0.55 * t * sp + v.s1) + 0.026 * Math.sin(3 * th - 0.8 * t * sp + v.s2) + 0.013 * Math.sin(5 * th + 1.3 * t * sp + v.s3)
+          if (st === 'editing') r += 0.008 * Math.sin(11 * th - 4 * t)
+          tr[i] = R * breath * r
+        }
+      }
+    }
+  }
+
+  function morph(v, dt) {
+    const k = REDUCED ? 1 : 1 - Math.exp(-dt * v.morphRate)
+    let maxd = 0
+    for (let i = 0; i < N; i++) {
+      const d = v.tr[i] - v.radii[i]
+      const ad = d < 0 ? -d : d
+      if (ad > maxd) maxd = ad
+      v.radii[i] += d * k
+    }
+    if (!v.dynamic && v.settled && maxd < 0.05) return
+    v.settled = maxd < 0.05
+    const d = pathFrom(v.radii, v.sharp)
+    setA(v.memFill, 'd', d)
+    setA(v.memGlow, 'd', d)
+    setA(v.memStroke, 'd', d)
+    setA(v.clipPath, 'd', d)
+    if (v.memInner) setA(v.memInner, 'd', d)
+  }
+
+  function radiusAt(v, th) {
+    const i = ((Math.round((th / TAU) * N) % N) + N) % N
+    return v.radii[i]
+  }
+
+  /* -------- aplicação de estado (uma vez por mudança) -------- */
+  function applyState(v) {
+    const a = v.agent
+    const st = a.state
+    const prev = v.lastState
+    v.lastState = st
+    v.stateAt = vt
+    v.settled = false
+    const ck = colorKey(a)
+    v.g.dataset.state = st
+    v.g.dataset.ck = ck
+    if (v.tg) {
+      v.tg.dataset.state = st
+      v.tg.dataset.ck = ck
+    }
+    if (v.halo) v.halo.setAttribute('fill', 'url(#halo-' + ck + ')')
+    if (v.memFill) v.memFill.setAttribute('fill', 'url(#mem-' + ck + ')')
+    if (v.nucGlow) v.nucGlow.setAttribute('fill', 'url(#halo-' + ck + ')')
+    const S0 = stateOf(st)
+    if (v.role === 'scribe') {
+      v.si.textContent = ''
+      v.st.textContent = ''
+    } else {
+      v.si.textContent = S0.icon
+      v.st.textContent = st === 'blocked' ? S0.label + ' · ' + Math.round(a.progress) + '%' : st === 'waiting' && a.after ? S0.label + ' ' + a.after : S0.label
+    }
+    if (v.role === 'worker' || v.role === 'creative') {
+      v.axis = axisOf(v)
+      v.morphRate = st === 'done' ? 2.6 : st === 'blocked' ? 10 : 6
+      if (st === 'done') {
+        buildFacets(v)
+        v.doneAt = vt
+        if (prev) ripple(v.px, v.py, v.R, v.R + 26, 'var(--c-done)', 1)
+        v.glyph.textContent = '✓'
+      } else if (st === 'exited') {
+        buildShards(v)
+        v.failAt = vt
+        if (prev) ripple(v.px, v.py, v.R * 0.8, v.R + 30, 'var(--c-exited)', 0.9)
+        v.glyph.textContent = '✕'
+        v.glyph.setAttribute('y', '-6')
+        v.sub.textContent = Math.round(a.progress) + '%'
+      } else if (st === 'waiting') {
+        buildWraps(v)
+        v.glyph.textContent = '⧗'
+        v.glyph.setAttribute('y', '0')
+      } else if (st === 'starting') {
+        const c = Math.cos(v.axis + Math.PI / 2) * v.R * 0.78
+        const s = Math.sin(v.axis + Math.PI / 2) * v.R * 0.78
+        v.equator.setAttribute('d', 'M' + f1(-c) + ' ' + f1(-s) + 'L' + f1(c) + ' ' + f1(s))
+      }
+      if (st !== 'exited') v.glyph.setAttribute('y', '0')
+      const blocked = st === 'blocked'
+      v.btnOk.setAttribute('tabindex', blocked ? '0' : '-1')
+      v.btnNo.setAttribute('tabindex', blocked ? '0' : '-1')
+      v.acts.setAttribute('aria-hidden', blocked ? 'false' : 'true')
+      if (prev === 'blocked' && !blocked && v.acts.contains(document.activeElement)) v.g.focus({ preventScroll: true })
+    }
+    if (v.role === 'orchestrator') {
+      v.morphRate = st === 'done' ? 2.2 : 6
+      if (st === 'done') {
+        buildFacets(v)
+        v.doneAt = vt
+        v.glyph.textContent = '✓'
+        if (prev) ripple(0, 0, v.R, v.R + 40, 'var(--c-done)', 1.2)
+      }
+    }
+    updateAria(v)
+    if (hovered === v.id) showTip(v)
+  }
+
+  function updateAria(v) {
+    const a = v.agent
+    const S0 = stateOf(a.state)
+    let label = nameOf(a.id) + ', ' + ROLE_LABEL[a.role]
+    if (a.role === 'scribe') label += ', ' + plural(sim.scribe ? sim.scribe.writes : 0, 'gravação', 'gravações')
+    else {
+      const pct = a.role === 'orchestrator' ? Math.round(sim.overall()) : Math.round(a.progress)
+      label += ', ' + S0.label + ', ' + pct + '%'
+      if (a.state === 'blocked') label += ', pede permissão'
+      if (a.state === 'waiting' && a.after) label += ', espera ' + a.after
+    }
+    v.g.setAttribute('aria-label', label)
+    v.g.setAttribute('aria-pressed', selected === v.id ? 'true' : 'false')
+  }
+
+  /* -------- quadro a quadro -------- */
+  function setT(v) {
+    const tf = v.sc === 1 ? 'translate(' + f1(v.px) + ' ' + f1(v.py) + ')' : 'translate(' + f1(v.px) + ' ' + f1(v.py) + ') scale(' + v.sc.toFixed(3) + ')'
+    if (tf !== v.tf) {
+      v.g.setAttribute('transform', tf)
+      v.tf = tf
+    }
+  }
+
+  function updateHalo(v, T, base) {
+    let ha = base
+    const fl = clamp(1 - (T - v.flashAt) / 0.7, 0, 1)
+    ha = Math.min(1, ha + fl * 0.55)
+    if (hovered === v.id || selected === v.id) ha = Math.min(1, ha + 0.22)
+    setA(v.halo, 'opacity', ha.toFixed(2))
+  }
+
+  function updateNucleus(v, p) {
+    const R = v.R
+    const rn = v.role === 'orchestrator' ? lerp(15, R * 0.4, p) : lerp(11, R * 0.6, p)
+    const rs = f1(rn)
+    setA(v.nucCore, 'r', rs)
+    setA(v.nucHot, 'r', rs)
+    setA(v.nucGlow, 'r', f1(rn * 1.95))
+    const fs = (v.role === 'orchestrator' ? 14 : 12) + 5 * p
+    setA(v.pct, 'font-size', fs.toFixed(1))
+    const txt = Math.round(p * 100) + '%'
+    if (v.pct.textContent !== txt) v.pct.textContent = txt
+    return rn
+  }
+
+  function updateSelection(v, T) {
+    if (selected !== v.id) return
+    const t = REDUCED ? 0 : T
+    setA(v.sel, 'stroke-dashoffset', f1(-t * 14))
+    const rs = +v.sel.getAttribute('r')
+    for (let k = 0; k < 2; k++) {
+      const a = t * (0.9 - k * 0.3) + k * Math.PI + v.s1
+      setA(v.selDots[k], 'cx', f1(Math.cos(a) * rs))
+      setA(v.selDots[k], 'cy', f1(Math.sin(a) * rs))
+    }
+  }
+
+  function updateWorker(v, T, dt) {
+    const a = v.agent
+    const st = a.state
+    if (st !== v.lastState) applyState(v)
+    if (v.budding) {
+      const e = clamp((T - v.bornAt) / 0.95, 0, 1)
+      const ee = easeOutCubic(e)
+      v.px = v.x * ee
+      v.py = v.y * ee
+      v.sc = 0.22 + 0.78 * ee
+      if (e >= 1) {
+        v.budding = false
+        v.px = v.x
+        v.py = v.y
+        v.sc = 1
+      }
+    }
+    setT(v)
+    v.dp += (a.progress - v.dp) * (dt > 0 ? 1 - Math.exp(-dt * 5) : 0)
+    if (v.dp === 0 && a.progress > 0 && dt === 0) v.dp = a.progress
+    computeTarget(v, T)
+    morph(v, dt)
+    const R = v.R
+    const t = REDUCED ? 0 : T
+    // halo
+    let ha = st === 'waiting' ? 0.25 : st === 'exited' ? 0 : st === 'done' ? 0.55 : 0.85
+    if (st === 'blocked') ha = REDUCED ? 1 : 0.7 + 0.3 * Math.sin(TAU * T * 1.2)
+    updateHalo(v, T, ha)
+    // núcleo
+    let rn = 11
+    if (st === 'thinking' || st === 'reading' || st === 'editing' || st === 'testing' || st === 'idle') rn = updateNucleus(v, clamp(v.dp / 100, 0, 1))
+    // organelas
+    if (st !== 'done' && st !== 'exited' && st !== 'waiting') {
+      for (let k = 0; k < 4; k++) {
+        const ang = v.s2 + k * 1.7 + t * (0.25 + k * 0.07) * (k % 2 ? 1 : -1)
+        const rr = lerp(rn + 7, R * 0.82, 0.25 + 0.6 * (((k * 0.37 + v.s3) % 1 + 1) % 1))
+        setA(v.orgs[k], 'cx', f1(rr * Math.cos(ang)))
+        setA(v.orgs[k], 'cy', f1(rr * Math.sin(ang)))
+      }
+    }
+    if (st === 'testing') {
+      for (let k = 0; k < 3; k++) {
+        const ph = REDUCED ? (k + 1) / 4 : (T / 1.5 + k / 3) % 1
+        setA(v.sonar[k], 'r', f1(R * (1.0 + 0.75 * ph)))
+        setA(v.sonar[k], 'opacity', (REDUCED ? 0.7 - k * 0.18 : (1 - ph) * 0.85).toFixed(2))
+      }
+    } else if (st === 'reading') {
+      for (let k = 0; k < 3; k++) {
+        const ph = REDUCED ? (k + 0.5) / 3 : (T * 0.42 + k / 3) % 1
+        const x0 = -R * 1.1 + ph * R * 2.2
+        let d = ''
+        for (let j = 0; j <= 12; j++) {
+          const y = -R + (j * R) / 6
+          const x = x0 + 7 * Math.sin(y * 0.06 + t * 2.2 + k * 1.7)
+          d += (j ? 'L' : 'M') + f1(x) + ' ' + f1(y)
+        }
+        setA(v.waves[k], 'd', d)
+        setA(v.waves[k], 'opacity', (REDUCED ? 0.75 : Math.sin(ph * Math.PI) * 0.9).toFixed(2))
+      }
+    } else if (st === 'editing') {
+      const M = 32
+      let dDim = ''
+      let dHot = ''
+      const w = t * 10
+      for (let m = 0; m < M; m++) {
+        const th = (m * TAU) / M + v.s1 * 0.1
+        const ph = w - m * 0.8
+        const beat = REDUCED ? 0 : Math.sin(ph)
+        const br = radiusAt(v, th) + 1.2
+        const len = 5 + 5 * Math.max(0, beat)
+        const a2 = th + (REDUCED ? 0 : 0.28 * Math.cos(ph))
+        const x1 = br * Math.cos(th)
+        const y1 = br * Math.sin(th)
+        const seg = 'M' + f1(x1) + ' ' + f1(y1) + 'L' + f1(x1 + len * Math.cos(a2)) + ' ' + f1(y1 + len * Math.sin(a2))
+        if (beat > 0.6) dHot += seg
+        else dDim += seg
+      }
+      setA(v.ciliaDim, 'd', dDim)
+      setA(v.ciliaHot, 'd', dHot)
+    } else if (st === 'thinking') {
+      setA(v.thought, 'r', f1(R * 0.78 * (v.breath || 1)))
+      setA(v.thought, 'stroke-dashoffset', f1(-t * 5))
+    } else if (st === 'blocked') {
+      setA(v.alert, 'opacity', (REDUCED ? 0.8 : 0.45 + 0.45 * Math.sin(TAU * T * 1.2)).toFixed(2))
+      setA(v.alert, 'stroke-dashoffset', f1(t * 9))
+    } else if (st === 'waiting') {
+      setA(v.wraps, 'transform', 'rotate(' + f1((v.sway * 180) / Math.PI) + ')')
+    } else if (st === 'starting') {
+      const off = R * (0.36 + (v.pinch || 0.2) * 0.4)
+      for (let k = 0; k < 2; k++) {
+        const sgn = k ? 1 : -1
+        setA(v.twins[k], 'cx', f1(Math.cos(v.axis) * off * sgn))
+        setA(v.twins[k], 'cy', f1(Math.sin(v.axis) * off * sgn))
+      }
+    } else if (st === 'done') {
+      if (!REDUCED && v.doneAt != null) {
+        const e = clamp((T - v.doneAt - 0.35) / 0.8, 0, 1)
+        const o = e.toFixed(2)
+        if (v.facets.style.opacity !== o) v.facets.style.opacity = o
+        const ge = e.toFixed(2)
+        if (v.glyph.style.opacity !== ge) v.glyph.style.opacity = ge
+      } else {
+        v.facets.style.opacity = '1'
+        v.glyph.style.opacity = '1'
+      }
+    } else if (st === 'exited' && !v.shardsDone) {
+      const e = REDUCED || v.failAt == null ? 1 : easeOutCubic(clamp((T - v.failAt) / 2.4, 0, 1))
+      for (const s of v.shardList) {
+        const tx = Math.cos(s.am) * s.dist * e
+        const ty = Math.sin(s.am) * s.dist * e
+        s.el.setAttribute('transform', 'translate(' + f1(tx) + ' ' + f1(ty) + ') rotate(' + f1(s.rot * e) + ' ' + f1(s.cx) + ' ' + f1(s.cy) + ')')
+      }
+      if (e >= 1) v.shardsDone = true
+    }
+    if (st !== 'done' && v.glyph.style.opacity !== '') v.glyph.style.opacity = ''
+    if (v.spark) {
+      const ang = REDUCED ? -0.8 : t * 0.8 + v.s1
+      const rr = radiusAt(v, ang) + 3
+      const sc = REDUCED ? 1 : 0.75 + 0.45 * (0.5 + 0.5 * Math.sin(T * 5.5))
+      setA(v.spark, 'transform', 'translate(' + f1(rr * Math.cos(ang)) + ' ' + f1(rr * Math.sin(ang)) + ') rotate(' + f1(t * 80) + ') scale(' + sc.toFixed(2) + ')')
+      const be = REDUCED ? 1 : clamp((T - v.sparkAt) / 0.8, 0, 1)
+      if (be < 1) {
+        let d = ''
+        const r1 = R * (1.08 + 0.1 * be)
+        const r2 = R * (1.2 + 0.38 * easeOutCubic(be))
+        for (let k = 0; k < 10; k++) {
+          const aa = (k * TAU) / 10 + v.s2
+          d += 'M' + f1(r1 * Math.cos(aa)) + ' ' + f1(r1 * Math.sin(aa)) + 'L' + f1(r2 * Math.cos(aa)) + ' ' + f1(r2 * Math.sin(aa))
+        }
+        setA(v.burst, 'd', d)
+        setA(v.burst, 'opacity', (1 - be).toFixed(2))
+      } else setA(v.burst, 'opacity', '0')
+    }
+    updateSelection(v, T)
+  }
+
+  function updateOrch(v, T, dt) {
+    const a = v.agent
+    const st = a.state
+    if (st !== v.lastState) applyState(v)
+    v.px = 0
+    v.py = 0
+    setT(v)
+    computeTarget(v, T)
+    morph(v, dt)
+    const R = v.R
+    const t = REDUCED ? 0 : T
+    const pul = v.pulse || 1
+    setA(v.deco, 'transform', 'scale(' + pul.toFixed(3) + ')')
+    updateHalo(v, T, st === 'done' ? 0.6 : 0.9)
+    if (st !== 'done') {
+      const p = clamp(sim.overall() / 100, 0, 1)
+      v.dp += (p * 100 - v.dp) * (dt > 0 ? 1 - Math.exp(-dt * 4) : 1)
+      updateNucleus(v, clamp(v.dp / 100, 0, 1))
+      let d = ''
+      const M = 72
+      for (let m = 0; m < M; m++) {
+        const th = (m * TAU) / M
+        const br = radiusAt(v, th) * 0.985
+        const len = 7 + (REDUCED ? 0 : 3 * Math.sin(t * 2 + m * 0.5))
+        const a2 = th + (REDUCED ? 0 : 0.22 * Math.sin(t * 1.5 + m * 0.3))
+        const x1 = br * Math.cos(th)
+        const y1 = br * Math.sin(th)
+        d += 'M' + f1(x1) + ' ' + f1(y1) + 'L' + f1(x1 + len * Math.cos(a2)) + ' ' + f1(y1 + len * Math.sin(a2))
+      }
+      setA(v.fringe, 'd', d)
+    } else if (v.doneAt != null) {
+      const e = REDUCED ? 1 : clamp((T - v.doneAt - 0.3) / 0.9, 0, 1)
+      v.facets.style.opacity = e.toFixed(2)
+    }
+    if (st === 'testing') {
+      for (let k = 0; k < 3; k++) {
+        const ph = REDUCED ? (k + 1) / 4 : (T / 1.5 + k / 3) % 1
+        setA(v.sonar[k], 'r', f1(R * (1.02 + 0.6 * ph)))
+        setA(v.sonar[k], 'opacity', (REDUCED ? 0.7 - k * 0.18 : (1 - ph) * 0.85).toFixed(2))
+      }
+    } else if (st === 'reading') {
+      for (let k = 0; k < 3; k++) {
+        const ph = REDUCED ? (k + 0.5) / 3 : (T * 0.35 + k / 3) % 1
+        const x0 = -R * 1.1 + ph * R * 2.2
+        let d = ''
+        for (let j = 0; j <= 14; j++) {
+          const y = -R + (j * R) / 7
+          const x = x0 + 8 * Math.sin(y * 0.05 + t * 2 + k * 1.7)
+          d += (j ? 'L' : 'M') + f1(x) + ' ' + f1(y)
+        }
+        setA(v.waves[k], 'd', d)
+        setA(v.waves[k], 'opacity', (REDUCED ? 0.6 : Math.sin(ph * Math.PI) * 0.7).toFixed(2))
+      }
+    }
+    updateSelection(v, T)
+  }
+
+  function updateScribe(v, T) {
+    const a = v.agent
+    if (a.state !== v.lastState) applyState(v)
+    v.px = v.x
+    v.py = v.y + (REDUCED ? 0 : Math.sin(T * 0.8 + v.s1) * 2.2)
+    v.sc = 1
+    setT(v)
+    const since = T - v.flashAt
+    const bump = REDUCED ? 0 : Math.sin(Math.PI * clamp(since / 0.6, 0, 1)) * 0.26
+    setA(v.gem, 'transform', 'scale(' + (1 + bump).toFixed(3) + ')')
+    const writing = !!(sim.scribe && sim.scribe.writing)
+    updateHalo(v, T, writing ? 0.95 : 0.5)
+    if (!REDUCED && since < 1.1) {
+      const e = since / 1.1
+      setA(v.ringW, 'r', f1(v.R * (1 + 1.4 * easeOutCubic(e))))
+      setA(v.ringW, 'opacity', (0.9 * (1 - e)).toFixed(2))
+    } else setA(v.ringW, 'opacity', '0')
+    v.g.classList.toggle('writing', writing)
+    const nameTx = writing ? 'gravando…' : 'escriba'
+    if (v.name.textContent !== nameTx) v.name.textContent = nameTx
+    const n = String(sim.scribe ? sim.scribe.writes : 0)
+    if (v.count.textContent !== n) {
+      v.count.textContent = n
+      updateAria(v)
+    }
+    updateSelection(v, T)
+  }
+
+  /* -------- tentáculos -------- */
+  function bez(p, t) {
+    const u = 1 - t
+    const a = u * u * u
+    const b = 3 * u * u * t
+    const c = 3 * u * t * t
+    const d = t * t * t
+    return [a * p[0] + b * p[2] + c * p[4] + d * p[6], a * p[1] + b * p[3] + c * p[5] + d * p[7]]
+  }
+  function splitBez(p, t) {
+    const x01 = lerp(p[0], p[2], t), y01 = lerp(p[1], p[3], t)
+    const x12 = lerp(p[2], p[4], t), y12 = lerp(p[3], p[5], t)
+    const x23 = lerp(p[4], p[6], t), y23 = lerp(p[5], p[7], t)
+    const x012 = lerp(x01, x12, t), y012 = lerp(y01, y12, t)
+    const x123 = lerp(x12, x23, t), y123 = lerp(y12, y23, t)
+    return [p[0], p[1], x01, y01, x012, y012, lerp(x012, x123, t), lerp(y012, y123, t)]
+  }
+  const cubicD = (p) => 'M' + f1(p[0]) + ' ' + f1(p[1]) + 'C' + f1(p[2]) + ' ' + f1(p[3]) + ' ' + f1(p[4]) + ' ' + f1(p[5]) + ' ' + f1(p[6]) + ' ' + f1(p[7])
+
+  function updateTent(v, T) {
+    if (!orchV || !v.tg) return
+    const st = v.agent.state
+    const dist = Math.hypot(v.px, v.py) || 1
+    const ux = v.px / dist
+    const uy = v.py / dist
+    const nx = -uy
+    const ny = ux
+    const bell = RO * (orchV.pulse || 1) * 0.9
+    const sx = ux * bell
+    const sy = uy * bell
+    const er = v.R * 0.9 * v.sc
+    const ex = v.px - ux * er
+    const ey = v.py - uy * er
+    const amp = REDUCED ? 0 : st === 'waiting' ? 3 : st === 'done' ? 3.5 : st === 'exited' ? 0 : st === 'blocked' ? 6 : 9
+    const s1 = Math.sin(1.5 * T + v.s1) * amp
+    const s2 = Math.sin(1.5 * T + v.s1 + 2.2) * amp
+    const p = [sx, sy, lerp(sx, ex, 0.33) + nx * s1, lerp(sy, ey, 0.33) + ny * s1, lerp(sx, ex, 0.67) + nx * s2, lerp(sy, ey, 0.67) + ny * s2, ex, ey]
+    v.tp = p
+    let draw = p
+    if (v.budding) draw = splitBez(p, clamp((T - v.bornAt) / 0.95, 0.02, 1))
+    if (st === 'exited') {
+      const e = REDUCED || v.failAt == null ? 1 : easeOutCubic(clamp((T - v.failAt) / 1.6, 0, 1))
+      draw = splitBez(p, lerp(1, 0.55, e))
+      draw[5] += 8 * e
+      draw[7] += 16 * e
+      const tx = draw[6] - draw[4]
+      const ty = draw[7] - draw[5]
+      const tl = Math.hypot(tx, ty) || 1
+      const ang = Math.atan2(ty / tl, tx / tl)
+      let fray = ''
+      for (const off of [-0.55, 0, 0.6]) {
+        const len = 7 + Math.abs(off) * 4
+        fray += 'M' + f1(draw[6]) + ' ' + f1(draw[7]) + 'L' + f1(draw[6] + Math.cos(ang + off) * len) + ' ' + f1(draw[7] + Math.sin(ang + off) * len)
+      }
+      setA(v.tFray, 'd', fray)
+    }
+    const d = cubicD(draw)
+    setA(v.tGlow, 'd', d)
+    setA(v.tCore, 'd', d)
+    setA(v.tBeads, 'd', d)
+    if (!REDUCED) {
+      const off = st === 'blocked' ? (T * 30) % 14 : -((T * 18) % 14)
+      setA(v.tBeads, 'stroke-dashoffset', f1(off))
+    }
+  }
+
+  function updateStalk(T) {
+    if (!orchV || !scribeV) return
+    if (!stalk) stalk = S('path', { class: 'stalk' }, L.tents)
+    const y0 = RO * (orchV.pulse || 1) * 0.97
+    const y1 = scribeV.py - 23
+    const sway = REDUCED ? 0 : Math.sin(T * 1.1) * 2
+    setA(stalk, 'd', 'M0 ' + f1(y0) + 'Q' + f1(sway) + ' ' + f1((y0 + y1) / 2) + ' 0 ' + f1(y1))
+    if (!REDUCED) setA(stalk, 'stroke-dashoffset', f1(-((T * 10) % 5)))
+  }
+
+  /* -------- fios de seda (--after) -------- */
+  function syncThreads() {
+    for (const v of vis.values()) {
+      if (!v.slot) continue
+      const a = v.agent
+      if (a.state === 'waiting' && a.after && vis.has(a.after) && !threads.has(v.id)) {
+        const g = S('g', { class: 'thread' }, L.threads)
+        const th = {
+          a: v,
+          b: vis.get(a.after),
+          g,
+          glow: S('path', { class: 'th-glow' }, g),
+          line: S('path', { class: 'th-line' }, g),
+          drops: [0, 1, 2].map(() => S('circle', { class: 'th-drop', r: '1.8' }, g)),
+          lbl: S('text', { class: 'th-label' }, g),
+          snapAt: null,
+        }
+        th.lbl.textContent = '--after'
+        threads.set(v.id, th)
+      }
+    }
+    for (const th of threads.values()) {
+      if (th.snapAt == null && th.a.agent.state !== 'waiting') th.snapAt = vt
+    }
+  }
+  const quadAt = (P, t) => {
+    const u = 1 - t
+    return [u * u * P[0] + 2 * u * t * P[2] + t * t * P[4], u * u * P[1] + 2 * u * t * P[3] + t * t * P[5]]
+  }
+  function quadSub(P, t0, t1) {
+    const a = quadAt(P, t0)
+    const c = quadAt(P, t1)
+    const bx = (1 - t0) * (1 - t1) * P[0] + ((1 - t0) * t1 + t0 * (1 - t1)) * P[2] + t0 * t1 * P[4]
+    const by = (1 - t0) * (1 - t1) * P[1] + ((1 - t0) * t1 + t0 * (1 - t1)) * P[3] + t0 * t1 * P[5]
+    return 'M' + f1(a[0]) + ' ' + f1(a[1]) + 'Q' + f1(bx) + ' ' + f1(by) + ' ' + f1(c[0]) + ' ' + f1(c[1])
+  }
+  function updateThreads(T) {
+    for (const [id, th] of threads) {
+      const a = th.a
+      const b = th.b
+      if (!vis.has(a.id) || !vis.has(b.id)) {
+        th.g.remove()
+        threads.delete(id)
+        continue
+      }
+      const dx = b.px - a.px
+      const dy = b.py - a.py
+      const dist = Math.hypot(dx, dy) || 1
+      const ux = dx / dist
+      const uy = dy / dist
+      const sx = a.px + ux * a.R * 0.97 * a.sc
+      const sy = a.py + uy * a.R * 0.97 * a.sc
+      const ex = b.px - ux * b.R * 0.96
+      const ey = b.py - uy * b.R * 0.96
+      const sway = REDUCED ? 0 : Math.sin(T * 0.9 + a.s1) * 3
+      const P = [sx, sy, (sx + ex) / 2 - uy * sway, (sy + ey) / 2 + 10 + ux * sway, ex, ey]
+      if (th.snapAt != null) {
+        const e = clamp((T - th.snapAt) / 0.8, 0, 1)
+        if (REDUCED || e >= 1) {
+          th.g.remove()
+          threads.delete(id)
+          continue
+        }
+        const k = 0.5 * (1 - easeOutCubic(e))
+        const d = quadSub(P, 0, k) + quadSub(P, 1 - k, 1)
+        setA(th.line, 'd', d)
+        setA(th.glow, 'd', d)
+        setA(th.g, 'opacity', (1 - e).toFixed(2))
+        for (const c of th.drops) setA(c, 'opacity', '0')
+        setA(th.lbl, 'opacity', '0')
+        continue
+      }
+      const d = 'M' + f1(sx) + ' ' + f1(sy) + 'Q' + f1(P[2]) + ' ' + f1(P[3]) + ' ' + f1(ex) + ' ' + f1(ey)
+      setA(th.line, 'd', d)
+      setA(th.glow, 'd', d)
+      const us = [0.28, 0.52, 0.76]
+      for (let k = 0; k < 3; k++) {
+        const q = quadAt(P, us[k])
+        setA(th.drops[k], 'cx', f1(q[0]))
+        setA(th.drops[k], 'cy', f1(q[1]))
+        setA(th.drops[k], 'opacity', (REDUCED ? 0.8 : 0.45 + 0.45 * Math.sin(T * 2.4 + k * 2.1)).toFixed(2))
+      }
+      const m = quadAt(P, 0.5)
+      let nx = -uy
+      let ny = ux
+      if (nx * m[0] + ny * m[1] < 0) {
+        nx = -nx
+        ny = -ny
+      }
+      let ang = (Math.atan2(uy, ux) * 180) / Math.PI
+      if (ang > 90) ang -= 180
+      if (ang < -90) ang += 180
+      const lx = m[0] + nx * 15
+      const ly = m[1] + ny * 15 + 3
+      setA(th.lbl, 'transform', 'translate(' + f1(lx) + ' ' + f1(ly) + ') rotate(' + f1(ang) + ')')
+    }
+  }
+
+  /* -------- esporos (mensagens do bus) e ondulações -------- */
+  let frameRect = null // lido uma vez por quadro, antes das escritas no DOM
+  function surfacePoint() {
+    const r = frameRect || fitRect()
+    return [((r.l + r.r) / 2 - view.x) / view.k, (r.t - 10 - view.y) / view.k]
+  }
+  function endpoint(id) {
+    if (id === 'você' || (sim.scribe && id === sim.scribe.note)) return { surface: true }
+    const a = sim.agent(id)
+    if (a && !vis.has(id)) ensureVisual(a)
+    const v = vis.get(id)
+    return v ? { v } : null
+  }
+  function sporeFor(m) {
+    const from = endpoint(m.from)
+    const to = endpoint(m.to)
+    if (!from || !to) return
+    if (REDUCED || document.hidden) {
+      if (to.v) to.v.flashAt = vt
+      return
+    }
+    let route = null
+    if (from.v && to.v && from.v !== to.v && (from.v === orchV || to.v === orchV)) {
+      const w = from.v === orchV ? to.v : from.v
+      if (w.tg && w.agent.state !== 'exited') route = { type: 'tent', w, dir: from.v === orchV ? 1 : -1 }
+    }
+    if (!route) route = { type: 'free', from, to }
+    const k = KINDS[m.kind] ? m.kind : 'chat'
+    const g = S('g', { class: 'spore' }, L.spores)
+    g.style.setProperty('--k', 'var(--k-' + k + ')')
+    const glow = S('circle', { r: '15', fill: 'url(#sp-' + k + ')' }, g)
+    const trail = [2.7, 2.1, 1.5].map((r, i) => S('circle', { class: 'sp-trail', r: String(r), opacity: String(0.8 - i * 0.2) }, g))
+    const core = S('circle', { class: 'sp-core', r: '3.7' }, g)
+    const dur = (route.type === 'tent' ? 1.25 : 1.6) / Math.pow(Math.max(0.5, sim.speed), 0.3)
+    spores.push({ g, glow, core, trail, route, t0: vt, dur, kind: k, target: to.v || null })
+    while (spores.length > 18) spores.shift().g.remove()
+  }
+  function endPos(ep, toward) {
+    if (ep.surface) return surfacePoint()
+    const v = ep.v
+    const dx = toward[0] - v.px
+    const dy = toward[1] - v.py
+    const l = Math.hypot(dx, dy) || 1
+    const r = v.R * 0.85 * v.sc
+    return [v.px + (dx / l) * r, v.py + (dy / l) * r]
+  }
+  function centerOf(ep) {
+    return ep.surface ? surfacePoint() : [ep.v.px, ep.v.py]
+  }
+  function sporePoint(s, e) {
+    const rt = s.route
+    if (rt.type === 'tent') {
+      if (!rt.w.tp) return [0, 0]
+      return bez(rt.w.tp, rt.dir > 0 ? e : 1 - e)
+    }
+    const ca = centerOf(rt.from)
+    const cb = centerOf(rt.to)
+    const A = endPos(rt.from, cb)
+    const B = endPos(rt.to, ca)
+    const mx = (A[0] + B[0]) / 2
+    const my = (A[1] + B[1]) / 2
+    const dx = B[0] - A[0]
+    const dy = B[1] - A[1]
+    const len = Math.hypot(dx, dy) || 1
+    let nx = -dy / len
+    let ny = dx / len
+    if (nx * mx + ny * my < 0) {
+      nx = -nx
+      ny = -ny
+    }
+    const bulge = Math.min(70, len * 0.22)
+    const cx = mx + nx * bulge
+    const cy = my + ny * bulge
+    const u = 1 - e
+    return [u * u * A[0] + 2 * u * e * cx + e * e * B[0], u * u * A[1] + 2 * u * e * cy + e * e * B[1]]
+  }
+  function updateSpores(T) {
+    for (let i = spores.length - 1; i >= 0; i--) {
+      const s = spores[i]
+      const u = clamp((T - s.t0) / s.dur, 0, 1)
+      const e = easeInOut(u)
+      const p = sporePoint(s, e)
+      setA(s.core, 'cx', f1(p[0]))
+      setA(s.core, 'cy', f1(p[1]))
+      setA(s.glow, 'cx', f1(p[0]))
+      setA(s.glow, 'cy', f1(p[1]))
+      for (let k = 0; k < 3; k++) {
+        const q = sporePoint(s, Math.max(0, e - 0.04 * (k + 1)))
+        setA(s.trail[k], 'cx', f1(q[0]))
+        setA(s.trail[k], 'cy', f1(q[1]))
+      }
+      const fade = Math.min(1, u * 8, (1 - u) * 6 + 0.25)
+      setA(s.g, 'opacity', fade.toFixed(2))
+      if (u >= 1) {
+        s.g.remove()
+        spores.splice(i, 1)
+        if (s.target && vis.has(s.target.id)) {
+          s.target.flashAt = T
+          ripple(s.target.px, s.target.py, s.target.R * 0.95, s.target.R + 16, 'var(--k-' + s.kind + ')', 0.65)
+        }
+      }
+    }
+  }
+  function ripple(x, y, r0, r1, color, dur) {
+    if (REDUCED) return
+    const c = S('circle', { class: 'ripple', cx: f1(x), cy: f1(y), r: f1(r0) }, L.fx)
+    c.style.stroke = color
+    ripples.push({ c, r0, r1, t0: vt, dur: dur || 0.7 })
+    while (ripples.length > 16) ripples.shift().c.remove()
+  }
+  function updateRipples(T) {
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i]
+      const u = clamp((T - r.t0) / r.dur, 0, 1)
+      setA(r.c, 'r', f1(lerp(r.r0, r.r1, easeOutCubic(u))))
+      setA(r.c, 'opacity', ((1 - u) * 0.85).toFixed(2))
+      if (u >= 1) {
+        r.c.remove()
+        ripples.splice(i, 1)
+      }
+    }
+  }
+
+  /* =======================================================================
+     Vista: zoom, pan, ajuste
+     ======================================================================= */
+  const topbar = $('topbar')
+  const busEl = $('bus')
+  const panel = $('panel')
+  const foot = $('foot')
+  const zPct = $('zPct')
+
+  function fitRect() {
+    const W = window.innerWidth
+    const H = window.innerHeight
+    let l = 14
+    let r = W - 14
+    let t = 14
+    let b = H - 14
+    if (topbar) t = topbar.offsetTop + topbar.offsetHeight + 12
+    if (!EMBED) {
+      if (busEl && getComputedStyle(busEl).display !== 'none') l = busEl.offsetLeft + busEl.offsetWidth + 14
+      if (panel && !panel.hidden) r = panel.offsetLeft - 14
+      if (foot && getComputedStyle(foot).display !== 'none') b = foot.offsetTop - 12
+    }
+    if (r - l < 160) {
+      l = 14
+      r = W - 14
+    }
+    return { l, r, t, b, w: Math.max(80, r - l), h: Math.max(80, b - t) }
+  }
+  function contentBox() {
+    let x0 = -RO - 30
+    let y0 = -RO - 30
+    let x1 = RO + 30
+    let y1 = RO + 30
+    const add = (x, y, rx, ry) => {
+      x0 = Math.min(x0, x - rx)
+      x1 = Math.max(x1, x + rx)
+      y0 = Math.min(y0, y - ry)
+      y1 = Math.max(y1, y + ry)
+    }
+    for (const s of SLOTS) if (s.ring === 1) add(s.x, s.y, RW + 30, RW + 54)
+    for (const v of vis.values()) if (v.slot) add(v.x, v.y, RW + 30, RW + 54)
+    add(SCRIBE_AT.x, SCRIBE_AT.y, 40, 60)
+    return { x0, y0, x1, y1 }
+  }
+  function fitTarget() {
+    const r = fitRect()
+    const b = contentBox()
+    const pad = EMBED ? 8 : 18
+    const k = clamp(Math.min((r.w - pad * 2) / (b.x1 - b.x0), (r.h - pad * 2) / (b.y1 - b.y0)), 0.25, 1.7)
+    return { k, x: (r.l + r.r) / 2 - (k * (b.x0 + b.x1)) / 2, y: (r.t + r.b) / 2 - (k * (b.y0 + b.y1)) / 2 }
+  }
+  function applyView() {
+    worldG.setAttribute('transform', 'translate(' + view.x.toFixed(2) + ' ' + view.y.toFixed(2) + ') scale(' + view.k.toFixed(4) + ')')
+    if (zPct) zPct.textContent = Math.round(view.k * 100) + '%'
+    if (hovered) positionTip()
+  }
+  function setView(target, animate) {
+    if (!animate || REDUCED) {
+      viewAnim = null
+      view.x = target.x
+      view.y = target.y
+      view.k = target.k
+      applyView()
+      return
+    }
+    viewAnim = { from: { x: view.x, y: view.y, k: view.k }, to: target, t0: performance.now(), dur: 700 }
+  }
+  function stepView(now) {
+    if (!viewAnim) return
+    const u = clamp((now - viewAnim.t0) / viewAnim.dur, 0, 1)
+    const e = easeOutExpo(u)
+    view.x = lerp(viewAnim.from.x, viewAnim.to.x, e)
+    view.y = lerp(viewAnim.from.y, viewAnim.to.y, e)
+    view.k = lerp(viewAnim.from.k, viewAnim.to.k, e)
+    applyView()
+    if (u >= 1) viewAnim = null
+  }
+  function fitView(animate) {
+    autoFit = true
+    setView(fitTarget(), animate)
+  }
+  function refit() {
+    if (autoFit) setView(fitTarget(), true)
+  }
+  function zoomAt(cx, cy, factor) {
+    const k2 = clamp(view.k * factor, 0.3, 3.4)
+    const wx = (cx - view.x) / view.k
+    const wy = (cy - view.y) / view.k
+    viewAnim = null
+    view.x = cx - wx * k2
+    view.y = cy - wy * k2
+    view.k = k2
+    autoFit = false
+    applyView()
+  }
+  function zoomCenter(factor) {
+    const r = fitRect()
+    const k2 = clamp(view.k * factor, 0.3, 3.4)
+    const cx = (r.l + r.r) / 2
+    const cy = (r.t + r.b) / 2
+    const wx = (cx - view.x) / view.k
+    const wy = (cy - view.y) / view.k
+    autoFit = false
+    setView({ k: k2, x: cx - wx * k2, y: cy - wy * k2 }, true)
+  }
+  function zoomTo(v) {
+    const r = fitRect()
+    const k2 = clamp(Math.max(view.k * 1.5, 1.5), 0.3, 3.4)
+    autoFit = false
+    setView({ k: k2, x: (r.l + r.r) / 2 - v.x * k2, y: (r.t + r.b) / 2 - v.y * k2 }, true)
+  }
+  const toScreen = (x, y) => [x * view.k + view.x, y * view.k + view.y]
+
+  /* -------- ponteiro: arrastar, roda, pinça, clique -------- */
+  let drag = null
+  const pointers = new Map()
+  let pinch = null
+  const mouse = { x: -999, y: -999, inside: false, lx: -999, ly: -999 }
+  stage.addEventListener('mousedown', (e) => e.preventDefault())
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    if (e.target.closest && e.target.closest('.act')) return
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.size === 2) {
+      const [p1, p2] = [...pointers.values()]
+      pinch = { d: Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1, k: view.k }
+      drag = null
+      return
+    }
+    const cell = e.target.closest && e.target.closest('.cell')
+    drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, vx: view.x, vy: view.y, moved: false, cell }
+  })
+  stage.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'mouse') {
+      mouse.x = e.clientX
+      mouse.y = e.clientY
+      mouse.inside = true
+    }
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pinch && pointers.size === 2) {
+      const [p1, p2] = [...pointers.values()]
+      const d = Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1
+      zoomAt((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (pinch.k * (d / pinch.d)) / view.k)
+      return
+    }
+    if (!drag || e.pointerId !== drag.id) return
+    const dx = e.clientX - drag.x0
+    const dy = e.clientY - drag.y0
+    if (!drag.moved && Math.hypot(dx, dy) > 4) {
+      drag.moved = true
+      stage.classList.add('dragging')
+      try { stage.setPointerCapture(e.pointerId) } catch (err) { /* sem captura: segue */ }
+      hideTip()
+    }
+    if (drag.moved) {
+      viewAnim = null
+      autoFit = false
+      view.x = drag.vx + dx
+      view.y = drag.vy + dy
+      applyView()
+    }
+  })
+  function endPointer(e) {
+    pointers.delete(e.pointerId)
+    if (pointers.size < 2) pinch = null
+    if (!drag || e.pointerId !== drag.id) return
+    const d = drag
+    drag = null
+    stage.classList.remove('dragging')
+    if (e.type === 'pointerup' && !d.moved && d.cell) select(d.cell.dataset.id)
+  }
+  stage.addEventListener('pointerup', endPointer)
+  stage.addEventListener('pointercancel', endPointer)
+  stage.addEventListener('pointerleave', (e) => {
+    if (e.pointerType === 'mouse') mouse.inside = false
+  })
+  stage.addEventListener('dblclick', (e) => {
+    if (e.target.closest && e.target.closest('.act')) return
+    const cell = e.target.closest && e.target.closest('.cell')
+    if (cell && vis.get(cell.dataset.id)) zoomTo(vis.get(cell.dataset.id))
+    else fitView(true)
+  })
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault()
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1
+    const factor = Math.exp(-e.deltaY * unit * (e.ctrlKey ? 0.008 : 0.0016))
+    zoomAt(e.clientX, e.clientY, factor)
+  }, { passive: false })
+
+  scene.addEventListener('pointerover', (e) => {
+    if (drag && drag.moved) return
+    const c = e.target.closest && e.target.closest('.cell')
+    if (c) hoverCell(c.dataset.id)
+  })
+  scene.addEventListener('pointerout', (e) => {
+    const c = e.target.closest && e.target.closest('.cell')
+    const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('.cell') : null
+    if (c && c !== to && document.activeElement !== c) unhover()
+  })
+  scene.addEventListener('focusin', (e) => {
+    const c = e.target.closest && e.target.closest('.cell')
+    if (c) hoverCell(c.dataset.id)
+  })
+  scene.addEventListener('focusout', () => unhover())
+
+  /* -------- dica flutuante -------- */
+  const tip = $('tip')
+  function hoverCell(id) {
+    const v = vis.get(id)
+    if (!v) return
+    if (hovered && hovered !== id && vis.get(hovered)) vis.get(hovered).g.classList.remove('hover')
+    hovered = id
+    v.g.classList.add('hover')
+    showTip(v)
+  }
+  function unhover() {
+    if (hovered && vis.get(hovered)) vis.get(hovered).g.classList.remove('hover')
+    hovered = null
+    hideTip()
+  }
+  function showTip(v) {
+    const a = v.agent
+    const S0 = stateOf(a.state)
+    const pct = a.role === 'orchestrator' ? Math.round(sim.overall()) : Math.round(a.progress)
+    let h = '<div class="tip-h"><b>' + esc(nameOf(a.id)) + '</b><span>' + esc(ROLE_LABEL[a.role] || '') + (a.area ? ' · ' + esc(a.area) : '') + '</span></div>'
+    if (a.role === 'scribe') {
+      h += '<div class="tip-s" data-ck="scribe"><i>◆</i>' + plural(sim.scribe ? sim.scribe.writes : 0, 'gravação', 'gravações') + (sim.scribe && sim.scribe.writing ? ' · gravando agora' : '') + '</div>'
+      h += '<p>' + esc(sim.scribe ? sim.scribe.note : '') + (sim.scribe && sim.scribe.last ? ' · última: ' + esc(sim.scribe.last.text) : '') + '</p>'
+    } else {
+      h += '<div class="tip-s" data-ck="' + colorKey(a) + '"><i>' + S0.icon + '</i>' + S0.label + ' · ' + pct + '%</div>'
+      h += '<p>' + esc(a.task) + '</p>'
+    }
+    if (a.after) h += '<p>⧗ <b>--after ' + esc(a.after) + '</b></p>'
+    if (a.state === 'blocked' && a.permission) h += '<p class="tip-perm">⏸ ' + esc(a.permission.tool) + ' · ' + esc(a.permission.detail) + '</p>'
+    h += '<p class="tip-k">' + (EMBED ? '' : 'clique ou Enter abre o painel') + '</p>'
+    tip.innerHTML = h
+    tip.dataset.ck = colorKey(a)
+    tip.hidden = false
+    positionTip()
+  }
+  function positionTip() {
+    const v = hovered && vis.get(hovered)
+    if (!v || tip.hidden) return
+    const w = tip.offsetWidth
+    const h = tip.offsetHeight
+    const fr = fitRect()
+    const c = toScreen(v.px, v.py)
+    const r = v.R * 1.18 * view.k
+    const lab = (v.slot ? 56 : v.role === 'scribe' ? 40 : 0) * view.k
+    // quatro lugares em volta da célula (acima/abaixo deixam espaço para os rótulos)
+    const spots = {
+      above: [c[0] - w / 2, c[1] - r - (v.slot && v.above ? lab : 0) - h - 8],
+      below: [c[0] - w / 2, c[1] + r + (v.slot && !v.above ? lab : v.role === 'scribe' ? lab : 0) + 8],
+      right: [c[0] + r + 12, c[1] - h / 2],
+      left: [c[0] - r - 12 - w, c[1] - h / 2],
+    }
+    let order = ['above', 'below', 'right', 'left']
+    if (v.slot) {
+      // primeiro para fora do favo (lado oposto ao orquestrador), onde não há outras células
+      const d = Math.hypot(v.px, v.py) || 1
+      const ux = v.px / d
+      const uy = v.py / d
+      const side = ux > 0 ? 'right' : 'left'
+      const vert = uy > 0 ? 'below' : 'above'
+      order = Math.abs(ux) > Math.abs(uy) ? [side, vert, vert === 'above' ? 'below' : 'above', side === 'right' ? 'left' : 'right'] : [vert, side, side === 'right' ? 'left' : 'right', vert === 'above' ? 'below' : 'above']
+    } else if (v.role === 'scribe') order = ['below', 'left', 'right', 'above']
+    // cabe na janela entre a barra e o rodapé (cobrir o painel um instante é melhor que cobrir células)
+    const fits = (p) => p[0] >= 8 && p[0] + w <= window.innerWidth - 8 && p[1] >= fr.t - 4 && p[1] + h <= fr.b + 4
+    let pick = spots[order[0]]
+    for (const k of order) {
+      if (fits(spots[k])) {
+        pick = spots[k]
+        break
+      }
+    }
+    const x = clamp(pick[0], 8, window.innerWidth - w - 8)
+    const y = clamp(pick[1], 8, window.innerHeight - h - 8)
+    tip.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'
+  }
+  function hideTip() {
+    tip.hidden = true
+  }
+
+  /* =======================================================================
+     Seleção e painel do agente
+     ======================================================================= */
+  const pName = $('pName')
+  const pRole = $('pRole')
+  const pTask = $('pTask')
+  const pBadge = $('pBadge')
+  const pState = $('pState')
+  const pStateBox = $('pStateBox')
+  const pProg = $('pProg')
+  const pProgK = $('pProgK')
+  const pProgBox = $('pProgBox')
+  const pBar = $('pBar')
+  const pTok = $('pTok')
+  const pTokK = $('pTokK')
+  const pTime = $('pTime')
+  const pPerm = $('pPerm')
+  const pPermD = $('pPermD')
+  const pAuto = $('pAuto')
+  const pDep = $('pDep')
+  const pFiles = $('pFiles')
+  const pFilesN = $('pFilesN')
+  const pFilesBox = $('pFilesBox')
+  const pTx = $('pTx')
+  const pNew = $('pNew')
+  const pCopied = $('pCopied')
+  const pMsg = $('pMsg')
+  let stick = true
+  let newCount = 0
+  let filesSig = ''
+
+  function select(id, opts) {
+    if (!vis.has(id)) return
+    const prev = selected
+    selected = id
+    for (const v of vis.values()) {
+      v.g.classList.toggle('selected', v.id === id)
+      v.g.setAttribute('aria-pressed', v.id === id ? 'true' : 'false')
+    }
+    if (EMBED) return
+    const wasHidden = panel.hidden
+    panel.hidden = false
+    root.classList.remove('no-panel')
+    if (prev !== id || wasHidden) renderPanel()
+    if (onlySel.checked) renderBus()
+    if (wasHidden) refit()
+    if (opts && opts.focusPanel) pName.focus({ preventScroll: true })
+  }
+  function deselect() {
+    if (!selected) return
+    const v = vis.get(selected)
+    selected = null
+    for (const w of vis.values()) {
+      w.g.classList.remove('selected')
+      w.g.setAttribute('aria-pressed', 'false')
+    }
+    panel.hidden = true
+    root.classList.add('no-panel')
+    if (onlySel.checked) renderBus()
+    refit()
+    if (v && panel.contains(document.activeElement)) v.g.focus({ preventScroll: true })
+  }
+
+  function lineEl(l) {
+    const d = document.createElement('div')
+    d.className = 'ln k-' + l.kind
+    const tm = document.createElement('span')
+    tm.className = 'ln-t'
+    tm.textContent = AletheSim.clock(l.at)
+    d.appendChild(tm)
+    d.appendChild(document.createTextNode(l.text))
+    return d
+  }
+  function renderPanel() {
+    const a = selected && sim.agent(selected)
+    if (!a) return
+    pName.textContent = nameOf(a.id)
+    pRole.textContent = (ROLE_LABEL[a.role] || '') + (a.area ? ' · ' + a.area : '')
+    pTask.textContent = a.task
+    pMsg.placeholder = 'Mensagem para ' + nameOf(a.id) + '…'
+    pTx.textContent = ''
+    const frag = document.createDocumentFragment()
+    for (const l of a.lines) frag.appendChild(lineEl(l))
+    pTx.appendChild(frag)
+    stick = true
+    newCount = 0
+    pNew.hidden = true
+    pTx.scrollTop = pTx.scrollHeight
+    filesSig = ''
+    updatePanelLive()
+  }
+  function appendLine(l) {
+    pTx.appendChild(lineEl(l))
+    while (pTx.childElementCount > 400) pTx.firstElementChild.remove()
+    if (stick) pTx.scrollTop = pTx.scrollHeight
+    else {
+      newCount += 1
+      pNew.hidden = false
+      pNew.textContent = '↓ novas linhas (' + newCount + ')'
+    }
+  }
+  pTx.addEventListener('scroll', () => {
+    const atEnd = pTx.scrollTop + pTx.clientHeight >= pTx.scrollHeight - 6
+    if (atEnd) {
+      stick = true
+      newCount = 0
+      pNew.hidden = true
+    } else stick = false
+  })
+  pNew.addEventListener('click', () => {
+    pTx.scrollTop = pTx.scrollHeight
+    stick = true
+    newCount = 0
+    pNew.hidden = true
+  })
+
+  function updatePanelLive() {
+    if (EMBED || panel.hidden || !selected) return
+    const a = sim.agent(selected)
+    if (!a) return
+    const S0 = stateOf(a.state)
+    const ck = colorKey(a)
+    pBadge.dataset.ck = ck
+    pBadge.dataset.state = a.state
+    pStateBox.dataset.ck = ck
+    pProgBox.dataset.ck = ck
+    if (a.role === 'scribe') {
+      pBadge.textContent = '◆'
+      pState.innerHTML = '<i>◆</i> ' + (sim.scribe && sim.scribe.writing ? 'gravando' : 'em espera')
+      pProgK.textContent = 'Gravações'
+      pProg.textContent = String(sim.scribe ? sim.scribe.writes : 0)
+      pBar.style.transform = 'scaleX(' + clamp((sim.scribe ? sim.scribe.writes : 0) / 9, 0, 1).toFixed(3) + ')'
+      pTokK.textContent = 'Nota'
+      pTok.textContent = 'Orchestra.md'
+      pTok.title = sim.scribe ? sim.scribe.note : ''
+    } else {
+      pBadge.textContent = S0.icon
+      pState.innerHTML = '<i>' + S0.icon + '</i> ' + S0.label
+      const pct = a.role === 'orchestrator' ? sim.overall() : a.progress
+      pProgK.textContent = a.role === 'orchestrator' ? 'Progresso geral' : 'Progresso'
+      pProg.textContent = Math.round(pct) + '%'
+      pBar.style.transform = 'scaleX(' + clamp(pct / 100, 0, 1).toFixed(3) + ')'
+      pTokK.textContent = 'Tokens'
+      pTok.textContent = AletheSim.tokens(a.tokens)
+      pTok.title = ''
+    }
+    const end = a.endedAt != null ? a.endedAt : sim.t
+    pTime.textContent = AletheSim.clock(Math.max(0, end - (a.startedAt || 0)))
+    // permissão
+    if (a.state === 'blocked' && a.permission) {
+      pPerm.hidden = false
+      pPermD.textContent = a.permission.tool + '(' + a.permission.detail + ')'
+      if (typeof a.blockedAt === 'number') {
+        const left = Math.max(0, 14 - (sim.t - a.blockedAt))
+        pAuto.textContent = 'aprovação automática em ' + Math.ceil(left) + ' s'
+      } else pAuto.textContent = ''
+    } else pPerm.hidden = true
+    // dependência
+    if (a.after) {
+      pDep.hidden = false
+      pDep.innerHTML = a.state === 'waiting' ? '⧗ Espera <b>' + esc(a.after) + '</b> terminar (<b>--after</b>)' : '✓ Começou depois de <b>' + esc(a.after) + '</b> (<b>--after</b>)'
+    } else pDep.hidden = true
+    // arquivos
+    const sig = a.files.join('|') + '#' + a.touched.join('|')
+    if (sig !== filesSig) {
+      filesSig = sig
+      pFiles.textContent = ''
+      for (const f of a.files) {
+        const li = document.createElement('li')
+        if (a.touched.includes(f)) {
+          const b = document.createElement('b')
+          b.textContent = '✎ editado'
+          li.appendChild(b)
+        }
+        li.appendChild(document.createTextNode(f))
+        li.title = f
+        pFiles.appendChild(li)
+      }
+      pFilesN.textContent = '· ' + a.files.length + (a.touched.length ? ' (' + a.touched.length + ' editados)' : '')
+      pFilesBox.hidden = a.files.length === 0
+    }
+  }
+
+  function approve(id) {
+    const a = sim.agent(id)
+    if (a && a.state === 'blocked' && sim.approve(id)) announce(nameOf(id) + ': permissão aprovada por você')
+  }
+  function deny(id) {
+    const a = sim.agent(id)
+    if (a && a.state === 'blocked' && sim.deny(id)) announce(nameOf(id) + ': permissão negada por você')
+  }
+  let copiedTimer = 0
+  function copySelected() {
+    if (!selected) return
+    const done = (ok) => {
+      pCopied.textContent = ok ? 'Copiado ✓' : 'Não deu para copiar'
+      pCopied.classList.add('show')
+      clearTimeout(copiedTimer)
+      copiedTimer = setTimeout(() => {
+        pCopied.classList.remove('show')
+        pCopied.textContent = ''
+      }, 1800)
+    }
+    Promise.resolve(AletheSim.copyText(sim.transcript(selected))).then((ok) => done(ok !== false), () => done(false))
+  }
+  $('pClose').addEventListener('click', () => deselect())
+  $('pApprove').addEventListener('click', () => selected && approve(selected))
+  $('pDeny').addEventListener('click', () => selected && deny(selected))
+  $('pCopy').addEventListener('click', copySelected)
+  $('pForm').addEventListener('submit', (e) => {
+    e.preventDefault()
+    const txt = pMsg.value.trim()
+    if (!txt || !selected) return
+    sim.send(selected, txt)
+    pMsg.value = ''
+    pMsg.focus()
+  })
+
+  /* =======================================================================
+     Correnteza (bus)
+     ======================================================================= */
+  const busList = $('busList')
+  const busCount = $('busCount')
+  const busShowing = $('busShowing')
+  const onlySel = $('onlySel')
+  let busFilter = 'all'
+  let lastBusAdd = 0
+  let busStagger = 0
+  const filtersEl = $('filters')
+  for (const [key, text, label] of FILTERS) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.className = 'flt'
+    b.dataset.f = key
+    b.textContent = text
+    b.title = label
+    b.setAttribute('aria-label', label)
+    b.setAttribute('aria-pressed', key === 'all' ? 'true' : 'false')
+    b.addEventListener('click', () => {
+      busFilter = key
+      for (const o of filtersEl.children) o.setAttribute('aria-pressed', o.dataset.f === key ? 'true' : 'false')
+      renderBus()
+    })
+    filtersEl.appendChild(b)
+  }
+  onlySel.addEventListener('change', renderBus)
+  busList.addEventListener('click', (e) => {
+    const li = e.target.closest && e.target.closest('.msg')
+    if (!li) return
+    const id = li.dataset.pick
+    if (id && vis.has(id)) select(id)
+  })
+  function matches(m) {
+    const K = KINDS[m.kind] || KINDS.chat
+    if (busFilter !== 'all' && K.group !== busFilter) return false
+    if (onlySel.checked && selected && m.from !== selected && m.to !== selected) return false
+    return true
+  }
+  function busItem(m) {
+    const K = KINDS[m.kind] || KINDS.chat
+    const li = document.createElement('li')
+    li.className = 'msg'
+    li.dataset.kind = m.kind
+    const pick = m.from === 'você' ? m.to : m.from
+    if (sim.agent(pick)) {
+      li.dataset.pick = pick
+      li.title = 'Abrir ' + nameOf(pick)
+    }
+    li.style.setProperty('--k', 'var(--k-' + (KINDS[m.kind] ? m.kind : 'chat') + ')')
+    li.innerHTML = '<span class="m-ic" aria-hidden="true">' + K.icon + '</span><div class="m-body"><div class="m-top"><span class="m-from">' + esc(nameOf(m.from)) + '</span><span class="m-arrow" aria-hidden="true">→</span><span class="sr-only"> para </span><span class="m-to">' + esc(nameOf(m.to)) + '</span><time>' + AletheSim.clock(m.at) + '</time></div><p class="m-text"><span class="sr-only">' + esc(K.label) + ': </span>' + esc(m.text) + '</p></div>'
+    return li
+  }
+  function emptyNote() {
+    const li = document.createElement('li')
+    li.className = 'bus-empty'
+    li.textContent = sim.bus.length ? 'Nada com esse filtro ainda.' : 'O bus está quieto: as mensagens aparecem aqui.'
+    return li
+  }
+  function renderBus() {
+    busList.textContent = ''
+    const items = sim.bus.filter(matches).slice(-60)
+    for (let i = items.length - 1; i >= 0; i--) busList.appendChild(busItem(items[i]))
+    if (!items.length) busList.appendChild(emptyNote())
+    const f = FILTERS.find((x) => x[0] === busFilter)
+    busShowing.textContent = (f ? f[3] : 'tudo') + (onlySel.checked && selected ? ' de ' + nameOf(selected) : '')
+    busCount.textContent = String(sim.bus.length)
+  }
+  function addBus(m) {
+    busCount.textContent = String(sim.bus.length)
+    if (EMBED || !matches(m)) return
+    const empty = busList.querySelector('.bus-empty')
+    if (empty) empty.remove()
+    const li = busItem(m)
+    const now = performance.now()
+    busStagger = now - lastBusAdd < 120 ? Math.min(busStagger + 70, 280) : 0
+    lastBusAdd = now
+    busList.prepend(li)
+    enter(li, busStagger)
+    while (busList.childElementCount > 60) busList.lastElementChild.remove()
+  }
+
+  /* Entradas com fade + blur conduzidas pelo laço (não dependem do relógio de animação CSS) */
+  const entering = []
+  // chamado depois de inserir o elemento: ele cresce em altura (empurra a correnteza) e surge com fade + blur
+  function enter(el, delayMs) {
+    if (REDUCED) return
+    const h = el.offsetHeight
+    el.style.overflow = 'hidden'
+    el.style.maxHeight = '0px'
+    el.style.paddingTop = '0px'
+    el.style.paddingBottom = '0px'
+    el.style.opacity = '0'
+    el.style.transform = 'translateY(-8px)'
+    el.style.filter = 'blur(6px)'
+    entering.push({ el, h, t0: performance.now() + (delayMs || 0), dur: 640 })
+  }
+  function stepEnter(now) {
+    for (let i = entering.length - 1; i >= 0; i--) {
+      const it = entering[i]
+      if (!it.el.isConnected) {
+        entering.splice(i, 1)
+        continue
+      }
+      const u = clamp((now - it.t0) / it.dur, 0, 1)
+      if (u >= 1) {
+        for (const k of ['opacity', 'transform', 'filter', 'maxHeight', 'paddingTop', 'paddingBottom', 'overflow']) it.el.style[k] = ''
+        entering.splice(i, 1)
+        continue
+      }
+      const g = easeOutExpo(Math.min(1, u * 1.6)) // a altura abre primeiro
+      const e = easeOutCubic(u)
+      it.el.style.maxHeight = (g * it.h).toFixed(1) + 'px'
+      it.el.style.paddingTop = it.el.style.paddingBottom = (g * 8).toFixed(1) + 'px'
+      it.el.style.opacity = e.toFixed(3)
+      it.el.style.transform = 'translateY(' + ((1 - e) * -8).toFixed(2) + 'px)'
+      it.el.style.filter = 'blur(' + ((1 - e) * 6).toFixed(2) + 'px)'
+    }
+  }
+
+  /* Volta da cena depois do reinício da sessão (fade conduzido pelo laço) */
+  let fadeAt = 0
+  function stepFade(now) {
+    if (!fadeAt) return
+    const u = clamp((now - fadeAt) / 700, 0, 1)
+    worldG.style.opacity = u >= 1 ? '' : easeOutCubic(u).toFixed(3)
+    if (u >= 1) fadeAt = 0
+  }
+
+  /* =======================================================================
+     Barra superior
+     ======================================================================= */
+  const countsEl = $('counts')
+  const countEls = {}
+  for (const st of COUNT_STATES) {
+    const S0 = STATES[st]
+    const li = document.createElement('li')
+    li.className = 'cnt zero'
+    li.dataset.state = st
+    li.dataset.ck = st
+    li.dataset.label = S0.label
+    li.innerHTML = '<span class="ci" aria-hidden="true">' + S0.icon + '</span><b>0</b><span class="sr-only"> ' + S0.label + '</span>'
+    li.title = S0.label
+    countsEl.appendChild(li)
+    countEls[st] = li
+  }
+  const speedSeg = $('speedSeg')
+  for (const s of SPEEDS) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.dataset.s = String(s)
+    b.textContent = String(s).replace('.', ',') + '×'
+    b.setAttribute('aria-label', 'Velocidade ' + String(s).replace('.', ',') + '×')
+    b.addEventListener('click', () => sim.setSpeed(s))
+    speedSeg.appendChild(b)
+  }
+  function syncSpeed() {
+    let best = SPEEDS[0]
+    for (const s of SPEEDS) if (Math.abs(s - sim.speed) < Math.abs(best - sim.speed)) best = s
+    for (const b of speedSeg.children) b.setAttribute('aria-pressed', +b.dataset.s === best ? 'true' : 'false')
+  }
+  function bumpSpeed(dir) {
+    let i = 0
+    for (let k = 0; k < SPEEDS.length; k++) if (Math.abs(SPEEDS[k] - sim.speed) < Math.abs(SPEEDS[i] - sim.speed)) i = k
+    sim.setSpeed(SPEEDS[clamp(i + dir, 0, SPEEDS.length - 1)])
+  }
+  function syncPause() {
+    const p = sim.paused
+    $('pauseBtn').setAttribute('aria-pressed', p ? 'true' : 'false')
+    $('pauseBtn').setAttribute('aria-label', p ? 'Continuar (Espaço)' : 'Pausar (Espaço)')
+    $('pauseIc').textContent = p ? '▶' : '⏸'
+    $('pauseTx').textContent = p ? 'Continuar' : 'Pausar'
+    $('pausedPill').hidden = !p || EMBED
+    root.classList.toggle('paused', p)
+  }
+  function togglePause() {
+    sim.toggle()
+  }
+  $('pauseBtn').addEventListener('click', togglePause)
+  $('themeBtn').addEventListener('click', () => toggleTheme())
+  $('helpBtn').addEventListener('click', () => openHelp())
+  $('zIn').addEventListener('click', () => zoomCenter(1.25))
+  $('zOut').addEventListener('click', () => zoomCenter(0.8))
+  $('zFit').addEventListener('click', () => fitView(true))
+  $('goalText').textContent = sim.goal
+  $('goal').title = 'Objetivo: ' + sim.goal
+
+  function updateTop() {
+    const ov = sim.overall()
+    $('ovNum').textContent = Math.round(ov) + '%'
+    $('tideFill').style.transform = 'scaleX(' + clamp(ov / 100, 0, 1).toFixed(3) + ')'
+    $('ovClock').textContent = 'sessão ' + sim.session + ' · ' + AletheSim.clock(sim.t)
+    const c = {}
+    for (const st of COUNT_STATES) c[st] = 0
+    for (const w of sim.workers) if (c[w.state] !== undefined) c[w.state] += 1
+    for (const st of COUNT_STATES) {
+      const li = countEls[st]
+      const n = String(c[st])
+      const b = li.querySelector('b')
+      if (b.textContent !== n) b.textContent = n
+      li.classList.toggle('zero', c[st] === 0)
+      li.classList.toggle('alarm', st === 'blocked' && c[st] > 0)
+      li.setAttribute('aria-label', c[st] + ' ' + STATES[st].label)
+    }
+    const w = sim.scribe ? sim.scribe.writes : 0
+    $('scribeN').textContent = String(w)
+    $('scribeLbl').textContent = w === 1 ? 'gravação' : 'gravações'
+  }
+
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'light' : 'dark'
+    root.dataset.theme = theme
+    store.set('colmeia-b.theme', theme)
+    syncTheme()
+  }
+  function syncTheme() {
+    $('themeIc').textContent = theme === 'dark' ? '☀' : '☾'
+    $('themeBtn').title = theme === 'dark' ? 'Tema lagoa (claro) · T' : 'Tema abismo (escuro) · T'
+    makeSprites()
+    if (REDUCED) drawPlankton(performance.now(), 0)
+  }
+
+  /* -------- rodapé -------- */
+  const footToggle = $('footToggle')
+  function setFoot(collapsed) {
+    foot.classList.toggle('collapsed', collapsed)
+    footToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+    footToggle.textContent = collapsed ? 'Mostrar' : 'Recolher'
+    syncChrome()
+    refit()
+  }
+  footToggle.addEventListener('click', () => {
+    const c = !foot.classList.contains('collapsed')
+    store.set('colmeia-b.foot', c ? '1' : '0')
+    setFoot(c)
+  })
+
+  /* -------- medidas do layout (barra e rodapé) -------- */
+  function syncChrome() {
+    if (topbar) root.style.setProperty('--top-h', topbar.offsetTop + topbar.offsetHeight + 12 + 'px')
+    if (!EMBED && foot) root.style.setProperty('--foot-h', window.innerHeight - foot.offsetTop + 12 + 'px')
+  }
+
+  /* -------- ajuda -------- */
+  const help = $('help')
+  let helpReturn = null
+  function openHelp() {
+    if (EMBED) return
+    helpReturn = document.activeElement
+    help.hidden = false
+    $('helpClose').focus()
+  }
+  function closeHelp() {
+    help.hidden = true
+    if (helpReturn && helpReturn.focus) helpReturn.focus({ preventScroll: true })
+  }
+  $('helpClose').addEventListener('click', closeHelp)
+  help.addEventListener('click', (e) => {
+    if (e.target === help) closeHelp()
+  })
+
+  /* -------- anúncios (só o importante) -------- */
+  const live = $('live')
+  function announce(text) {
+    const p = document.createElement('p')
+    p.textContent = text
+    live.appendChild(p)
+    while (live.childElementCount > 3) live.firstElementChild.remove()
+  }
+
+  /* =======================================================================
+     Teclado (nunca enquanto se digita; nunca no modo miniatura)
+     ======================================================================= */
+  function navigate(key) {
+    const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key]
+    if (!dir) return
+    const cur = selected && vis.get(selected)
+    if (!cur) {
+      if (orchV) {
+        select(orchV.id)
+        orchV.g.focus({ preventScroll: true })
+      }
+      return
+    }
+    let best = null
+    let bestScore = Infinity
+    for (const v of vis.values()) {
+      if (v === cur) continue
+      const vx = v.x - cur.x
+      const vy = v.y - cur.y
+      const dist = Math.hypot(vx, vy) || 1
+      const cos = (vx * dir[0] + vy * dir[1]) / dist
+      if (cos < 0.3) continue
+      const score = dist * (2.2 - cos)
+      if (score < bestScore) {
+        bestScore = score
+        best = v
+      }
+    }
+    if (best) {
+      select(best.id)
+      best.g.focus({ preventScroll: true })
+    }
+  }
+  if (!EMBED) {
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest && e.target.closest('button')
+      if (b && e.detail > 0 && !b.closest('form') && !b.closest('.help')) b.blur()
+    }, true)
+    document.addEventListener('keydown', (e) => {
+      const t = e.target
+      const tag = t && t.tagName
+      const typing = tag === 'INPUT' && t.type !== 'checkbox' ? true : tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)
+      if (!help.hidden) {
+        if (e.key === 'Escape' || e.key === '?') {
+          e.preventDefault()
+          closeHelp()
+        } else if (e.key === 'Tab') {
+          e.preventDefault()
+          $('helpClose').focus()
+        }
+        return
+      }
+      if (typing) {
+        if (e.key === 'Escape') t.blur()
+        return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const k = e.key
+      const cellEl = t && t.closest ? t.closest('.cell') : null
+      const inAct = t && t.closest ? t.closest('.act') : null
+      const native = t && t.closest ? t.closest('button, summary, a[href], input, details') : null
+      if (k === 'Enter' && cellEl && !inAct) {
+        e.preventDefault()
+        select(cellEl.dataset.id)
+        return
+      }
+      if (k === ' ' || k === 'Spacebar') {
+        if (native || inAct) return
+        e.preventDefault()
+        togglePause()
+        return
+      }
+      if (k === '+' || k === '=') {
+        e.preventDefault()
+        bumpSpeed(1)
+        return
+      }
+      if (k === '-' || k === '_') {
+        e.preventDefault()
+        bumpSpeed(-1)
+        return
+      }
+      if (/^[0-9]$/.test(k)) {
+        const id = k === '0' ? 'orchestrator' : 'claude-' + k
+        const v = vis.get(id)
+        if (v) {
+          e.preventDefault()
+          select(id)
+          v.g.focus({ preventScroll: true })
+        }
+        return
+      }
+      if (k.indexOf('Arrow') === 0) {
+        if (t && t.closest && t.closest('.p-tx, .bus-list')) return
+        e.preventDefault()
+        navigate(k)
+        return
+      }
+      if (k === 'Escape') {
+        if (selected) {
+          e.preventDefault()
+          deselect()
+        }
+        return
+      }
+      if (k === '?') {
+        e.preventDefault()
+        openHelp()
+        return
+      }
+      const lk = k.toLowerCase()
+      if (lk === 'a' && selected) {
+        e.preventDefault()
+        approve(selected)
+      } else if (lk === 'n' && selected) {
+        e.preventDefault()
+        deny(selected)
+      } else if (lk === 'c' && selected) {
+        e.preventDefault()
+        copySelected()
+      } else if (lk === 't') {
+        e.preventDefault()
+        toggleTheme()
+      } else if (lk === 'f') {
+        e.preventDefault()
+        fitView(true)
+      }
+    })
+  }
+
+  /* =======================================================================
+     Plâncton (canvas) + isca de luz no cursor
+     ======================================================================= */
+  const pc = $('plankton')
+  const pctx = pc.getContext('2d')
+  let PW = 0
+  let PH = 0
+  let DPR = 1
+  let motes = []
+  let sprites = {}
+  const lure = $('lure')
+  const lureOn = !EMBED && FINE
+  function sprite(rgb, alphaMax) {
+    const c = document.createElement('canvas')
+    c.width = 32
+    c.height = 32
+    const g = c.getContext('2d')
+    const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16)
+    gr.addColorStop(0, 'rgba(' + rgb + ',' + alphaMax + ')')
+    gr.addColorStop(0.22, 'rgba(' + rgb + ',' + alphaMax * 0.55 + ')')
+    gr.addColorStop(1, 'rgba(' + rgb + ',0)')
+    g.fillStyle = gr
+    g.fillRect(0, 0, 32, 32)
+    return c
+  }
+  function makeSprites() {
+    if (theme === 'dark') sprites = { a: sprite('0,255,255', 1), b: sprite('210,255,255', 1), c: sprite('143,255,0', 1), d: sprite('167,139,250', 1), e: sprite('255,106,255', 1) }
+    else sprites = { a: sprite('0,107,117', 0.55), b: sprite('31,71,77', 0.45), c: sprite('58,116,0', 0.5), d: sprite('91,63,208', 0.5), e: sprite('163,22,143', 0.45) }
+  }
+  function initMotes() {
+    const r = rng(20261004)
+    const n = EMBED ? 70 : 135
+    motes = []
+    for (let i = 0; i < n; i++) {
+      const roll = r()
+      const snow = r() < 0.16
+      motes.push({
+        x: r() * PW,
+        y: r() * PH,
+        z: 0.3 + r() * 0.7,
+        r: snow ? 1.4 + r() * 1.4 : 0.5 + r() * 1.5,
+        sp: snow ? 'b' : roll < 0.42 ? 'a' : roll < 0.62 ? 'b' : roll < 0.78 ? 'c' : roll < 0.94 ? 'd' : 'e',
+        vx: (r() - 0.5) * 5,
+        vy: snow ? 3 + r() * 4 : -(2 + r() * 6),
+        ph: r() * TAU,
+        tw: 0.4 + r() * 1.8,
+        flash: 0,
+        snow,
+      })
+    }
+  }
+  function resizeCanvas() {
+    // o plâncton é só brilho suave: meia resolução basta e corta o custo de upload por quadro
+    DPR = Math.min(2, window.devicePixelRatio || 1) * 0.5
+    PW = window.innerWidth
+    PH = window.innerHeight
+    pc.width = Math.round(PW * DPR)
+    pc.height = Math.round(PH * DPR)
+    pctx.setTransform(DPR, 0, 0, DPR, 0, 0)
+    if (!motes.length) initMotes()
+  }
+  function drawPlankton(now, dt) {
+    if (!PW) return
+    const t = now / 1000
+    pctx.clearRect(0, 0, PW, PH)
+    pctx.globalCompositeOperation = theme === 'dark' ? 'lighter' : 'source-over'
+    const ox = view.x * 0.06
+    const oy = view.y * 0.06
+    const moving = !REDUCED && dt > 0
+    for (const m of motes) {
+      if (moving) {
+        m.x += (m.vx + Math.sin(t * 0.35 + m.ph) * 3) * m.z * dt
+        m.y += m.vy * m.z * dt
+        if (m.y < -10) m.y += PH + 20
+        if (m.y > PH + 10) m.y -= PH + 20
+        if (m.x < -10) m.x += PW + 20
+        if (m.x > PW + 10) m.x -= PW + 20
+      }
+      const X = (((m.x + ox * m.z) % PW) + PW) % PW
+      const Y = (((m.y + oy * m.z) % PH) + PH) % PH
+      if (lureOn && !REDUCED && mouse.inside) {
+        const dd = Math.hypot(mouse.lx - X, mouse.ly - Y)
+        if (dd < 120) m.flash = Math.min(1, m.flash + dt * 3.5 * (1 - dd / 120))
+      }
+      if (m.flash > 0) m.flash = Math.max(0, m.flash - dt * 0.9)
+      const tw = REDUCED ? 0.8 : 0.6 + 0.4 * Math.sin(t * m.tw + m.ph)
+      const base = m.snow ? 0.24 : 0.32 + 0.48 * m.z
+      pctx.globalAlpha = Math.min(1, base * tw + m.flash * 0.95)
+      const s = m.r * (7 + 6 * m.flash) * (0.6 + 0.6 * m.z)
+      pctx.drawImage(sprites[m.sp], X - s / 2, Y - s / 2, s, s)
+    }
+    pctx.globalAlpha = 1
+  }
+  function updateLure(dt) {
+    if (!lureOn || REDUCED) return
+    const k = 1 - Math.exp(-dt * 7)
+    if (mouse.lx < -900) {
+      mouse.lx = mouse.x
+      mouse.ly = mouse.y
+    }
+    mouse.lx += (mouse.x - mouse.lx) * k
+    mouse.ly += (mouse.y - mouse.ly) * k
+    lure.style.transform = 'translate3d(' + mouse.lx.toFixed(1) + 'px,' + mouse.ly.toFixed(1) + 'px,0)'
+    lure.classList.toggle('on', mouse.inside && !drag)
+  }
+
+  /* =======================================================================
+     Laço principal: rAF quando houver; o tick do motor cobre o resto
+     ======================================================================= */
+  let settleUntil = 0
+  function frame(ts) {
+    const now = typeof ts === 'number' ? ts : performance.now()
+    if (now < settleUntil) {
+      // logo depois de um redimensionamento: deixa o compositor fechar um quadro estável
+      lastTs = now
+      lastFrame = now
+      return
+    }
+    const dt = lastTs ? Math.min(0.1, Math.max(0, (now - lastTs) / 1000)) : 0
+    lastTs = now
+    lastFrame = now
+    const vdt = sim.paused ? 0 : dt
+    vt += vdt
+    frameRect = spores.length ? fitRect() : null
+    stepView(now)
+    stepEnter(now)
+    stepFade(now)
+    const T = vt
+    if (orchV) updateOrch(orchV, T, vdt)
+    for (const v of vis.values()) {
+      if (v.slot) {
+        updateWorker(v, T, vdt)
+        updateTent(v, T)
+      }
+    }
+    if (scribeV) updateScribe(scribeV, T)
+    updateStalk(T)
+    updateThreads(T)
+    updateSpores(T)
+    updateRipples(T)
+    if (!REDUCED || dt === 0) drawPlankton(now, dt)
+    updateLure(dt)
+    if (now - lastUi > 200) {
+      lastUi = now
+      updateTop()
+      updatePanelLive()
+      if (hovered && vis.get(hovered)) {
+        if (Math.random() < 0.5) showTip(vis.get(hovered))
+        else positionTip()
+      }
+      for (const a of sim.agents) if (!vis.has(a.id)) ensureVisual(a)
+    }
+  }
+  function raf(ts) {
+    try {
+      frame(ts)
+    } finally {
+      requestAnimationFrame(raf)
+    }
+  }
+
+  /* =======================================================================
+     Eventos do motor
+     ======================================================================= */
+  sim.on('tick', () => {
+    const now = performance.now()
+    if (now - lastFrame > 60) frame(now)
+  })
+  sim.on('spawn', (e) => {
+    ensureVisual(e.agent)
+    syncThreads()
+    refit()
+  })
+  sim.on('state', (e) => {
+    const v = vis.get(e.agent.id)
+    if (v && v.lastState !== e.to) applyState(v)
+    syncThreads()
+    if (e.to === 'exited') announce(nameOf(e.agent.id) + ' falhou')
+    if (e.to === 'done') announce(e.agent.role === 'orchestrator' ? 'Sessão concluída: verificação final ok' : nameOf(e.agent.id) + ' concluído')
+    if (selected === e.agent.id) updatePanelLive()
+  })
+  sim.on('line', (e) => {
+    if (!EMBED && selected === e.agent.id && !panel.hidden) appendLine(e.line)
+  })
+  sim.on('message', (e) => {
+    const m = e.message
+    addBus(m)
+    sporeFor(m)
+    if (m.kind === 'idea') {
+      const v = vis.get(m.from)
+      if (v) v.sparkAt = vt
+    }
+  })
+  sim.on('scribe', () => {
+    if (scribeV) {
+      scribeV.flashAt = vt
+      ripple(scribeV.px, scribeV.py, scribeV.R, scribeV.R + 30, 'var(--c-scribe-ink)', 0.9)
+    }
+    const pill = $('scribePill')
+    pill.classList.remove('flash')
+    void pill.offsetWidth
+    pill.classList.add('flash')
+  })
+  sim.on('permission', (e) => {
+    announce(nameOf(e.agent.id) + ' está bloqueado: pede permissão para ' + e.request.tool + '. A aprova, N nega.')
+    const v = vis.get(e.agent.id)
+    if (v) ripple(v.px, v.py, v.R, v.R + 34, 'var(--c-blocked)', 1)
+  })
+  sim.on('resolved', (e) => {
+    if (selected === e.agent.id) updatePanelLive()
+  })
+  sim.on('pause', syncPause)
+  sim.on('speed', syncSpeed)
+  sim.on('reset', () => {
+    if (!REDUCED) {
+      fadeAt = performance.now()
+      worldG.style.opacity = '0'
+    }
+    for (const v of vis.values()) {
+      v.g.remove()
+      if (v.tg) v.tg.remove()
+      if (v.clipEl) v.clipEl.remove()
+    }
+    vis.clear()
+    orchV = null
+    scribeV = null
+    for (const th of threads.values()) th.g.remove()
+    threads.clear()
+    for (const s of spores) s.g.remove()
+    spores.length = 0
+    for (const r of ripples) r.c.remove()
+    ripples.length = 0
+    if (stalk) {
+      stalk.remove()
+      stalk = null
+    }
+    hovered = null
+    hideTip()
+    for (const a of sim.agents) ensureVisual(a)
+    if (!EMBED) {
+      if (!selected || !vis.has(selected)) selected = 'orchestrator'
+      const id = selected
+      selected = null
+      select(id)
+      renderBus()
+    }
+    announce('Nova sessão começou')
+    refit()
+  })
+
+  /* =======================================================================
+     Movimento reduzido ao vivo
+     ======================================================================= */
+  if (mqReduce) {
+    const onChange = (e) => {
+      REDUCED = e.matches
+      root.classList.toggle('reduced', REDUCED)
+      if (REDUCED) {
+        for (const s of spores) s.g.remove()
+        spores.length = 0
+        for (const th of threads.values()) setA(th.g, 'opacity', '1')
+        lure.classList.remove('on')
+      }
+      drawPlankton(performance.now(), 0)
+    }
+    if (mqReduce.addEventListener) mqReduce.addEventListener('change', onChange)
+    else if (mqReduce.addListener) mqReduce.addListener(onChange)
+  }
+
+  /* =======================================================================
+     Partida
+     ======================================================================= */
+  window.addEventListener('resize', () => {
+    settleUntil = performance.now() + 350
+    resizeCanvas()
+    syncChrome()
+    if (autoFit) setView(fitTarget(), false)
+    drawPlankton(performance.now(), 0)
+  })
+  if (!EMBED && store.get('colmeia-b.foot') === '1') {
+    foot.classList.add('collapsed')
+    footToggle.setAttribute('aria-expanded', 'false')
+    footToggle.textContent = 'Mostrar'
+  }
+  syncChrome()
+  syncTheme()
+  syncSpeed()
+  syncPause()
+  resizeCanvas()
+  for (const a of sim.agents) ensureVisual(a)
+  if (!EMBED) {
+    renderBus()
+    select('orchestrator')
+  } else root.classList.add('no-panel')
+  setView(fitTarget(), false)
+  frame(performance.now())
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { syncChrome(); if (autoFit) setView(fitTarget(), false) })
+  sim.start()
+  requestAnimationFrame(raf)
+})()
+</script>
+</body>
+</html>

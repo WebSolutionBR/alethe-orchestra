@@ -1,0 +1,3142 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colmeia C · Holográfica</title>
+<meta name="description" content="Protótipo da Colmeia do Alethe Orchestra numa direção holográfica / cyber HUD, com a simulação da sessão rodando ao vivo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<script>
+  // Tema e modo miniatura antes do primeiro desenho (evita piscar o tema errado).
+  ;(function () {
+    try {
+      var q = new URLSearchParams(location.search)
+      var t = q.get('theme')
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      if (q.get('embed') === '1') document.documentElement.setAttribute('data-embed', '1')
+    } catch (e) {}
+  })()
+</script>
+<style>
+/* ================================================================ tokens */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07060B;
+  --bg-2: #120B26;
+  --fg: #F4F1FF;
+  --fg-2: #CBC4E8;
+  --fg-3: #A69ECA;
+  --line: rgba(200, 190, 255, .13);
+  --line-2: rgba(200, 190, 255, .24);
+  --chip: rgba(255, 255, 255, .045);
+  --chip-hover: rgba(255, 255, 255, .09);
+  --chip-solid: #110D20;
+  --top-bg: rgba(8, 6, 14, .74);
+  --ticker-bg: rgba(9, 7, 18, .66);
+  --glass: rgba(13, 10, 26, .68);
+  --glass-strong: rgba(12, 9, 24, .92);
+  --notes-bg: rgba(8, 6, 16, .9);
+  --glass-hi: rgba(255, 255, 255, .07);
+  --shadow: 0 22px 60px rgba(0, 0, 0, .55);
+  --hud-corner: rgba(92, 246, 255, .9);
+  --focus: #5CF6FF;
+  --holo-1: #00F0FF; --holo-2: #8B6BFF; --holo-3: #FF6AFF; --holo-4: #8FFF00;
+  --t-cyan: #5CF6FF; --t-pink: #FF8DF7; --t-lime: #B4FF4D; --t-amber: #FFC34D; --t-red: #FF7A90; --t-violet: #BBA6FF; --t-scribe: #B7A2FF;
+  --cyan: #00F0FF; --pink: #FF6AFF; --lime: #8FFF00; --amber: #FFB020; --red: #FF4D6D; --violet: #A78BFA; --electric: #5600FF; --scribe: #8B6CEF;
+  --h0: #EDE9FF; --h1: #22E3F5; --h2: #B4FF4D; --h3: #6CB4FF; --h4: #FF6AFF; --h5: #3DF2CF; --h6: #C79BFF; --h7: #FFD84D; --hc: #FF6AFF;
+  --face: rgba(10, 8, 22, .8);
+  --face-orch: rgba(20, 11, 44, .88);
+  --face-solid: #0B0918;
+  --depth: rgba(110, 90, 255, .13);
+  --edge: rgba(180, 160, 255, .38);
+  --rim2: rgba(255, 255, 255, .1);
+  --vu-off: rgba(200, 190, 255, .36);
+  --ghost-face: rgba(10, 8, 22, .28);
+  --ghost-dot: rgba(190, 180, 255, .55);
+  --sheen-1: rgba(0, 240, 255, .30); --sheen-2: rgba(255, 106, 255, .32); --sheen-3: rgba(143, 255, 0, .22);
+  --scan-line: rgba(92, 246, 255, .95); --scan-tail: rgba(92, 246, 255, .16);
+  --mat-line: rgba(92, 246, 255, .55);
+  --glitch-band: rgba(255, 77, 109, .2);
+  --rgb-c: rgba(0, 240, 255, .9); --rgb-m: rgba(255, 40, 120, .9);
+  --haz-a: #FFB020; --haz-b: #FF3355; --haz-gap: #170C09;
+  --plate-1: #CFF8FF; --plate-2: #E6D9FF; --plate-3: #FFD9F3; --plate-4: #E6FFC9;
+  --plate-fg: #120E22; --plate-fg-2: #3B3358; --plate-depth: rgba(230, 220, 255, .22); --plate-chip: #120E22; --plate-chip-fg: #F4F1FF;
+  --halo: 0 0 5px rgba(6, 4, 14, .95), 0 0 2px rgba(6, 4, 14, .95);
+  --ab-c: rgba(0, 240, 255, .8); --ab-m: rgba(255, 60, 220, .8);
+  --grid: rgba(150, 120, 255, .26);
+  --horizon-glow: rgba(255, 106, 255, .35);
+  --scan: rgba(255, 255, 255, .028);
+  --noise-op: .075;
+  --film-op: .26; --film-blend: screen;
+  --film: conic-gradient(from 0deg, #00F0FF 0deg, #5600FF 70deg, #FF6AFF 150deg, #7B5CFF 215deg, #00F0FF 285deg, #8FFF00 325deg, #00F0FF 360deg);
+  --blob-1: rgba(86, 0, 255, .55); --blob-2: rgba(255, 106, 255, .24); --blob-3: rgba(0, 240, 255, .16);
+  --vignette: rgba(0, 0, 0, .62);
+  --k-task: #00F0FF; --k-report: #B4FF4D; --k-block: #FFB020; --k-answer: #F4F1FF; --k-fail: #FF4D6D; --k-idea: #FF6AFF; --k-scribe: #B7A2FF; --k-chat: #BBA6FF; --k-user: #E8F9FF;
+  --radar: rgba(120, 220, 255, .2); --radar-2: rgba(120, 220, 255, .09); --radar-sweep: 0, 240, 255;
+  --beam-core: #FFFFFF;
+  --proj-1: rgba(0, 240, 255, .16); --proj-2: rgba(86, 0, 255, .1); --proj-3: rgba(86, 0, 255, 0);
+  --avatar-fg: #07060B;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --ease-io: cubic-bezier(.45, 0, .55, 1);
+  --font-ui: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F1EEF7;
+  --bg-2: #FCFBFF;
+  --fg: #16122A;
+  --fg-2: #3A3552;
+  --fg-3: #565070;
+  --line: rgba(40, 24, 90, .14);
+  --line-2: rgba(40, 24, 90, .26);
+  --chip: rgba(255, 255, 255, .55);
+  --chip-hover: rgba(255, 255, 255, .9);
+  --chip-solid: #FFFFFF;
+  --top-bg: rgba(251, 249, 255, .74);
+  --ticker-bg: rgba(255, 255, 255, .6);
+  --glass: rgba(255, 255, 255, .62);
+  --glass-strong: rgba(255, 255, 255, .94);
+  --notes-bg: rgba(255, 255, 255, .86);
+  --glass-hi: rgba(255, 255, 255, .85);
+  --shadow: 0 20px 50px rgba(70, 40, 140, .16);
+  --hud-corner: rgba(11, 100, 119, .9);
+  --focus: #0B6477;
+  --holo-1: #0891B2; --holo-2: #6D28D9; --holo-3: #DB2777; --holo-4: #65A30D;
+  --t-cyan: #0B6477; --t-pink: #A3167F; --t-lime: #3D6610; --t-amber: #8F3F06; --t-red: #B3123A; --t-violet: #5B21B6; --t-scribe: #5B3FD0;
+  --cyan: #0891B2; --pink: #DB2777; --lime: #65A30D; --amber: #D97706; --red: #E11D48; --violet: #7C3AED; --electric: #5600FF; --scribe: #6C4EE0;
+  --h0: #2A2346; --h1: #0E7490; --h2: #4D7C0F; --h3: #1D4ED8; --h4: #BE185D; --h5: #0F766E; --h6: #7E22CE; --h7: #A16207; --hc: #BE185D;
+  --face: rgba(255, 255, 255, .76);
+  --face-orch: rgba(255, 255, 255, .9);
+  --face-solid: #FFFFFF;
+  --depth: rgba(110, 80, 220, .1);
+  --edge: rgba(90, 60, 180, .34);
+  --rim2: rgba(60, 40, 140, .14);
+  --vu-off: rgba(60, 40, 140, .38);
+  --ghost-face: rgba(255, 255, 255, .34);
+  --ghost-dot: rgba(70, 50, 150, .42);
+  --sheen-1: rgba(8, 145, 178, .2); --sheen-2: rgba(219, 39, 119, .2); --sheen-3: rgba(101, 163, 13, .16);
+  --scan-line: rgba(8, 120, 150, .9); --scan-tail: rgba(8, 120, 150, .12);
+  --mat-line: rgba(8, 120, 150, .42);
+  --glitch-band: rgba(190, 18, 60, .13);
+  --rgb-c: rgba(0, 150, 190, .9); --rgb-m: rgba(220, 20, 90, .9);
+  --haz-a: #F59E0B; --haz-b: #E11D48; --haz-gap: #FFF4E6;
+  --plate-1: #1B1440; --plate-2: #2B1452; --plate-3: #12284A; --plate-4: #20123A;
+  --plate-fg: #F7F4FF; --plate-fg-2: #D9D2F5; --plate-depth: rgba(40, 20, 90, .3); --plate-chip: #F7F4FF; --plate-chip-fg: #16122A;
+  --halo: 0 0 5px rgba(255, 255, 255, .95), 0 0 2px rgba(255, 255, 255, .95);
+  --ab-c: rgba(0, 170, 200, .5); --ab-m: rgba(220, 40, 180, .5);
+  --grid: rgba(80, 50, 180, .15);
+  --horizon-glow: rgba(219, 39, 119, .18);
+  --scan: rgba(40, 20, 90, .025);
+  --noise-op: .06;
+  --film-op: .5; --film-blend: normal;
+  --film: conic-gradient(from 0deg, #A5F3FC 0deg, #C4B5FD 80deg, #F5D0FE 160deg, #FBCFE8 205deg, #C7D2FE 255deg, #D9F99D 318deg, #A5F3FC 360deg);
+  --blob-1: rgba(167, 139, 250, .38); --blob-2: rgba(244, 114, 182, .24); --blob-3: rgba(34, 211, 238, .2);
+  --vignette: rgba(120, 100, 180, .16);
+  --k-task: #0B6477; --k-report: #3D6610; --k-block: #8F3F06; --k-answer: #16122A; --k-fail: #B3123A; --k-idea: #A3167F; --k-scribe: #5B3FD0; --k-chat: #5B21B6; --k-user: #16122A;
+  --radar: rgba(60, 40, 160, .2); --radar-2: rgba(60, 40, 160, .1); --radar-sweep: 109, 40, 217;
+  --beam-core: #16122A;
+  --proj-1: rgba(255, 255, 255, .7); --proj-2: rgba(167, 139, 250, .14); --proj-3: rgba(167, 139, 250, 0);
+  --avatar-fg: #FFFFFF;
+}
+
+/* ================================================================ base */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 14px/1.4 var(--font-ui);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.mono { font-family: var(--font-mono); }
+
+/* ================================================================ fundo: película iridescente, aurora, grão */
+.bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: radial-gradient(110% 85% at 50% 42%, var(--bg-2) 0%, var(--bg) 62%); }
+.bg-film {
+  position: absolute; left: 50%; top: 48%; width: 112vmin; height: 112vmin; margin: -56vmin 0 0 -56vmin;
+  border-radius: 50%; background: var(--film); filter: blur(80px) saturate(1.15);
+  opacity: var(--film-op); mix-blend-mode: var(--film-blend);
+  animation: spin 96s linear infinite;
+}
+.bg-film.f2 { left: 92%; top: 4%; width: 64vmin; height: 64vmin; margin: -32vmin 0 0 -32vmin; opacity: calc(var(--film-op) * .75); animation-duration: 130s; animation-direction: reverse; }
+.bg-film.f3 { left: 6%; top: 98%; width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin; opacity: calc(var(--film-op) * .45); animation-duration: 110s; }
+.bg-blob { position: absolute; border-radius: 50%; filter: blur(70px); animation: drift 34s var(--ease-io) infinite alternate; }
+.bg-blob.b1 { width: 44vmax; height: 44vmax; left: -14vmax; top: 26%; background: radial-gradient(closest-side, var(--blob-1), transparent); }
+.bg-blob.b2 { width: 36vmax; height: 36vmax; right: -10vmax; top: -12vmax; background: radial-gradient(closest-side, var(--blob-2), transparent); animation-duration: 42s; }
+.bg-blob.b3 { width: 30vmax; height: 30vmax; right: 18%; bottom: -16vmax; background: radial-gradient(closest-side, var(--blob-3), transparent); animation-duration: 50s; }
+.bg-noise {
+  position: absolute; inset: 0; opacity: var(--noise-op);
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"] .bg-noise { filter: invert(1); }
+.bg-vignette { position: absolute; inset: 0; background: radial-gradient(120% 95% at 50% 45%, transparent 55%, var(--vignette) 100%); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(5vmax, -3vmax, 0) scale(1.12); } }
+
+/* scanlines por cima de tudo (bem sutis) + faixa de varredura lenta */
+.scanlines { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: repeating-linear-gradient(to bottom, var(--scan) 0 1px, transparent 1px 3px); }
+.scanlines::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 18vh; background: linear-gradient(to bottom, transparent, var(--scan) 50%, transparent); opacity: .9; animation: roll 11s var(--ease-io) infinite; }
+@keyframes roll { from { transform: translateY(-20vh); } to { transform: translateY(110vh); } }
+
+/* ================================================================ moldura do app */
+#app { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; }
+
+/* ---------- topo */
+.top {
+  position: relative; z-index: 6; flex: none; height: 62px;
+  display: flex; align-items: center; gap: 18px; padding: 0 14px 0 16px;
+  background: var(--top-bg); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(18px) saturate(1.25); -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+.top::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent 1%, var(--holo-1) 20%, var(--holo-2) 42%, var(--holo-3) 64%, var(--holo-4) 84%, transparent 99%);
+  opacity: .85;
+}
+.brand { display: flex; align-items: center; gap: 12px; flex: none; min-width: 0; }
+.logo { width: 36px; height: 40px; flex: none; overflow: visible; }
+.logo .lg-rim { fill: none; stroke: url(#holo-a); stroke-width: 2.2; }
+.logo .lg-in { fill: none; stroke: var(--fg-3); stroke-width: 1; opacity: .6; }
+.logo .lg-core { fill: url(#holo-a); opacity: .9; }
+.title {
+  margin: 0; font: 700 21px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap;
+  color: var(--fg); text-shadow: -1.6px 0 var(--ab-c), 1.6px 0 var(--ab-m);
+}
+.title .t-sub { font: 500 12px/1 var(--font-mono); letter-spacing: .24em; color: var(--fg-2); text-shadow: -1px 0 var(--ab-c), 1px 0 var(--ab-m); margin-left: 12px; }
+.kicker { margin: 6px 0 0; display: flex; gap: 8px; font: 500 10px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-3); white-space: nowrap; }
+.kicker b { font-weight: 700; color: var(--t-cyan); }
+.goal { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-left: 16px; border-left: 1px solid var(--line); }
+.goal-k { font: 700 9.5px/1 var(--font-mono); letter-spacing: .24em; color: var(--t-cyan); }
+.goal-v { font: 500 13px/1.25 var(--font-ui); color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.readouts { display: flex; gap: 6px; flex: none; }
+.ro { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 5px; height: 44px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--chip); min-width: 68px; }
+.ro-k { font: 700 9px/1 var(--font-mono); letter-spacing: .2em; color: var(--fg-3); white-space: nowrap; }
+.ro-v { font: 700 17px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--fg); letter-spacing: .02em; white-space: nowrap; }
+.ro-v .u { font-size: 11px; color: var(--fg-2); margin-left: 1px; }
+.ro-overall { flex-direction: row; align-items: center; gap: 10px; }
+.ro-overall > div { display: flex; flex-direction: column; gap: 5px; }
+.vu-mini { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
+.vu-mini i { display: block; width: 4px; border-radius: 1px; border: 1px solid var(--vu-off); background: transparent; }
+.vu-mini i.on { background: var(--holo-1); border-color: var(--holo-1); }
+.vu-mini i.on:nth-child(n+4) { background: var(--holo-2); border-color: var(--holo-2); }
+.vu-mini i.on:nth-child(n+7) { background: var(--holo-3); border-color: var(--holo-3); }
+.vu-mini i.on:nth-child(10) { background: var(--holo-4); border-color: var(--holo-4); }
+.ro-scribe .ro-v { color: var(--t-scribe); }
+.controls { display: flex; align-items: center; gap: 8px; flex: none; }
+.ctl {
+  height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--chip);
+  display: inline-flex; align-items: center; gap: 8px; font: 700 12px/1 var(--font-mono); letter-spacing: .06em; color: var(--fg);
+  transition: border-color .25s var(--ease), background-color .25s var(--ease), transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.ctl:hover { border-color: var(--t-cyan); background: var(--chip-hover); }
+.ctl:active { transform: scale(.97); }
+.ctl .ic { font-size: 13px; width: 14px; text-align: center; }
+.ctl-icon { width: 36px; padding: 0; justify-content: center; }
+.ic-theme { width: 16px; height: 16px; transition: transform .45s var(--ease); }
+[data-theme="light"] .ic-theme { transform: rotate(180deg); }
+.ctl-pause { min-width: 116px; justify-content: center; }
+.ctl-pause[aria-pressed="true"] { border-color: var(--t-amber); box-shadow: 0 0 0 1px var(--t-amber) inset; }
+.speed { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--chip); }
+.speed button { height: 28px; min-width: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; font: 700 12px/1 var(--font-mono); color: var(--fg-2); transition: background-color .25s var(--ease), color .25s var(--ease), box-shadow .25s var(--ease); }
+.speed button:hover { color: var(--fg); background: var(--chip-hover); }
+.speed button[aria-pressed="true"] { color: var(--fg); background: var(--chip-hover); box-shadow: inset 0 0 0 1px var(--t-cyan), 0 0 16px rgba(0, 240, 255, .22); }
+
+/* ---------- fita do bus (letreiro) */
+.ticker {
+  position: relative; z-index: 5; flex: none; height: 32px; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px;
+  background: var(--ticker-bg); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  font: 500 11.5px/1 var(--font-mono);
+}
+.tk-label { flex: none; display: inline-flex; align-items: center; gap: 8px; font: 700 10.5px/1 var(--font-mono); letter-spacing: .22em; color: var(--t-lime); }
+.tk-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px var(--lime); animation: blink 2s steps(2, jump-none) infinite; }
+@keyframes blink { from { opacity: 1; } to { opacity: .3; } }
+.tk-view { position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 97%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 97%, transparent 100%); }
+.tk-track { position: absolute; right: 18px; top: 0; height: 100%; display: flex; align-items: center; gap: 26px; white-space: nowrap; will-change: transform; }
+.tk-item { display: inline-flex; align-items: center; gap: 7px; color: var(--fg-2); }
+.tk-item time { color: var(--fg-3); }
+.tk-item b { font-weight: 700; color: var(--fg); }
+.tk-item .tk-k { font-weight: 700; width: 12px; text-align: center; }
+.tk-item .tk-ar { color: var(--fg-3); }
+.tk-item .tk-txt { color: var(--fg-2); }
+.tk-sep { color: var(--fg-3); font-weight: 700; letter-spacing: .2em; }
+.k-task .tk-k, .k-task .m-k { color: var(--k-task); }
+.k-report .tk-k, .k-report .m-k { color: var(--k-report); }
+.k-block .tk-k, .k-block .m-k { color: var(--k-block); }
+.k-answer .tk-k, .k-answer .m-k { color: var(--k-answer); }
+.k-fail .tk-k, .k-fail .m-k { color: var(--k-fail); }
+.k-idea .tk-k, .k-idea .m-k { color: var(--k-idea); }
+.k-scribe .tk-k, .k-scribe .m-k { color: var(--k-scribe); }
+.k-chat .tk-k, .k-chat .m-k { color: var(--k-chat); }
+.k-user .tk-k, .k-user .m-k { color: var(--k-user); }
+.counts { flex: none; display: inline-flex; gap: 4px; }
+.cnt { display: inline-flex; align-items: center; gap: 4px; height: 21px; padding: 0 7px; border-radius: 6px; border: 1px solid var(--line); font: 700 11px/1 var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.cnt[data-zero="1"] { color: var(--fg-3); border-style: dashed; }
+.cnt[data-st="blocked"][data-zero="0"] { border-color: var(--t-amber); color: var(--t-amber); }
+.cnt[data-st="exited"][data-zero="0"] { border-color: var(--t-red); color: var(--t-red); }
+
+/* ================================================================ palco */
+.stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; touch-action: none; cursor: grab; }
+.stage.dragging { cursor: grabbing; }
+.floor { position: absolute; inset: 0; overflow: hidden; perspective: 460px; perspective-origin: 50% 30%; pointer-events: none; }
+.floor-plane {
+  position: absolute; left: -70%; width: 240%; top: 46%; height: 150%; transform-origin: 50% 0;
+  transform: rotateX(74deg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 52%, transparent 90%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 52%, transparent 90%);
+  animation: floor 6s linear infinite;
+}
+.floor-plane.ceil { top: auto; bottom: 54%; transform-origin: 50% 100%; transform: rotateX(-74deg); opacity: .45; animation-name: ceil;
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 12%, #000 40%, transparent 80%); mask-image: linear-gradient(to top, transparent 0%, #000 12%, #000 40%, transparent 80%); }
+@keyframes floor { from { transform: rotateX(74deg) translateY(0); } to { transform: rotateX(74deg) translateY(64px); } }
+@keyframes ceil { from { transform: rotateX(-74deg) translateY(0); } to { transform: rotateX(-74deg) translateY(-64px); } }
+.horizon { position: absolute; left: 0; right: 0; top: 46%; height: 1px; background: linear-gradient(90deg, transparent 4%, var(--holo-1) 28%, var(--holo-3) 50%, var(--holo-4) 72%, transparent 96%); box-shadow: 0 0 22px 3px var(--horizon-glow); opacity: .5; }
+
+.cam { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+.cam.ease { transition: transform .8s var(--ease); }
+.tilt { position: absolute; left: 0; top: 0; width: 0; height: 0; perspective: 1100px; perspective-origin: 0 0; }
+.plane { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; transform: rotateX(18deg); }
+.layer { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+.cells-back, .cells-front, .tags { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+
+/* ---------- radar em volta do orquestrador */
+.r-c { fill: none; stroke: var(--radar); stroke-width: 1; }
+.r-c.r-dash { stroke-dasharray: 2 6; }
+.r-tick { stroke: var(--radar); stroke-width: 1; }
+.r-tick.big { stroke-width: 1.6; }
+.r-cross { stroke: var(--radar-2); stroke-width: 1; stroke-dasharray: 3 7; }
+.r-lbl { font: 700 9px var(--font-mono); fill: var(--fg-3); letter-spacing: .1em; }
+.r-sweep { transform-box: view-box; transform-origin: 0 0; animation: spin 7.5s linear infinite; }
+.r-arm { stroke: rgba(var(--radar-sweep), .38); stroke-width: 1; }
+.r-core { transform-box: view-box; transform-origin: 0 0; animation: spin 26s linear infinite reverse; }
+[data-blocked="1"] .r-arm { stroke: var(--amber); }
+
+/* ---------- ligações --after (laser fino até a dependência) */
+.link .l-glow { stroke: var(--t-violet); stroke-width: 9; opacity: .22; fill: none; stroke-linecap: round; }
+.link .l-core { stroke: var(--t-violet); stroke-width: 1.8; fill: none; stroke-dasharray: 4 4; stroke-linecap: round; }
+.link .l-end { fill: var(--t-violet); filter: drop-shadow(0 0 3px var(--t-violet)); }
+.link.is-wait .l-core { animation: flow 0.9s linear infinite; }
+.link.is-chain .l-glow { opacity: 0; }
+.link.is-chain .l-core { stroke-dasharray: 1 6; stroke-linecap: round; opacity: .55; }
+.link.is-chain .l-end { opacity: .5; }
+@keyframes flow { to { stroke-dashoffset: -16; } }
+
+/* ---------- feixes de mensagem */
+.beam .b-glow { fill: none; stroke: var(--bc); stroke-width: 7; opacity: .26; stroke-linecap: round; }
+.beam .b-core { fill: none; stroke: var(--bc); stroke-width: 1.8; stroke-linecap: round; }
+.beam .h-o { fill: var(--bc); opacity: .38; }
+.beam .h-i { fill: var(--beam-core); }
+.beam .b-head { filter: drop-shadow(0 0 4px var(--bc)); }
+.beam.k-task { --bc: var(--k-task); } .beam.k-report { --bc: var(--k-report); } .beam.k-block { --bc: var(--k-block); }
+.beam.k-answer { --bc: var(--k-answer); } .beam.k-fail { --bc: var(--k-fail); } .beam.k-idea { --bc: var(--k-idea); }
+.beam.k-chat { --bc: var(--k-chat); } .beam.k-user { --bc: var(--k-user); } .beam.k-scribe { --bc: var(--k-scribe); }
+
+/* ================================================================ hexágonos (prismas holográficos) */
+.cb, .cf { position: absolute; width: var(--w); height: var(--h); transition: transform .45s var(--ease); }
+.cb > svg, .cf > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+.cb.hov, .cf.hov, .cb.sel, .cf.sel { transform: scale(1.045); }
+.c-face { fill: var(--face); }
+.role-orchestrator .c-face { fill: var(--face-orch); }
+.c-depth { fill: var(--depth); stroke: var(--edge); stroke-width: 1; }
+.c-edges { fill: none; stroke: var(--edge); stroke-width: 1; }
+.c-rim { fill: none; stroke: url(#holo-a); stroke-width: 1.7; }
+.role-orchestrator .c-rim { stroke-width: 2.6; }
+.c-rim2 { fill: none; stroke: var(--rim2); stroke-width: .9; }
+.c-glow { fill: none; stroke: var(--hue); stroke-width: 7; opacity: .1; }
+.cf.hov .c-rim, .cf.sel .c-rim { stroke-width: 2.6; }
+.cf.hov .c-glow, .cf.sel .c-glow { opacity: .24; }
+.c-flash { fill: none; stroke: var(--hitc, var(--k-task)); stroke-width: 3.2; opacity: 0; }
+.c-focus { fill: none; stroke: var(--focus); stroke-width: 2; stroke-dasharray: 4 3; display: none; }
+.cf:has(:focus-visible) .c-focus { display: block; }
+.c-jag, .c-crack, .c-ring, .c-stamp { display: none; }
+.c-vu rect { fill: transparent; stroke: var(--vu-off); stroke-width: .9; }
+.c-vu rect.on { fill: var(--hue); stroke: var(--hue); }
+.c-vu rect.part { fill: var(--hue); fill-opacity: .38; stroke: var(--hue); }
+.c-brk { opacity: 0; transform: scale(1.22); transform-origin: 50% 50%; transition: opacity .35s var(--ease), transform .45s var(--ease); }
+.c-brk path { fill: none; stroke: var(--hud-corner); stroke-width: 2.6; stroke-linecap: square; stroke-linejoin: miter; filter: drop-shadow(0 0 3px var(--hud-corner)); }
+.cf.sel .c-brk { opacity: 1; transform: scale(1); }
+
+/* camada de padrão por estado (recortada no hexágono) */
+.c-fx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); overflow: hidden; pointer-events: none; }
+.c-fx > i { position: absolute; display: none; }
+
+/* texto dentro do hexágono */
+.cf { --txt: var(--fg); --txt-2: var(--fg-2); }
+.c-btn {
+  position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: transparent; color: var(--txt);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  -webkit-tap-highlight-color: transparent;
+}
+.c-btn:focus-visible { outline: none; }
+.c-st {
+  position: absolute; left: 50%; top: 22px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 4px; height: 14px; padding: 0 6px; border-radius: 4px;
+  background: var(--chip-solid); border: 1px solid var(--line-2);
+  font: 700 7.4px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--txt);
+}
+.c-ic { display: inline-block; font-size: 9px; line-height: 1; letter-spacing: 0; }
+.c-id { position: absolute; left: 0; right: 0; top: 39px; text-align: center; font: 700 13.5px/16px var(--font-mono); letter-spacing: .01em; color: var(--txt); text-shadow: var(--halo); white-space: nowrap; }
+.c-area { position: absolute; left: 9px; right: 9px; top: 56px; text-align: center; font: 500 8.6px/12px var(--font-ui); color: var(--txt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--halo); }
+.c-pct { position: absolute; left: 0; right: 0; top: 87px; text-align: center; font: 700 13px/16px var(--font-ui); font-variant-numeric: tabular-nums; letter-spacing: .02em; color: var(--txt); text-shadow: var(--halo); }
+.role-orchestrator .c-st { top: 25px; }
+.role-orchestrator .c-id { top: 43px; font-size: 11.5px; letter-spacing: .14em; }
+.role-orchestrator .c-area { top: 60px; }
+.role-orchestrator .c-pct { top: 100px; font-size: 11.5px; letter-spacing: .12em; }
+.role-orchestrator .c-pct b { font-size: 13.5px; letter-spacing: .02em; }
+
+/* faísca do criativo */
+.c-spark { position: absolute; right: -4px; top: 14px; font-size: 17px; line-height: 1; color: var(--hc); text-shadow: 0 0 10px var(--hc); pointer-events: none; animation: twinkle 3s var(--ease-io) infinite; }
+@keyframes twinkle { 0%, 100% { transform: scale(.82) rotate(0deg); } 50% { transform: scale(1.18) rotate(24deg); } }
+
+.cf.idea .c-area { color: var(--t-pink); font-family: var(--font-mono); font-weight: 700; letter-spacing: .06em; }
+.cf.idea .c-spark { animation-duration: .9s; }
+
+/* ações de permissão no próprio hexágono */
+.c-act { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); display: none; gap: 4px; }
+.c-act button {
+  height: 17px; padding: 0 5px; border-radius: 4px; border: 1px solid var(--line-2);
+  font: 700 8px/1 var(--font-ui); letter-spacing: .02em; white-space: nowrap;
+  background: var(--chip-solid); color: var(--fg);
+}
+.c-act .c-yes { border-color: var(--t-lime); color: var(--t-lime); }
+.c-act .c-no { border-color: var(--t-red); color: var(--t-red); }
+.c-act button:hover { background: var(--fg); color: var(--bg); }
+.c-act button:focus-visible { outline: 1.5px solid var(--focus); outline-offset: 1px; }
+.c-perm {
+  position: absolute; left: 50%; top: -15px; transform: translateX(calc(-50% + var(--out, 0px))); display: none;
+  height: 14px; padding: 0 6px; border-radius: 3px; align-items: center; gap: 4px;
+  background: var(--haz-a); color: #1A0D00; font: 700 7.6px/14px var(--font-mono); letter-spacing: .16em; white-space: nowrap;
+  box-shadow: 0 0 12px rgba(255, 176, 32, .55);
+  animation: blink 1s steps(2, jump-none) infinite;
+}
+
+/* ---------- iniciando: holograma se materializando em scanlines */
+.cb[data-state="starting"] .fx-mat { display: block; inset: 0; background: repeating-linear-gradient(to bottom, var(--mat-line) 0 1px, transparent 1px 4px); transform-origin: 50% 0; animation: mat 1.7s var(--ease) -1.1s infinite; }
+@keyframes mat { 0% { transform: scaleY(.04); opacity: 1; } 70% { transform: scaleY(1); opacity: .9; } 100% { transform: scaleY(1); opacity: .25; } }
+.cb[data-state="starting"] .c-face { fill: var(--ghost-face); }
+.cf[data-state="starting"] .c-rim { stroke-dasharray: var(--per); animation: rimdraw 1.7s var(--ease) -1.1s infinite; }
+@keyframes rimdraw { from { stroke-dashoffset: var(--per); } to { stroke-dashoffset: 0; } }
+.cf[data-state="starting"] .c-ic { animation: spin 2.4s linear infinite; }
+
+/* ---------- pensando: brilho holográfico varrendo devagar */
+.cb[data-state="thinking"] .fx-sheen { display: block; top: -10%; bottom: -10%; left: -70%; width: 240%; background: linear-gradient(104deg, transparent 38%, var(--sheen-1) 45%, var(--sheen-2) 50%, var(--sheen-3) 55%, transparent 62%); animation: sheen 4.2s var(--ease-io) -1.7s infinite; }
+@keyframes sheen { 0% { transform: translateX(-34%); opacity: 0; } 18% { opacity: 1; } 72% { opacity: 1; } 100% { transform: translateX(34%); opacity: 0; } }
+.cf[data-state="thinking"] .c-ic { animation: spin 7s linear infinite; }
+
+/* ---------- lendo: feixe horizontal de varredura */
+.cb[data-state="reading"] .fx-scan { display: block; left: 0; right: 0; top: 0; height: 20%; background: linear-gradient(to bottom, transparent 0, var(--scan-tail) 38%, var(--scan-line) 50%, var(--scan-tail) 62%, transparent 100%); animation: scan 2.6s var(--ease-io) -1.1s infinite alternate; }
+@keyframes scan { from { transform: translateY(-50%); } to { transform: translateY(450%); } }
+
+/* ---------- editando: chuva de glifos dentro */
+.cb[data-state="editing"] .fx-rain { display: block; inset: 0; }
+.fx-rain span { position: absolute; top: 0; width: 10px; margin-left: -5px; font: 500 8px/9px var(--font-mono); color: var(--hue); opacity: .52; white-space: pre; text-align: center; animation: rain 4s linear infinite; }
+@keyframes rain { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+
+/* ---------- testando: anel segmentado girando */
+.cf[data-state="testing"] .c-ring { display: block; fill: none; stroke: var(--hue); stroke-width: 2.4; stroke-dasharray: 7 5; opacity: .85; transform-box: fill-box; transform-origin: center; animation: spin 3.2s linear infinite; }
+
+/* ---------- bloqueado: listras de perigo + etiqueta PERMISSÃO piscando (1x/s) */
+.cb[data-state="blocked"] .fx-haz { display: block; inset: -40%; background: repeating-linear-gradient(-45deg, var(--haz-a) 0 7px, var(--haz-gap) 7px 11px, var(--haz-b) 11px 18px, var(--haz-gap) 18px 22px); animation: haz 1.4s linear infinite; }
+@keyframes haz { to { transform: translateX(31.11px); } }
+.cb[data-state="blocked"] .fx-plate { display: block; inset: 11px 10px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--face-solid); }
+.cf[data-state="blocked"] .c-rim { stroke: var(--haz-a); stroke-width: 2.4; }
+.cf[data-state="blocked"] .c-act { display: flex; }
+.cf[data-state="blocked"] .c-perm { display: inline-flex; }
+.cf[data-state="blocked"] .c-vu, .cf[data-state="blocked"] .c-pct { display: none; }
+.cf[data-state="blocked"] .c-st { border-color: var(--haz-a); }
+.cf[data-state="blocked"] .c-area { font-family: var(--font-mono); font-weight: 700; color: var(--t-amber); letter-spacing: .02em; }
+.cf[data-state="blocked"] .c-id { top: 38px; }
+.cf[data-state="blocked"] .c-area { top: 55px; }
+
+/* ---------- aguardando: holograma fantasma pontilhado */
+.cb[data-state="waiting"] .c-face { fill: var(--ghost-face); }
+.cb[data-state="waiting"] .c-depth, .cb[data-state="waiting"] .c-edges { stroke-dasharray: 2 3; opacity: .55; }
+.cb[data-state="waiting"] .fx-ghost { display: block; inset: 0; background-image: radial-gradient(var(--ghost-dot) 1px, transparent 1.4px); background-size: 7px 7px; animation: ghost 3.6s var(--ease-io) -1.8s infinite alternate; }
+@keyframes ghost { from { opacity: .35; } to { opacity: .8; } }
+.cf[data-state="waiting"] .c-rim { stroke-dasharray: 2.5 4; stroke-width: 1.5; opacity: .85; }
+.cf[data-state="waiting"] .c-rim2, .cf[data-state="waiting"] .c-glow { display: none; }
+.cf[data-state="waiting"] .c-area { font-family: var(--font-mono); font-weight: 700; color: var(--t-violet); }
+.cf[data-state="waiting"] .c-vu { opacity: .5; }
+
+/* ---------- concluído: placa holográfica sólida + carimbo ✓ */
+.cb[data-state="done"] .c-face { fill: url(#plate); }
+.cb[data-state="done"] .c-depth { fill: var(--plate-depth); }
+.cf[data-state="done"] { --txt: var(--plate-fg); --txt-2: var(--plate-fg-2); --halo: none; }
+.cf[data-state="done"] .c-rim { stroke-width: 2.6; }
+.cf[data-state="done"] .c-rim2 { stroke: var(--plate-fg-2); opacity: .35; }
+.cf[data-state="done"] .c-st { background: var(--plate-chip); color: var(--plate-chip-fg); border-color: transparent; }
+.cf[data-state="done"] .c-vu rect { stroke: var(--plate-fg-2); }
+.cf[data-state="done"] .c-vu rect.on { fill: var(--plate-fg); stroke: var(--plate-fg); }
+.cf[data-state="done"] .c-stamp { display: block; }
+.c-stamp circle { fill: none; stroke: var(--plate-fg); stroke-width: 1.6; }
+.c-stamp circle.in { stroke-width: .8; stroke-dasharray: 2 1.6; }
+.c-stamp text { font: 700 13px var(--font-ui); fill: var(--plate-fg); text-anchor: middle; }
+
+/* ---------- falhou: glitch, separação RGB, contorno serrilhado */
+.cf[data-state="exited"] .c-rim, .cf[data-state="exited"] .c-rim2 { display: none; }
+.cf[data-state="exited"] .c-jag, .cf[data-state="exited"] .c-crack { display: block; }
+.c-jag { fill: none; stroke-width: 1.5; stroke-linejoin: miter; }
+.c-jag-c { stroke: var(--rgb-c); transform: translate(-2px, 0); }
+.c-jag-m { stroke: var(--rgb-m); transform: translate(2px, .8px); }
+.c-jag-w { stroke: var(--fg); stroke-width: 1; opacity: .7; }
+.c-crack { fill: none; stroke: var(--t-red); stroke-width: 1.2; opacity: .8; }
+.cb[data-state="exited"] .fx-glitch { display: block; inset: 0; background: repeating-linear-gradient(to bottom, transparent 0 6px, var(--glitch-band) 6px 8px, transparent 8px 15px); animation: glitch 3.4s steps(1, end) infinite; }
+@keyframes glitch { 0%, 84%, 100% { transform: none; } 86% { transform: translateX(-3px); } 90% { transform: translateX(2px); } }
+.cf[data-state="exited"] .c-id { text-shadow: -1.6px 0 var(--rgb-c), 1.6px 0 var(--rgb-m), var(--halo); animation: glitch 3.4s steps(1, end) infinite; }
+.cf[data-state="exited"] .c-area { font-family: var(--font-mono); font-weight: 700; color: var(--t-red); letter-spacing: .14em; }
+.cf[data-state="exited"] .c-st { border-color: var(--t-red); }
+.cf[data-state="exited"] .c-vu rect.on { fill: transparent; stroke: var(--t-red); }
+.cb[data-state="exited"] .c-depth, .cb[data-state="exited"] .c-edges { stroke-dasharray: 6 3 1 3; }
+
+/* nascimento: fade + blur + escala */
+.spawn { animation: spawn .8s var(--ease) both; }
+@keyframes spawn { from { opacity: 0; transform: scale(.55); filter: blur(8px); } to { opacity: 1; transform: none; filter: blur(0); } }
+
+/* ---------- escriba Obsidian: cristal roxo acoplado ao orquestrador */
+.crystal { position: absolute; width: 30px; height: 70px; margin: -35px 0 0 -15px; padding: 0; border: 0; background: transparent; color: var(--fg); }
+.crystal svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.crystal:focus-visible { outline: 2px dashed var(--focus); outline-offset: 4px; border-radius: 4px; }
+.cr-body { fill: url(#crystal-g); stroke: var(--scribe); stroke-width: 1.4; }
+.cr-left { fill: rgba(30, 10, 70, .35); }
+[data-theme="light"] .cr-left { fill: rgba(40, 20, 90, .18); }
+.cr-facet { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: .7; }
+[data-theme="light"] .cr-facet { stroke: rgba(255, 255, 255, .8); }
+.cr-glow { fill: var(--scribe); opacity: .22; filter: blur(5px); }
+.cr-bob { animation: bob 4.8s var(--ease-io) infinite alternate; transform-box: view-box; }
+@keyframes bob { from { transform: translateY(1.5px); } to { transform: translateY(-2.5px); } }
+.cr-ring { fill: none; stroke: var(--scribe); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.cr-up { stroke: var(--scribe); stroke-width: 1.6; stroke-dasharray: 2 3; opacity: 0; transition: opacity .3s var(--ease); }
+.crystal.writing .cr-up { opacity: .9; animation: flow .8s linear infinite; }
+.crystal.writing .cr-glow { opacity: .55; }
+.crystal.sel .cr-body { stroke-width: 2.4; }
+.cr-count {
+  position: absolute; left: 50%; top: -38px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 4px; height: 15px; padding: 0 6px; border-radius: 4px;
+  background: var(--chip-solid); border: 1px solid var(--scribe); color: var(--t-scribe);
+  font: 700 7.8px/1 var(--font-mono); letter-spacing: .06em; white-space: nowrap; pointer-events: none;
+}
+.cr-count b { color: var(--fg); font-size: 10px; }
+.cr-plus { position: absolute; left: 50%; top: -48px; transform: translateX(-50%); font: 700 9px/1 var(--font-mono); letter-spacing: .12em; color: var(--t-scribe); white-space: nowrap; pointer-events: none; opacity: 0; text-shadow: var(--halo); }
+
+/* "você" no vale de baixo */
+.you { position: absolute; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 5px; height: 16px; padding: 0 7px; border-radius: 4px; border: 1px solid var(--line-2); background: var(--chip-solid); font: 700 8px/1 var(--font-mono); letter-spacing: .16em; color: var(--fg-2); white-space: nowrap; pointer-events: none; }
+.you i { width: 6px; height: 6px; border-radius: 50%; background: var(--k-user); box-shadow: 0 0 6px var(--k-user); font-style: normal; }
+
+/* etiquetas que sobem (ideias do criativo) */
+.float-tag { position: absolute; width: max-content; max-width: 230px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--pink); background: var(--glass-strong); color: var(--fg); font: 600 8.5px/1.35 var(--font-ui); pointer-events: none; box-shadow: 0 0 18px rgba(255, 106, 255, .3); }
+.float-tag b { display: block; font: 700 7.5px/1 var(--font-mono); letter-spacing: .16em; color: var(--t-pink); margin-bottom: 3px; }
+
+/* ================================================================ painéis de vidro HUD */
+.glass {
+  background: var(--glass); border: 1px solid var(--line-2); border-radius: 14px;
+  backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-hi);
+}
+.hud { position: relative; }
+.hud::before {
+  content: ''; position: absolute; inset: 6px; pointer-events: none; z-index: 1;
+  --b: var(--hud-corner); --l: 14px; --t: 2px;
+  background:
+    linear-gradient(var(--b), var(--b)) left top / var(--l) var(--t),
+    linear-gradient(var(--b), var(--b)) left top / var(--t) var(--l),
+    linear-gradient(var(--b), var(--b)) right top / var(--l) var(--t),
+    linear-gradient(var(--b), var(--b)) right top / var(--t) var(--l),
+    linear-gradient(var(--b), var(--b)) left bottom / var(--l) var(--t),
+    linear-gradient(var(--b), var(--b)) left bottom / var(--t) var(--l),
+    linear-gradient(var(--b), var(--b)) right bottom / var(--l) var(--t),
+    linear-gradient(var(--b), var(--b)) right bottom / var(--t) var(--l);
+  background-repeat: no-repeat;
+}
+.hud::after { content: ''; position: absolute; left: 22px; right: 22px; top: -1px; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--holo-1), var(--holo-3), var(--holo-4), transparent); opacity: .7; }
+.h-eyebrow { margin: 0; font: 700 10px/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--fg-2); }
+.h-eyebrow span { color: var(--fg-3); }
+
+/* ---------- trilho esquerdo: bus + legenda */
+.rail { position: absolute; z-index: 3; left: 12px; top: 12px; bottom: 12px; width: 288px; display: flex; flex-direction: column; padding: 14px 12px 12px; gap: 10px; }
+.rail-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.pill { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 9px; border: 1px solid var(--line-2); font: 700 10px/1 var(--font-mono); color: var(--fg-2); }
+.bus { list-style: none; margin: 0; padding: 0 2px 0 0; flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 6px; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.msg { position: relative; padding: 7px 9px 7px 11px; border-radius: 8px; background: var(--chip); border: 1px solid var(--line); }
+.msg::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 0; border-left: 2px solid var(--line-2); }
+.msg.k-task::before { border-left: 2px solid var(--k-task); }
+.msg.k-report::before { border-left: 2px solid var(--k-report); }
+.msg.k-block::before { border-left: 2px dashed var(--k-block); }
+.msg.k-answer::before { border-left: 2px solid var(--k-answer); }
+.msg.k-fail::before { border-left: 2px dotted var(--k-fail); }
+.msg.k-idea::before { border-left: 2px solid var(--k-idea); }
+.msg.k-scribe::before { border-left: 2px double var(--k-scribe); border-left-width: 3px; }
+.msg.k-chat::before { border-left: 2px dashed var(--k-chat); }
+.msg.k-user::before { border-left: 2px solid var(--k-user); }
+.msg.k-block, .msg.k-fail { background: var(--chip-hover); }
+.m-head { display: flex; align-items: center; gap: 6px; font: 600 10.5px/1.2 var(--font-mono); color: var(--fg-2); }
+.m-k { width: 12px; text-align: center; font-weight: 700; }
+.m-route { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-route b { color: var(--fg); font-weight: 700; }
+.m-route i { font-style: normal; color: var(--fg-3); padding: 0 3px; }
+.m-head time { color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.m-text { margin: 4px 0 0; font: 400 12px/1.35 var(--font-ui); color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bus:focus-visible { outline-offset: -2px; border-radius: 8px; }
+.bus .sep { list-style: none; text-align: center; font: 700 9.5px/1 var(--font-mono); letter-spacing: .22em; color: var(--t-cyan); padding: 8px 0; }
+.legend { flex: none; border-top: 1px solid var(--line); padding: 10px 4px 0; }
+.legend ul { list-style: none; margin: 9px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.legend li { display: flex; align-items: center; gap: 7px; font: 600 11px/1.1 var(--font-ui); color: var(--fg-2); white-space: nowrap; min-width: 0; }
+.legend svg { width: 18px; height: 20px; flex: none; overflow: visible; }
+.sw-face { fill: var(--face); stroke: var(--fg-3); stroke-width: 1.2; }
+
+/* ---------- painel do agente (terminal HUD) */
+.panel {
+  position: absolute; z-index: 4; top: 12px; right: 12px; bottom: 12px; width: 384px;
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 12px;
+  transform: translateX(calc(100% + 28px)); opacity: 0; visibility: hidden;
+  transition: transform .55s var(--ease), opacity .4s var(--ease), visibility 0s linear .55s;
+}
+.panel.open { transform: none; opacity: 1; visibility: visible; transition: transform .55s var(--ease), opacity .4s var(--ease), visibility 0s; }
+.panel > * { flex-shrink: 0; }
+.panel > .term { flex: 1 1 auto; }
+.p-head { display: flex; align-items: center; gap: 11px; }
+.p-avatar { width: 40px; height: 46px; flex: none; display: grid; place-items: center; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--p-hue, var(--h1)); color: var(--avatar-fg); font: 700 17px/1 var(--font-ui); }
+.p-title { flex: 1; min-width: 0; }
+.p-title h2 { margin: 0; font: 700 19px/1.1 var(--font-mono); letter-spacing: .01em; color: var(--fg); text-shadow: -1px 0 var(--ab-c), 1px 0 var(--ab-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-title p { margin: 4px 0 0; font: 500 11.5px/1.2 var(--font-ui); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--line-2); background: var(--chip); color: var(--fg); font: 700 13px/1 var(--font-mono); transition: border-color .25s var(--ease), background-color .25s var(--ease); }
+.icon-btn:hover { border-color: var(--t-red); background: var(--chip-hover); }
+.p-statebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.badge { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--chip); font: 700 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg); }
+.badge i { font-style: normal; font-size: 13px; letter-spacing: 0; }
+.badge[data-state="blocked"] { border-color: var(--haz-a); color: var(--t-amber); background-image: repeating-linear-gradient(-45deg, transparent 0 6px, rgba(255, 176, 32, .13) 6px 10px); }
+.badge[data-state="exited"] { border-color: var(--t-red); color: var(--t-red); border-style: dashed; }
+.badge[data-state="done"] { border-color: var(--t-lime); color: var(--t-lime); }
+.badge[data-state="waiting"] { border-style: dotted; color: var(--t-violet); border-color: var(--t-violet); }
+.p-pct { font: 700 27px/1 var(--font-ui); font-variant-numeric: tabular-nums; letter-spacing: .01em; color: var(--fg); }
+.p-pct small { font-size: 13px; color: var(--fg-2); margin-left: 2px; }
+.p-vu { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; align-items: end; height: 22px; }
+.p-vu i { display: block; border-radius: 2px; border: 1px solid var(--vu-off); }
+.p-vu i.on { background: var(--p-hue, var(--holo-1)); border-color: var(--p-hue, var(--holo-1)); box-shadow: 0 0 10px -2px var(--p-hue, var(--holo-1)); }
+.p-vu i.part { background: transparent; border-color: var(--p-hue, var(--holo-1)); border-style: dashed; }
+.p-ro { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0; }
+.p-ro > div { padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--chip); min-width: 0; }
+.p-ro dt { font: 700 8.5px/1 var(--font-mono); letter-spacing: .18em; color: var(--fg-3); }
+.p-ro dd { margin: 5px 0 0; font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-task { margin: 0; font: 500 12.5px/1.4 var(--font-ui); color: var(--fg); }
+.p-task::before { content: 'TAREFA  '; font: 700 9px/1 var(--font-mono); letter-spacing: .2em; color: var(--t-cyan); }
+.p-after { margin: -4px 0 0; font: 600 11px/1.3 var(--font-mono); color: var(--t-violet); }
+.p-perm { position: relative; padding: 10px 11px 10px 14px; border-radius: 10px; border: 1px solid var(--haz-a); background: var(--glass-strong); overflow: hidden; }
+.p-perm::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: repeating-linear-gradient(-45deg, var(--haz-a) 0 5px, var(--haz-gap) 5px 8px, var(--haz-b) 8px 13px, var(--haz-gap) 13px 16px); }
+.p-perm h3 { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 11px/1 var(--font-mono); letter-spacing: .2em; color: var(--t-amber); }
+.p-perm h3 .blinker { animation: blink 1s steps(2, jump-none) infinite; }
+.p-perm h3 small { font-weight: 600; letter-spacing: .06em; color: var(--fg-2); }
+.p-perm p { margin: 7px 0 9px; font: 500 11.5px/1.35 var(--font-mono); color: var(--fg); word-break: break-word; }
+.p-perm .row { display: flex; gap: 8px; }
+.btn { height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--chip); font: 700 11.5px/1 var(--font-mono); letter-spacing: .06em; color: var(--fg); display: inline-flex; align-items: center; gap: 7px; transition: background-color .25s var(--ease), border-color .25s var(--ease), transform .25s var(--ease); }
+.btn:hover { background: var(--chip-hover); }
+.btn:active { transform: scale(.97); }
+.btn kbd { font: 700 9.5px/1 var(--font-mono); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--fg-2); }
+.btn-yes { border-color: var(--t-lime); color: var(--t-lime); }
+.btn-no { border-color: var(--t-red); color: var(--t-red); }
+.p-files { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px; max-height: 58px; overflow: auto; }
+.p-files li { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: 20px; padding: 0 7px; border-radius: 5px; border: 1px dashed var(--line-2); font: 500 10.5px/1 var(--font-mono); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-files li.t { border-style: solid; border-color: var(--t-cyan); color: var(--fg); }
+.p-files li::before { content: '·'; color: var(--fg-3); }
+.p-files li.t::before { content: '✎'; color: var(--t-cyan); }
+.term { position: relative; flex: 1 1 auto; min-height: 110px; display: flex; flex-direction: column; border-radius: 10px; border: 1px solid var(--line-2); background: var(--glass-strong); overflow: hidden; }
+.term-bar { flex: none; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px 0 10px; border-bottom: 1px solid var(--line); }
+.term-bar .dots { display: inline-flex; gap: 5px; }
+.term-bar .dots i { width: 9px; height: 9px; border-radius: 50%; }
+.term-bar .dots i:nth-child(1) { background: #FF5F57; } .term-bar .dots i:nth-child(2) { background: #FEBC2E; } .term-bar .dots i:nth-child(3) { background: #28C840; }
+.term-bar .tt { flex: 1; font: 700 9.5px/1 var(--font-mono); letter-spacing: .2em; color: var(--fg-2); }
+.term-bar .live { font: 700 9px/1 var(--font-mono); letter-spacing: .14em; color: var(--t-lime); }
+.term-bar .btn { height: 24px; padding: 0 9px; font-size: 10.5px; border-radius: 6px; }
+.term-body { flex: 1; min-height: 0; overflow: auto; padding: 8px 10px 10px; font: 400 11.5px/1.55 var(--font-mono); color: var(--fg-2); scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.term-body:focus-visible { outline-offset: -2px; }
+.ln { white-space: pre-wrap; word-break: break-word; }
+.ln .ln-t { color: var(--fg-3); margin-right: 8px; user-select: none; }
+.ln.k-tool { color: var(--t-cyan); }
+.ln.k-ok { color: var(--t-lime); }
+.ln.k-error { color: var(--t-red); }
+.ln.k-note { color: var(--fg-2); }
+.ln.k-prompt { color: var(--fg); font-weight: 700; }
+.ln.k-think { color: var(--t-violet); font-style: italic; }
+.term-new { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); height: 26px; padding: 0 12px; border-radius: 13px; border: 1px solid var(--t-cyan); background: var(--glass-strong); color: var(--fg); font: 700 10.5px/1 var(--font-mono); box-shadow: 0 6px 20px rgba(0, 0, 0, .3); }
+.p-send { display: flex; gap: 6px; flex: none; }
+.p-send input { flex: 1; min-width: 0; height: 34px; padding: 0 11px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--glass-strong); color: var(--fg); font: 500 12px/1 var(--font-mono); }
+.p-send input::placeholder { color: var(--fg-3); }
+.p-send input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.copied { color: var(--t-lime); }
+
+/* ---------- alerta de bloqueio no topo do palco */
+.alert {
+  position: absolute; z-index: 5; top: 12px; left: 50%; width: 560px; transform: translate(-50%, -16px);
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center;
+  padding: 10px 12px 10px 18px; border-radius: 12px; border: 1px solid var(--haz-a);
+  background: var(--glass-strong); box-shadow: 0 14px 40px rgba(0, 0, 0, .35), 0 0 24px rgba(255, 176, 32, .18);
+  opacity: 0; visibility: hidden; transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s linear .45s;
+}
+.alert.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s; }
+.alert::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; border-radius: 12px 0 0 12px; background: repeating-linear-gradient(-45deg, var(--haz-a) 0 5px, var(--haz-gap) 5px 8px, var(--haz-b) 8px 13px, var(--haz-gap) 13px 16px); }
+.al-tag { grid-row: span 2; align-self: stretch; display: grid; place-items: center; padding: 0 10px; border-radius: 8px; background: var(--haz-a); color: #1A0D00; font: 700 11px/1.1 var(--font-mono); letter-spacing: .14em; text-align: center; }
+.al-tag span { animation: blink 1s steps(2, jump-none) infinite; }
+.al-text { font: 600 12.5px/1.3 var(--font-ui); color: var(--fg); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-text code { font: 600 11.5px/1.3 var(--font-mono); color: var(--t-amber); }
+.al-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.al-row .btn { height: 28px; font-size: 11px; }
+.al-row .auto { margin-left: auto; font: 600 10.5px/1 var(--font-mono); color: var(--fg-2); font-variant-numeric: tabular-nums; }
+
+/* ---------- zoom + dica */
+.zoom { position: absolute; z-index: 3; bottom: 12px; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 12px; transform: translateX(-50%); }
+.zoom button { height: 30px; min-width: 30px; padding: 0 9px; border-radius: 8px; border: 1px solid transparent; background: transparent; font: 700 13px/1 var(--font-mono); color: var(--fg); }
+.zoom button:hover { background: var(--chip-hover); border-color: var(--line-2); }
+.zoom .zl { min-width: 50px; text-align: center; font: 700 11px/1 var(--font-mono); color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.zoom .hint { padding: 0 8px 0 6px; font: 500 10.5px/1 var(--font-mono); color: var(--fg-3); white-space: nowrap; border-left: 1px solid var(--line); }
+.paused-tag { position: absolute; z-index: 3; left: 50%; bottom: 62px; transform: translateX(-50%); padding: 10px 16px; border-radius: 10px; border: 1px solid var(--t-amber); background: var(--glass-strong); font: 700 13px/1 var(--font-mono); letter-spacing: .2em; color: var(--t-amber); pointer-events: none; opacity: 0; transition: opacity .3s var(--ease); }
+[data-paused="1"] .paused-tag { opacity: 1; }
+[data-paused="1"] .stage *, [data-paused="1"] .bg * { animation-play-state: paused !important; }
+
+/* ---------- rodapé recolhível */
+.notes { position: relative; z-index: 6; flex: none; padding: 7px 16px 9px; border-top: 1px solid var(--line); background: var(--notes-bg); }
+.notes::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent 2%, var(--holo-4) 25%, var(--holo-1) 50%, var(--holo-3) 75%, transparent 98%); opacity: .6; }
+.notes-bar { display: flex; align-items: center; gap: 12px; }
+.notes-toggle { display: inline-flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px 0 4px; border: 0; border-radius: 6px; background: transparent; font: 700 10.5px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fg); }
+.notes-toggle:hover { background: var(--chip-hover); }
+.notes-toggle .chev { display: inline-block; transition: transform .35s var(--ease); }
+.notes[data-open="false"] .notes-toggle .chev { transform: rotate(-90deg); }
+.notes-bar .decide { margin-left: auto; font: 700 10.5px/1 var(--font-mono); letter-spacing: .12em; color: var(--t-amber); }
+.notes-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin-top: 4px; }
+.notes[data-open="false"] .notes-body { display: none; }
+.n-col h2 { margin: 0 0 4px; font: 700 10px/1 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; }
+.n-col.ok h2 { color: var(--t-lime); }
+.n-col.warn h2 { color: var(--t-amber); }
+.n-col ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.n-col li { position: relative; padding-left: 13px; font: 400 11.5px/1.38 var(--font-ui); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.n-col li::before { content: '▸'; position: absolute; left: 0; top: 0; color: var(--fg-3); }
+.n-col li b { color: var(--fg); font-weight: 600; }
+
+/* ---------- dica flutuante, ajuda, retícula */
+.tip { position: fixed; z-index: 50; left: 0; top: 0; max-width: 300px; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--glass-strong); box-shadow: var(--shadow); pointer-events: none; font: 500 11.5px/1.35 var(--font-ui); color: var(--fg); opacity: 0; transition: opacity .2s var(--ease); }
+.tip.show { opacity: 1; }
+.tip .t-id { font: 700 12.5px/1.2 var(--font-mono); }
+.tip .t-st { margin-top: 3px; font: 700 10.5px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--t-cyan); }
+.tip .t-area { margin-top: 3px; color: var(--fg-2); }
+.tip .t-last { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font: 500 10.5px/1.35 var(--font-mono); color: var(--fg-2); }
+.help-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(4, 3, 10, .55); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s var(--ease), visibility 0s linear .3s; }
+[data-theme="light"] .help-back { background: rgba(60, 40, 120, .18); }
+.help-back.show { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .3s var(--ease), visibility 0s; }
+.help { width: min(520px, calc(100vw - 32px)); padding: 20px 22px 18px; background: var(--glass-strong); transform: translateY(10px) scale(.98); transition: transform .45s var(--ease); }
+.help-back.show .help { transform: none; }
+.help h2 { margin: 0 0 12px; font: 700 18px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; text-shadow: -1.4px 0 var(--ab-c), 1.4px 0 var(--ab-m); }
+.help dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; font: 500 12.5px/1.35 var(--font-ui); color: var(--fg-2); }
+.help dt { font: 700 11.5px/1.35 var(--font-mono); color: var(--fg); white-space: nowrap; }
+.help dd { margin: 0; }
+.help .close { position: absolute; top: 14px; right: 14px; }
+.reticle { position: fixed; z-index: 45; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; opacity: 0; transition: opacity .3s var(--ease), width .3s var(--ease), height .3s var(--ease), margin .3s var(--ease); }
+.reticle.on { opacity: .9; }
+.reticle svg { width: 100%; height: 100%; overflow: visible; }
+.reticle circle { fill: none; stroke: var(--t-cyan); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.reticle path { stroke: var(--t-pink); stroke-width: 1.6; fill: none; }
+.reticle.lock { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+.reticle.lock circle { stroke: var(--t-lime); }
+
+/* ================================================================ modo miniatura (?embed=1) */
+[data-embed="1"] .top, [data-embed="1"] .rail, [data-embed="1"] .panel, [data-embed="1"] .notes,
+[data-embed="1"] .zoom, [data-embed="1"] .alert, [data-embed="1"] .counts, [data-embed="1"] .tip, [data-embed="1"] .reticle, [data-embed="1"] .help-back { display: none !important; }
+[data-embed="1"] .ticker { height: 26px; font-size: 10.5px; }
+[data-embed="1"] .stage { cursor: default; }
+.embed-tag { display: none; }
+[data-embed="1"] .embed-tag { display: inline-flex; position: absolute; z-index: 4; left: 10px; top: 8px; align-items: center; gap: 8px; padding: 5px 9px; border-radius: 8px; font: 700 11px/1 var(--font-ui); letter-spacing: .16em; text-transform: uppercase; color: var(--fg); text-shadow: -1px 0 var(--ab-c), 1px 0 var(--ab-m); background: var(--glass); border: 1px solid var(--line-2); }
+[data-embed="1"] .embed-tag small { font: 700 10px/1 var(--font-mono); letter-spacing: .1em; color: var(--fg-2); text-shadow: none; }
+
+/* telas menores */
+@media (max-width: 1380px) { .goal { display: none; } }
+@media (max-width: 1100px) { .rail { display: none; } .readouts .ro-scribe { display: none; } .title .t-sub { display: none; } .kicker span:nth-child(n+4) { display: none; } }
+@media (max-width: 860px) {
+  .readouts, .kicker { display: none; }
+  .panel { left: 12px; width: auto; }
+  .notes-body { grid-template-columns: 1fr; }
+  .zoom .hint { display: none; }
+}
+
+/* ================================================================ movimento reduzido: troca movimento por padrão estático */
+@media (prefers-reduced-motion: reduce) {
+  .bg-film, .bg-blob, .floor-plane, .scanlines::after, .r-sweep, .r-core, .tk-dot, .c-spark, .cr-bob,
+  .fx-sheen, .fx-scan, .fx-rain span, .fx-haz, .fx-mat, .fx-ghost, .fx-glitch, .c-ring, .c-rim, .c-ic, .c-id, .c-perm,
+  .link .l-core, .al-tag span, .p-perm h3 .blinker, .crystal.writing .cr-up { animation: none !important; }
+  .scanlines::after { display: none; }
+  .cb[data-state="thinking"] .fx-sheen { transform: none; opacity: 1; }
+  .cb[data-state="reading"] .fx-scan { transform: translateY(200%); }
+  .cb[data-state="starting"] .fx-mat { transform: none; opacity: .8; }
+  .cf[data-state="starting"] .c-rim { stroke-dasharray: 3 3; stroke-dashoffset: 0; }
+  .cb[data-state="waiting"] .fx-ghost { opacity: .6; }
+  .r-sweep { transform: rotate(-38deg); }
+  .spawn { animation: none; }
+  .cam.ease, .panel, .panel.open, .alert, .alert.show, .help, .tip, .c-brk, .cb, .cf { transition: none !important; }
+  .reticle { display: none; }
+}
+</style>
+</head>
+<body>
+<pre id="__errors" hidden></pre>
+<script>
+  window.addEventListener('error', (e) => { const p = document.getElementById('__errors'); p.textContent += (e.message || e) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+  window.addEventListener('unhandledrejection', (e) => { const p = document.getElementById('__errors'); p.textContent += 'promise: ' + (e.reason && e.reason.message || e.reason) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+</script>
+
+<!-- definições SVG compartilhadas: contorno holográfico (gira devagar), placa iridescente, cristal -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false" id="defs-svg">
+  <defs>
+    <linearGradient id="holo-a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color: var(--holo-1)"/>
+      <stop offset=".3" style="stop-color: var(--holo-2)"/>
+      <stop offset=".58" style="stop-color: var(--holo-3)"/>
+      <stop offset=".82" style="stop-color: var(--holo-4)"/>
+      <stop offset="1" style="stop-color: var(--holo-1)"/>
+      <animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="10s" repeatCount="indefinite"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color: var(--plate-1)"/>
+      <stop offset=".38" style="stop-color: var(--plate-2)"/>
+      <stop offset=".7" style="stop-color: var(--plate-3)"/>
+      <stop offset="1" style="stop-color: var(--plate-4)"/>
+    </linearGradient>
+    <radialGradient id="proj-glow" cx="0" cy="0" r="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0" style="stop-color: var(--proj-1)"/>
+      <stop offset=".55" style="stop-color: var(--proj-2)"/>
+      <stop offset="1" style="stop-color: var(--proj-3)"/>
+    </radialGradient>
+    <linearGradient id="crystal-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E7DDFF"/>
+      <stop offset=".35" stop-color="#A88CFF"/>
+      <stop offset=".7" stop-color="#6C4EE0"/>
+      <stop offset="1" stop-color="#FF8DF7"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="bg" aria-hidden="true">
+  <div class="bg-blob b1"></div><div class="bg-blob b2"></div><div class="bg-blob b3"></div>
+  <div class="bg-film"></div><div class="bg-film f2"></div><div class="bg-film f3"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="-18 -20 36 40" aria-hidden="true" focusable="false">
+        <polygon class="lg-rim" points="0,-18 15.6,-9 15.6,9 0,18 -15.6,9 -15.6,-9"/>
+        <polygon class="lg-in" points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5"/>
+        <polygon class="lg-core" points="0,-5 4.3,-2.5 4.3,2.5 0,5 -4.3,2.5 -4.3,-2.5"/>
+      </svg>
+      <div>
+        <h1 class="title">Colmeia C<span class="t-sub">· HOLOGRÁFICA</span></h1>
+        <p class="kicker"><span>Alethe Orchestra</span><span>//</span><b id="hdr-project">alethe-orchestra</b><span>//</span><span id="hdr-session">sessão 01</span></p>
+      </div>
+    </div>
+    <div class="goal">
+      <span class="goal-k">META DA SESSÃO</span>
+      <span class="goal-v" id="goal"></span>
+    </div>
+    <div class="readouts" aria-label="Leituras da sessão">
+      <div class="ro"><span class="ro-k">TEMPO</span><span class="ro-v" id="ro-clock">00:00</span></div>
+      <div class="ro ro-overall">
+        <div><span class="ro-k">GERAL</span><span class="ro-v" id="ro-overall">0<span class="u">%</span></span></div>
+        <span class="vu-mini" id="ro-vu" aria-hidden="true"></span>
+      </div>
+      <div class="ro ro-scribe"><span class="ro-k">ESCRIBA</span><span class="ro-v" id="ro-scribe">◆ 0</span></div>
+    </div>
+    <div class="controls" role="group" aria-label="Controles da simulação">
+      <button type="button" id="btn-pause" class="ctl ctl-pause" aria-pressed="false" aria-keyshortcuts="Space"><span class="ic" aria-hidden="true">⏸&#xFE0E;</span><span class="lb">Pausar</span></button>
+      <div class="speed" role="group" aria-label="Velocidade da simulação" id="speed"></div>
+      <button type="button" id="btn-theme" class="ctl ctl-icon" aria-keyshortcuts="T" aria-label="Alternar para o tema claro (T)"><svg class="ic-theme" viewBox="-8 -8 16 16" aria-hidden="true" focusable="false"><circle r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M0,-6.2 A6.2,6.2 0 0,1 0,6.2 Z" fill="currentColor"/></svg></button>
+      <button type="button" id="btn-help" class="ctl ctl-icon" aria-keyshortcuts="Shift+?" aria-label="Atalhos de teclado (?)"><span class="ic" aria-hidden="true">?</span></button>
+    </div>
+  </header>
+
+  <div class="ticker">
+    <span class="tk-label"><i class="tk-dot" aria-hidden="true"></i>BUS AO VIVO</span>
+    <div class="tk-view" role="marquee" aria-label="Fita com as mensagens mais recentes do bus"><div class="tk-track" id="tk-track"></div></div>
+    <span class="counts" id="counts" aria-label="Agentes por estado"></span>
+  </div>
+
+  <main class="stage" id="stage" aria-label="Colmeia: agentes da sessão em hexágonos">
+    <div class="floor" aria-hidden="true"><div class="floor-plane ceil"></div><div class="floor-plane"></div><div class="horizon"></div></div>
+    <div class="cam" id="cam">
+      <div class="tilt">
+        <div class="plane" id="plane">
+          <svg class="layer" id="radar" aria-hidden="true" focusable="false"></svg>
+          <div class="cells-back" id="cells-back" aria-hidden="true"></div>
+          <svg class="layer" id="links" aria-hidden="true" focusable="false"></svg>
+          <svg class="layer" id="beams" aria-hidden="true" focusable="false"></svg>
+          <div class="cells-front" id="cells-front"></div>
+          <div class="cells-front" id="cells-top"></div>
+          <div class="tags" id="tags" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+
+    <span class="embed-tag" aria-hidden="true">Colmeia C <small>· holográfica</small></span>
+    <div class="paused-tag" id="paused-tag" aria-hidden="true">⏸&#xFE0E; PAUSADO · ESPAÇO CONTINUA</div>
+
+    <aside class="rail glass hud" id="rail" aria-label="Bus de mensagens e legenda dos estados">
+      <div class="rail-head"><h2 class="h-eyebrow">BUS <span>// mensagens</span></h2><span class="pill" id="bus-count" aria-label="Mensagens nesta sessão">0</span></div>
+      <ol class="bus" id="bus" tabindex="0" aria-label="Últimas mensagens do bus, a mais recente primeiro"></ol>
+      <div class="legend">
+        <h2 class="h-eyebrow">LEGENDA <span>// sem depender de cor</span></h2>
+        <ul id="legend"></ul>
+      </div>
+    </aside>
+
+    <div class="alert" id="alert" aria-hidden="true">
+      <div class="al-tag"><span>⏸&#xFE0E;<br>PERMISSÃO</span></div>
+      <div class="al-text" id="al-text"></div>
+      <div class="al-row">
+        <button type="button" class="btn btn-yes" id="al-yes">✓ Aprovar <kbd>A</kbd></button>
+        <button type="button" class="btn btn-no" id="al-no">✕ Negar <kbd>N</kbd></button>
+        <button type="button" class="btn" id="al-open">Ver agente</button>
+        <span class="auto" id="al-auto"></span>
+      </div>
+    </div>
+
+    <div class="zoom glass" id="zoom" role="group" aria-label="Zoom da colmeia">
+      <button type="button" id="z-out" aria-label="Diminuir zoom">−</button>
+      <span class="zl" id="z-level" aria-live="off">100%</span>
+      <button type="button" id="z-in" aria-label="Aumentar zoom">+</button>
+      <button type="button" id="z-fit" aria-label="Ajustar a vista (F)">⤢ Ajustar</button>
+      <span class="hint">arraste · roda = zoom · 2 cliques ajusta</span>
+    </div>
+
+    <aside class="panel glass hud" id="panel" aria-labelledby="p-id">
+      <div class="p-head">
+        <div class="p-avatar" id="p-avatar" aria-hidden="true">⬢</div>
+        <div class="p-title"><h2 id="p-id">orquestrador</h2><p id="p-role"></p></div>
+        <button type="button" class="icon-btn" id="p-close" aria-label="Fechar o painel (Esc)">✕</button>
+      </div>
+      <div class="p-statebar">
+        <span class="badge" id="p-badge"><i aria-hidden="true"></i><span></span></span>
+        <span class="p-pct" id="p-pct">0<small>%</small></span>
+      </div>
+      <div class="p-vu" id="p-vu" aria-hidden="true"></div>
+      <dl class="p-ro">
+        <div><dt>TOKENS</dt><dd id="p-tokens">0</dd></div>
+        <div><dt>CUSTO</dt><dd id="p-cost" title="estimativa: tokens × US$ 15 por milhão">US$ 0,00</dd></div>
+        <div><dt>TEMPO</dt><dd id="p-time">00:00</dd></div>
+        <div><dt id="p-k4">ARQUIVOS</dt><dd id="p-v4">0/0</dd></div>
+      </dl>
+      <p class="p-task" id="p-task"></p>
+      <p class="p-after" id="p-after" hidden></p>
+      <div class="p-perm" id="p-perm" hidden>
+        <h3><span class="blinker">⏸&#xFE0E; PERMISSÃO</span><small id="p-perm-auto"></small></h3>
+        <p id="p-perm-text"></p>
+        <div class="row">
+          <button type="button" class="btn btn-yes" id="p-yes">✓ Aprovar <kbd>A</kbd></button>
+          <button type="button" class="btn btn-no" id="p-no">✕ Negar <kbd>N</kbd></button>
+        </div>
+      </div>
+      <ul class="p-files" id="p-files" aria-label="Arquivos da tarefa (✎ = já editado)"></ul>
+      <div class="term">
+        <div class="term-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="tt">TRANSCRIÇÃO</span>
+          <span class="live" id="term-live">● AO VIVO</span>
+          <button type="button" class="btn" id="p-copy" aria-keyshortcuts="C">Copiar</button>
+        </div>
+        <div class="term-body" id="term" tabindex="0" role="region" aria-label="Transcrição do agente"></div>
+        <button type="button" class="term-new" id="term-new" hidden>↓ novas linhas</button>
+      </div>
+      <form class="p-send" id="p-send" autocomplete="off">
+        <label class="sr-only" for="p-msg">Mensagem para o agente</label>
+        <input id="p-msg" type="text" placeholder="Mensagem para o agente…" maxlength="240">
+        <button type="submit" class="btn">Enviar</button>
+      </form>
+    </aside>
+  </main>
+
+  <footer class="notes" id="notes" data-open="true">
+    <div class="notes-bar">
+      <button type="button" class="notes-toggle" id="notes-toggle" aria-expanded="true" aria-controls="notes-body"><span class="chev" aria-hidden="true">▾</span>Notas para o dono</button>
+      <span class="decide">A decisão é do dono.</span>
+    </div>
+    <div class="notes-body" id="notes-body">
+      <section class="n-col ok">
+        <h2>✓ Dá para levar ao app</h2>
+        <ul>
+          <li><b>Medidor de 10 segmentos</b> no lugar do “líquido”: lê em cinza (cheio × vazado), cabe no SVG do HiveView.</li>
+          <li><b>Um padrão por estado</b> (listras, pontilhado, serrilhado, carimbo ✓) via &lt;pattern&gt; SVG, sem gradiente.</li>
+          <li><b>Aprovar/Negar no hexágono</b> + alerta no topo; laser fino do <b>--after</b> até a dependência.</li>
+          <li>Colchetes de canto na seleção, leituras TOKENS/CUSTO/TEMPO e <b>cristal do escriba</b> com contador.</li>
+        </ul>
+      </section>
+      <section class="n-col warn">
+        <h2>⚠ Conflita com a regra atual</h2>
+        <ul>
+          <li><b>Gradientes</b> em toda parte (película cônica, contorno holográfico, placa, grade): a regra proíbe.</li>
+          <li><b>Cores literais</b> (#07060B, ciano, rosa, lima) fora de <b>theme.css</b>; pediria tokens novos (--holo-*).</li>
+          <li><b>Fontes novas</b> (Space Grotesk, JetBrains Mono via Google Fonts): dependência; o app usa Inter/Cascadia.</li>
+          <li>Plano 3D, parallax, scanlines e aberração cromática fogem do “nada vibecoded”; textos sem <b>t()</b>/i18n.</li>
+        </ul>
+      </section>
+    </div>
+  </footer>
+</div>
+
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
+<div class="help-back" id="help-back">
+  <div class="help glass hud" role="dialog" aria-modal="true" aria-labelledby="help-title" id="help">
+    <h2 id="help-title">Atalhos</h2>
+    <button type="button" class="icon-btn close" id="help-close" aria-label="Fechar a ajuda (Esc)">✕</button>
+    <dl>
+      <dt>Espaço</dt><dd>pausar / continuar a simulação</dd>
+      <dt>+ / −</dt><dd>velocidade: 0,5× · 1× · 2× · 4×</dd>
+      <dt>1 – 9 · 0</dt><dd>seleciona o claude-N · 0 = orquestrador</dd>
+      <dt>Setas</dt><dd>navegam entre os hexágonos vizinhos</dd>
+      <dt>A / N</dt><dd>aprova / nega o agente selecionado quando está bloqueado</dd>
+      <dt>C</dt><dd>copia a transcrição do selecionado</dd>
+      <dt>F</dt><dd>ajusta a vista (duplo clique também)</dd>
+      <dt>T</dt><dd>tema claro / escuro</dd>
+      <dt>Esc</dt><dd>fecha o painel ou esta ajuda</dd>
+      <dt>Mouse</dt><dd>roda = zoom (com ou sem Ctrl) · arrastar = mover · clique = selecionar</dd>
+    </dl>
+  </div>
+</div>
+<div class="reticle" id="reticle" aria-hidden="true"><svg viewBox="-17 -17 34 34"><circle r="12"/><path d="M-17,0 L-9,0 M9,0 L17,0 M0,-17 L0,-9 M0,9 L0,17"/></svg></div>
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="false"></div>
+<div class="scanlines" aria-hidden="true"></div>
+
+<script>
+/* <sim-engine> Motor de simulação dos protótipos da Orquestra (Colmeia e Mission Control).
+   Fonte única: prototipos/_fonte/sim-engine.js. Cada variante leva uma cópia inline entre os
+   marcadores <sim-engine> e </sim-engine>; rode `node _fonte/sync-engine.mjs` para atualizar todas.
+   Sem dependências e sem DOM: as variantes desenham, o motor só simula a orquestração. */
+;(function (global) {
+  'use strict'
+
+  /** Estados reais da Orquestra. Ícone + rótulo + `motion` garantem leitura sem depender de cor. */
+  const STATES = {
+    starting: { label: 'iniciando', icon: '◌', busy: true, motion: 'spin' },
+    thinking: { label: 'pensando', icon: '✻', busy: true, motion: 'breathe' },
+    reading: { label: 'lendo', icon: '◎', busy: true, motion: 'scan' },
+    editing: { label: 'editando', icon: '✎', busy: true, motion: 'type' },
+    testing: { label: 'testando', icon: '▶', busy: true, motion: 'tick' },
+    blocked: { label: 'bloqueado', icon: '⏸', busy: false, motion: 'alert' },
+    waiting: { label: 'aguardando', icon: '⧗', busy: false, motion: 'none' },
+    done: { label: 'concluído', icon: '✓', busy: false, motion: 'none' },
+    exited: { label: 'falhou', icon: '✕', busy: false, motion: 'none' },
+    idle: { label: 'ocioso', icon: '·', busy: false, motion: 'none' },
+  }
+
+  const ROLES = {
+    orchestrator: 'orquestrador',
+    worker: 'worker',
+    creative: 'criativo',
+    scribe: 'escriba Obsidian',
+  }
+
+  const GOAL = 'Terminal próprio na Orquestra: rolar, copiar e acabar com o texto embaralhado'
+  const PROJECT = 'alethe-orchestra'
+  const NOTE = '2026-10-04 Orchestra.md'
+
+  /** A equipe do cenário (a sessão real de 04/10/2026, comprimida em ~3 minutos). */
+  const PLAN = [
+    {
+      id: 'claude-2',
+      area: 'espelho-core',
+      task: 'Um terminal headless por PTY, sempre no tamanho real do PTY',
+      files: ['src/lib/terminalMirror/mirror.ts', 'src/lib/terminalMirror/lines.ts', 'src-tauri/src/pty.rs'],
+      duration: 52,
+      spawnAt: 3,
+      blockAt: 0.34,
+      permission: { tool: 'Edit', detail: 'src-tauri/src/pty.rs: emitir o pendente antes do clear' },
+    },
+    {
+      id: 'claude-1',
+      area: 'xterm-clássico',
+      task: 'Restaurar o histórico pelo espelho, sem replay em outra largura',
+      files: ['src/components/XTermView/useXtermSession.ts', 'src/lib/terminalReplay.ts'],
+      duration: 64,
+      spawnAt: 3.6,
+      failAt: 0.58,
+    },
+    {
+      id: 'claude-5',
+      area: 'obsidian-contexto',
+      task: 'Consultar o Obsidian antes de cada orquestração começar',
+      files: ['src-tauri/src/obsidian.rs', 'src/components/Orchestra/scribe/context.ts'],
+      duration: 58,
+      spawnAt: 4.2,
+    },
+    {
+      id: 'claude-6',
+      area: 'agente-criativo',
+      role: 'creative',
+      task: 'Propor recursos úteis e o que costuma passar despercebido',
+      files: ['docs/ideias-orquestra.md'],
+      duration: 80,
+      spawnAt: 4.8,
+    },
+    {
+      id: 'claude-3',
+      area: 'live-terminal-ui',
+      task: 'Renderizador DOM com grade exata, seleção, busca e links',
+      files: ['src/components/LiveTerminal/index.tsx', 'src/components/LiveTerminal/cells.ts', 'src/components/LiveTerminal/layout.ts'],
+      duration: 56,
+      spawnAt: 5.6,
+      after: 'claude-2',
+    },
+    {
+      id: 'claude-4',
+      area: 'integração',
+      task: 'LiveTerminal no painel do agente e nas células da visão Terminais',
+      files: ['src/components/Orchestra/AgentTerminal.tsx', 'src/stores/orchestraStore.ts'],
+      duration: 38,
+      spawnAt: 6.4,
+      after: 'claude-3',
+    },
+  ]
+
+  const RETRY = {
+    id: 'claude-7',
+    area: 'xterm-clássico · retomada',
+    task: 'Retomar de onde o claude-1 parou e corrigir a restauração',
+    files: ['src/components/XTermView/useXtermSession.ts'],
+    duration: 30,
+  }
+
+  const IDEAS = [
+    'atalho para copiar a última resposta de um agente',
+    'estado vazio do bus com exemplos de comando',
+    'desfazer “parar orquestração” por 5 s',
+    'aviso quando um worker fica 2 min sem reportar',
+    'exportar a sessão inteira como nota do Obsidian',
+  ]
+
+  const THINK = [
+    'Pensando no menor caminho que não quebra o contrato…',
+    'Comparando com o que o XTermView já faz…',
+    'Conferindo o histórico do embaralhamento (7 causas)…',
+    'Separando o que é pure function do que é DOM…',
+    'Lendo o contrato 00-contrato-live-terminal.md…',
+  ]
+
+  function seeded(seed) {
+    let s = seed >>> 0 || 1
+    return () => {
+      s ^= s << 13
+      s ^= s >>> 17
+      s ^= s << 5
+      return ((s >>> 0) % 1000003) / 1000003
+    }
+  }
+
+  function clock(seconds) {
+    const s = Math.max(0, Math.floor(seconds))
+    const m = Math.floor(s / 60)
+    return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  }
+
+  function tokens(n) {
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2).replace('.', ',')}M`
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace('.', ',')}k`
+    return String(Math.round(n))
+  }
+
+  /** Copia texto; usa a Clipboard API e cai para execCommand fora de contexto seguro. */
+  function copyText(text) {
+    if (global.navigator && navigator.clipboard && global.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).catch(() => legacyCopy(text))
+    }
+    return Promise.resolve(legacyCopy(text))
+  }
+
+  function legacyCopy(text) {
+    if (typeof document === 'undefined') return false
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch (error) {
+      ok = false
+    }
+    area.remove()
+    return ok
+  }
+
+  function create(options) {
+    const opts = Object.assign({ speed: 1, seed: 7, loop: true, autoApproveAfter: 14 }, options)
+    const listeners = new Map()
+    let rand = seeded(opts.seed)
+    let speed = opts.speed
+    let paused = false
+    let running = false
+    let frame = null
+    let last = 0
+    let session = 0
+    let world = null
+
+    function emit(type, payload) {
+      const event = Object.assign({ type, t: world ? world.t : 0 }, payload)
+      for (const key of [type, '*']) {
+        const set = listeners.get(key)
+        if (set) for (const fn of [...set]) {
+          try {
+            fn(event)
+          } catch (error) {
+            if (global.console) console.error('[sim] listener', error)
+          }
+        }
+      }
+    }
+
+    function on(type, fn) {
+      if (!listeners.has(type)) listeners.set(type, new Set())
+      listeners.get(type).add(fn)
+      return () => listeners.get(type).delete(fn)
+    }
+
+    function makeAgent(def, role, hue) {
+      return {
+        id: def.id,
+        role,
+        area: def.area,
+        task: def.task,
+        files: def.files ? def.files.slice() : [],
+        touched: [],
+        state: role === 'scribe' ? 'idle' : 'starting',
+        progress: 0,
+        after: def.after || null,
+        hue,
+        duration: def.duration || 60,
+        blockAt: def.blockAt,
+        failAt: def.failAt,
+        permission: null,
+        pendingPermission: def.permission || null,
+        lines: [],
+        tokens: 0,
+        startedAt: world.t,
+        endedAt: null,
+        nextLine: 0,
+        phaseUntil: 0,
+        reported: 0,
+        unread: 0,
+      }
+    }
+
+    function fresh() {
+      session += 1
+      rand = seeded(opts.seed + session * 97)
+      world = {
+        t: 0,
+        session,
+        goal: GOAL,
+        project: PROJECT,
+        agents: [],
+        byId: new Map(),
+        bus: [],
+        scribe: { note: NOTE, writes: 0, last: null, writing: false },
+        timeline: [],
+        finishedAt: null,
+        nextMessageId: 1,
+        spawned: new Set(),
+        retried: false,
+        ideas: 0,
+      }
+      const orch = makeAgent(
+        { id: 'orchestrator', area: 'orquestração', task: 'Dividir a meta, despachar workers, responder bloqueios e fechar a sessão', duration: 999 },
+        'orchestrator',
+        0,
+      )
+      orch.state = 'starting'
+      add(orch)
+      const scribe = makeAgent({ id: 'obsidian', area: 'escriba', task: `Registrar a sessão em ${NOTE}`, duration: 999 }, 'scribe', 0)
+      add(scribe)
+      schedule(0.6, () => setState(orch, 'reading'))
+      schedule(0.8, () => line(orch, 'tool', '⏺ Read(Alethe Orchestra/2026-10-04 Orchestra.md)'))
+      schedule(1.2, () => line(orch, 'note', '  ⎿  Contexto do Obsidian: 3 notas lidas'))
+      schedule(1.4, () => scribeWrite('Sessão iniciada · objetivo e contexto'))
+      schedule(1.8, () => setState(orch, 'thinking'))
+      schedule(2.0, () => line(orch, 'think', '✻ Dividindo a meta em 6 frentes com posse de arquivos disjunta…'))
+      for (const def of PLAN) schedule(def.spawnAt, () => spawn(def))
+    }
+
+    function add(agent) {
+      world.agents.push(agent)
+      world.byId.set(agent.id, agent)
+    }
+
+    const queue = []
+    function schedule(at, fn) {
+      queue.push({ at, fn })
+      queue.sort((a, b) => a.at - b.at)
+    }
+
+    function spawn(def) {
+      if (world.spawned.has(def.id)) return
+      world.spawned.add(def.id)
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      const agent = makeAgent(def, def.role || 'worker', workers.length + 1)
+      add(agent)
+      const orch = world.byId.get('orchestrator')
+      line(orch, 'tool', `⏺ Bash(orch spawn ${agent.id}${agent.after ? ` --after ${agent.after}` : ''})`)
+      message('orchestrator', agent.id, `tarefa: ${agent.task}`, 'task')
+      emit('spawn', { agent })
+      line(agent, 'prompt', `> ${agent.task}`)
+      if (agent.after) {
+        const dep = world.byId.get(agent.after)
+        if (!dep || dep.state !== 'done') {
+          setState(agent, 'waiting')
+          line(agent, 'note', `  aguardando ${agent.after} terminar (--after)`)
+          return
+        }
+      }
+      setState(agent, 'starting')
+      agent.phaseUntil = world.t + 1.2
+    }
+
+    function setState(agent, next) {
+      if (agent.state === next) return
+      const from = agent.state
+      agent.state = next
+      if (next === 'done' || next === 'exited') agent.endedAt = world.t
+      world.timeline.push({ at: world.t, id: agent.id, state: next })
+      if (world.timeline.length > 600) world.timeline.splice(0, world.timeline.length - 600)
+      emit('state', { agent, from, to: next })
+    }
+
+    function line(agent, kind, text) {
+      const entry = { at: world.t, kind, text }
+      agent.lines.push(entry)
+      if (agent.lines.length > 400) agent.lines.splice(0, agent.lines.length - 400)
+      agent.unread += 1
+      emit('line', { agent, line: entry })
+    }
+
+    function message(from, to, text, kind) {
+      const entry = { id: world.nextMessageId++, at: world.t, from, to, text, kind: kind || 'chat' }
+      world.bus.push(entry)
+      if (world.bus.length > 250) world.bus.splice(0, world.bus.length - 250)
+      emit('message', { message: entry })
+      return entry
+    }
+
+    function scribeWrite(text) {
+      const scribe = world.byId.get('obsidian')
+      world.scribe.writes += 1
+      world.scribe.last = { at: world.t, text }
+      world.scribe.writing = true
+      setState(scribe, 'editing')
+      line(scribe, 'tool', `⏺ Append(${NOTE})`)
+      line(scribe, 'ok', `  ⎿  ${text}`)
+      message('obsidian', NOTE, text, 'scribe')
+      emit('scribe', { write: world.scribe.last, count: world.scribe.writes })
+      schedule(world.t + 1.4, () => {
+        world.scribe.writing = false
+        setState(scribe, 'idle')
+      })
+    }
+
+    function pick(list) {
+      return list[Math.floor(rand() * list.length) % list.length]
+    }
+
+    function workPhase(agent) {
+      const p = agent.progress / 100
+      if (p < 0.12) return rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.72) return rand() < 0.7 ? 'editing' : rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.9) return 'testing'
+      return 'editing'
+    }
+
+    function narrate(agent) {
+      const file = pick(agent.files.length ? agent.files : ['README.md'])
+      switch (agent.state) {
+        case 'starting':
+          line(agent, 'note', '  iniciando Claude Code…')
+          break
+        case 'thinking':
+          line(agent, 'think', `✻ ${pick(THINK)}`)
+          break
+        case 'reading':
+          line(agent, 'tool', `⏺ Read(${file})`)
+          line(agent, 'note', `  ⎿  Read ${80 + Math.floor(rand() * 400)} lines`)
+          break
+        case 'editing': {
+          const plus = 4 + Math.floor(rand() * 60)
+          const minus = Math.floor(rand() * 20)
+          line(agent, 'tool', `⏺ Update(${file})`)
+          line(agent, 'ok', `  ⎿  Updated ${file} with ${plus} additions and ${minus} removals`)
+          if (!agent.touched.includes(file)) agent.touched.push(file)
+          break
+        }
+        case 'testing': {
+          const files = 3 + Math.floor(rand() * 6)
+          const tests = 20 + Math.floor(rand() * 70)
+          line(agent, 'tool', '⏺ Bash(npx vitest run)')
+          line(agent, 'ok', `  ⎿  ✓ ${tests} passed (${files} files)`)
+          break
+        }
+        default:
+          break
+      }
+    }
+
+    function report(agent) {
+      const step = Math.floor(agent.progress / 25) * 25
+      if (step <= agent.reported || step === 0 || step >= 100) return
+      agent.reported = step
+      const label = STATES[agent.state] ? STATES[agent.state].label : agent.state
+      line(agent, 'tool', `⏺ Bash(orch report ${step} ${agent.state} "${agent.area}")`)
+      message(agent.id, 'orchestrator', `${step}% · ${label}: ${agent.area}`, 'report')
+    }
+
+    function finish(agent) {
+      agent.progress = 100
+      setState(agent, 'done')
+      line(agent, 'tool', `⏺ Bash(orch report 100 done "${agent.area} pronto")`)
+      line(agent, 'ok', '  ⎿  ✓ tsc limpo · testes ok · seção registrada no Obsidian')
+      message(agent.id, 'orchestrator', `100% · concluído: ${agent.area}`, 'report')
+      scribeWrite(`${agent.id} · ${agent.area} concluído`)
+      for (const other of world.agents) {
+        if (other.after === agent.id && other.state === 'waiting') {
+          message('orchestrator', other.id, `${agent.id} terminou: pode começar`, 'task')
+          setState(other, 'starting')
+          other.startedAt = world.t
+          other.phaseUntil = world.t + 1.2
+          line(other, 'note', `  ${agent.id} terminou; começando agora`)
+        }
+      }
+    }
+
+    function fail(agent) {
+      agent.failing = false
+      setState(agent, 'exited')
+      line(agent, 'error', '  ⎿  ✕ 2 failed · restaura o histórico em 80 colunas')
+      line(agent, 'error', '  processo encerrado com código 1')
+      message(agent.id, 'orchestrator', 'falhei: 2 testes de restauração; o PTY encerrou', 'fail')
+      scribeWrite(`${agent.id} falhou · substituto a caminho`)
+      const orch = world.byId.get('orchestrator')
+      schedule(world.t + 2.2, () => {
+        line(orch, 'think', `✻ ${agent.id} caiu; mando um substituto que continua do estado atual`)
+        if (!world.retried) {
+          world.retried = true
+          spawn(Object.assign({}, RETRY))
+        }
+      })
+    }
+
+    function block(agent) {
+      agent.permission = agent.pendingPermission || { tool: 'Bash', detail: 'npm install' }
+      agent.pendingPermission = null
+      agent.blockedAt = world.t
+      setState(agent, 'blocked')
+      line(agent, 'error', `⏸ Permissão: ${agent.permission.tool}(${agent.permission.detail})`)
+      line(agent, 'note', '  aguardando aprovação (A aprova, N nega)')
+      message(agent.id, 'orchestrator', `pede permissão: ${agent.permission.tool} ${agent.permission.detail}`, 'block')
+      emit('permission', { agent, request: agent.permission })
+    }
+
+    function resolve(id, approved, by) {
+      const agent = world.byId.get(id)
+      if (!agent || agent.state !== 'blocked') return false
+      const request = agent.permission
+      agent.permission = null
+      message(by === 'auto' ? 'orchestrator' : 'você', agent.id, approved ? 'aprovado, pode seguir' : 'negado: siga sem tocar nesse arquivo', 'answer')
+      line(agent, approved ? 'ok' : 'error', approved ? '  ✓ aprovado' : '  ✕ negado; seguindo por outro caminho')
+      setState(agent, approved ? 'editing' : 'thinking')
+      agent.phaseUntil = world.t + 2
+      emit('resolved', { agent, approved, request })
+      return true
+    }
+
+    function stepAgent(agent, dt) {
+      if (agent.role === 'scribe' || agent.role === 'orchestrator') return
+      if (!STATES[agent.state].busy || agent.failing) return
+      if (agent.state === 'starting') {
+        if (world.t >= agent.phaseUntil) setState(agent, 'reading')
+        return
+      }
+      const rate = (100 / agent.duration) * (0.75 + rand() * 0.5)
+      agent.progress = Math.min(100, agent.progress + rate * dt)
+      agent.tokens += (60 + rand() * 140) * dt
+      if (agent.blockAt && agent.pendingPermission && agent.progress >= agent.blockAt * 100) {
+        block(agent)
+        return
+      }
+      if (agent.failAt && agent.progress >= agent.failAt * 100) {
+        agent.failAt = null
+        agent.failing = true
+        setState(agent, 'testing')
+        line(agent, 'tool', '⏺ Bash(npx vitest run src/components/XTermView)')
+        schedule(world.t + 1.6, () => fail(agent))
+        return
+      }
+      if (agent.id === 'claude-3' && !world.chatted && agent.progress > 30) {
+        world.chatted = true
+        message('claude-3', 'claude-4', 'deixo data-live-terminal na raiz e no textarea, combinado?', 'chat')
+        schedule(world.t + 2, () => message('claude-4', 'claude-3', 'combinado: uso para focar a célula e para o Esc', 'chat'))
+      }
+      if (agent.progress >= 100) {
+        finish(agent)
+        return
+      }
+      if (world.t >= agent.phaseUntil) {
+        setState(agent, workPhase(agent))
+        agent.phaseUntil = world.t + 2.5 + rand() * 4
+      }
+      if (world.t >= agent.nextLine) {
+        narrate(agent)
+        agent.nextLine = world.t + 1.4 + rand() * 2.6
+      }
+      report(agent)
+      if (agent.role === 'creative' && world.ideas < IDEAS.length && agent.progress > 12 + world.ideas * 16) {
+        const idea = IDEAS[world.ideas]
+        world.ideas += 1
+        line(agent, 'ok', `💡 proposta ${world.ideas}: ${idea}`)
+        message(agent.id, 'orchestrator', `proposta: ${idea}`, 'idea')
+      }
+    }
+
+    function stepOrchestrator(dt) {
+      const orch = world.byId.get('orchestrator')
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      orch.tokens += 30 * dt
+      if (world.finishedAt !== null) return
+      const blocked = workers.find((a) => a.state === 'blocked')
+      if (blocked && opts.autoApproveAfter > 0 && world.t - blocked.blockedAt > opts.autoApproveAfter) {
+        line(orch, 'think', `✻ ${blocked.id} esperou demais; aprovo (edição dentro da posse dele)`)
+        resolve(blocked.id, true, 'auto')
+      }
+      if (world.t < 7) return
+      if (workers.length > 0 && workers.every((a) => a.state === 'done' || (a.state === 'exited' && world.retried))) {
+        world.finishedAt = world.t
+        setState(orch, 'testing')
+        line(orch, 'tool', '⏺ Bash(npm test)')
+        schedule(world.t + 2.5, () => {
+          line(orch, 'ok', '  ⎿  ✓ 856 passed (96 files) · tsc limpo')
+          setState(orch, 'done')
+          message('orchestrator', 'você', 'tudo pronto: 6 frentes concluídas, 1 retomada', 'report')
+          scribeWrite('Fechamento da sessão · verificação final ok')
+          if (opts.loop) schedule(world.t + 9, () => reset())
+        })
+        return
+      }
+      if (orch.state !== 'thinking' && orch.state !== 'reading' && world.t > (orch.phaseUntil || 0)) {
+        setState(orch, rand() < 0.6 ? 'thinking' : 'reading')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+      } else if (world.t > (orch.phaseUntil || 0)) {
+        setState(orch, orch.state === 'thinking' ? 'reading' : 'thinking')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+        if (rand() < 0.5) line(orch, 'think', `✻ ${pick(['Conferindo os reports…', 'Respondendo o bus…', 'Revisando a posse de arquivos…'])}`)
+      }
+    }
+
+    function advance(dt) {
+      world.t += dt
+      while (queue.length && queue[0].at <= world.t) queue.shift().fn()
+      for (const agent of world.agents) stepAgent(agent, dt)
+      stepOrchestrator(dt)
+      emit('tick', { dt })
+    }
+
+    // Relógio por timer (~30 Hz), não por requestAnimationFrame: segue rodando em miniaturas e no
+    // Edge headless (onde o rAF quase não dispara). As variantes animam com CSS e redesenham no 'tick'.
+    const TICK_MS = 33
+    const now = () => (global.performance && performance.now ? performance.now() : Date.now())
+
+    function loop() {
+      frame = null
+      if (!running) return
+      const current = now()
+      const dt = last ? Math.min(0.25, (current - last) / 1000) : 0
+      last = current
+      if (!paused && dt > 0) advance(dt * speed)
+      frame = setTimeout(loop, TICK_MS)
+    }
+
+    function start() {
+      if (running) return api
+      running = true
+      last = 0
+      frame = setTimeout(loop, 0)
+      return api
+    }
+
+    function stop() {
+      running = false
+      if (frame !== null) clearTimeout(frame)
+      frame = null
+    }
+
+    function reset() {
+      queue.length = 0
+      fresh()
+      emit('reset', {})
+    }
+
+    function counts() {
+      const out = {}
+      for (const key of Object.keys(STATES)) out[key] = 0
+      for (const agent of world.agents) if (agent.role !== 'scribe') out[agent.state] += 1
+      return out
+    }
+
+    function overall() {
+      const workers = world.agents.filter((a) => (a.role === 'worker' || a.role === 'creative') && !(a.state === 'exited' && world.retried))
+      if (!workers.length) return 0
+      return workers.reduce((sum, a) => sum + a.progress, 0) / workers.length
+    }
+
+    const api = {
+      STATES,
+      ROLES,
+      on,
+      start,
+      stop,
+      reset,
+      pause() {
+        paused = true
+        emit('pause', { paused })
+      },
+      resume() {
+        paused = false
+        emit('pause', { paused })
+      },
+      toggle() {
+        paused = !paused
+        emit('pause', { paused })
+        return paused
+      },
+      get paused() {
+        return paused
+      },
+      get speed() {
+        return speed
+      },
+      setSpeed(value) {
+        speed = Math.max(0.25, Math.min(8, value))
+        emit('speed', { speed })
+      },
+      /** Avança a simulação na mão (útil com pausa ou em testes). */
+      step(seconds) {
+        advance(seconds)
+      },
+      get t() {
+        return world.t
+      },
+      get session() {
+        return world.session
+      },
+      get goal() {
+        return world.goal
+      },
+      get project() {
+        return world.project
+      },
+      get agents() {
+        return world.agents
+      },
+      get workers() {
+        return world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      },
+      get bus() {
+        return world.bus
+      },
+      get scribe() {
+        return world.scribe
+      },
+      get timeline() {
+        return world.timeline
+      },
+      agent(id) {
+        return world.byId.get(id) || null
+      },
+      overall,
+      counts,
+      approve(id) {
+        return resolve(id, true, 'você')
+      },
+      deny(id) {
+        return resolve(id, false, 'você')
+      },
+      /** Mensagem do usuário a um agente: entra no bus e o agente responde. */
+      send(to, text) {
+        const agent = world.byId.get(to)
+        if (!agent || !text) return null
+        const entry = message('você', to, text, 'user')
+        line(agent, 'prompt', `> ${text}`)
+        schedule(world.t + 1.4, () => {
+          const reply = agent.state === 'done' ? 'já terminei; posso revisar se quiser' : 'entendido, incorporo agora'
+          line(agent, 'ok', `⏺ ${reply}`)
+          message(to, 'você', reply, 'chat')
+        })
+        return entry
+      },
+      transcript(id) {
+        const agent = world.byId.get(id)
+        return agent ? agent.lines.map((l) => l.text).join('\n') : ''
+      },
+      clock,
+      tokens,
+      copyText,
+    }
+
+    fresh()
+    return api
+  }
+
+  global.AletheSim = { create, STATES, ROLES, clock, tokens, copyText }
+})(typeof window !== 'undefined' ? window : globalThis)
+/* </sim-engine> */
+</script>
+
+<script>
+;(() => {
+  'use strict'
+
+  /* ============================================================ utilidades */
+  const doc = document
+  const root = doc.documentElement
+  const $ = (s) => doc.querySelector(s)
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
+  const r2 = (v) => Math.round(v * 100) / 100
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+  const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+  const NS = 'http://www.w3.org/2000/svg'
+  const svgEl = (tag, attrs) => { const el = doc.createElementNS(NS, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el }
+  const STATES = AletheSim.STATES
+  const ROLES = AletheSim.ROLES
+  const SPEEDS = [0.5, 1, 2, 4]
+
+  const params = new URLSearchParams(location.search)
+  const EMBED = params.get('embed') === '1'
+  const mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
+  let REDUCED = !!(mqReduce && mqReduce.matches)
+  const COARSE = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+  if (params.get('theme') === 'light' || params.get('theme') === 'dark') root.dataset.theme = params.get('theme')
+
+  let speed0 = parseFloat(String(params.get('speed') || '').replace(',', '.'))
+  if (!isFinite(speed0) || speed0 <= 0) speed0 = 1
+  speed0 = SPEEDS.reduce((best, s) => (Math.abs(s - speed0) < Math.abs(best - speed0) ? s : best), 1)
+
+  /* ============================================================ motor */
+  const sim = AletheSim.create({ speed: speed0, seed: 7, loop: true })
+  sim.on('tick', () => { document.documentElement.dataset.simT = String(Math.round(sim.t)) })
+
+  /* ============================================================ textos */
+  const KIND = {
+    task: { icon: '→', label: 'tarefa' },
+    report: { icon: '↩', label: 'report' },
+    block: { icon: '⏸︎', label: 'bloqueio' },
+    answer: { icon: '✓', label: 'resposta' },
+    fail: { icon: '✕', label: 'falha' },
+    idea: { icon: '✦', label: 'ideia' },
+    scribe: { icon: '◆', label: 'escriba' },
+    chat: { icon: '⇄', label: 'conversa' },
+    user: { icon: '◉', label: 'você' },
+  }
+  const icon = (st) => {
+    const i = (STATES[st] || STATES.idle).icon
+    return i === '⏸' || i === '▶' ? i + '︎' : i
+  }
+  const label = (st) => (STATES[st] || STATES.idle).label
+  function nameOf(id) {
+    if (id === 'orchestrator') return 'orquestrador'
+    if (id === 'obsidian') return 'escriba'
+    if (/\.md$/.test(id)) return 'nota Obsidian'
+    return id
+  }
+  const shortDetail = (detail) => { const path = String(detail).split(':')[0]; return path.split('/').pop() }
+  const money = (tok) => 'US$ ' + ((tok * 15) / 1e6).toFixed(2).replace('.', ',')
+
+  /* ============================================================ geometria (hexágonos pontudos, coordenadas axiais) */
+  const SQ3 = Math.sqrt(3)
+  const R = 62
+  const RO = 70
+  const D = 134
+  const DEPTH = 11
+  const TILT = 18
+  const PERSP = 1100
+  const RING1 = [[0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]] // NO, NE, L, SE, SO, O
+  const CRYSTAL = { x: 0, y: -106 }
+  const YOU = { x: 0, y: 168 }
+  const xy = (q, r) => ({ x: D * (q + r / 2), y: D * (SQ3 / 2) * r })
+  const hexDist = (a, b) => { const dq = a.q - b.q; const dr = a.r - b.r; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2 }
+  function ringCells(n) {
+    const out = []
+    for (let q = -n; q <= n; q++) for (let r = -n; r <= n; r++) if (hexDist({ q, r }, { q: 0, r: 0 }) === n) out.push({ q, r })
+    return out
+  }
+  function hexPts(rad, oy) {
+    const out = []
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 180) * (60 * i - 90)
+      out.push([r2(rad * Math.cos(a)), r2(rad * Math.sin(a) + (oy || 0))])
+    }
+    return out
+  }
+  const ptsAttr = (pts) => pts.map((p) => p[0] + ',' + p[1]).join(' ')
+  function jagged(rad, amp, n) {
+    const P = hexPts(rad)
+    let d = ''
+    for (let i = 0; i < 6; i++) {
+      const a = P[i]
+      const b = P[(i + 1) % 6]
+      const mx = (a[0] + b[0]) / 2
+      const my = (a[1] + b[1]) / 2
+      const ml = Math.hypot(mx, my)
+      for (let k = 0; k < n; k++) {
+        const t = k / n
+        let x = a[0] + (b[0] - a[0]) * t
+        let y = a[1] + (b[1] - a[1]) * t
+        if (k > 0) {
+          const s = k % 2 ? amp : -amp * 0.55
+          x += (mx / ml) * s
+          y += (my / ml) * s
+        }
+        d += (i === 0 && k === 0 ? 'M' : 'L') + r2(x) + ',' + r2(y)
+      }
+    }
+    return d + 'Z'
+  }
+  /** Distância do centro até a borda do hexágono pontudo na direção `theta`. */
+  function edgeDist(theta, rad) {
+    const apo = (rad * SQ3) / 2
+    const deg = (((theta * 180) / Math.PI) % 60 + 60) % 60
+    return apo / Math.cos((Math.min(deg, 60 - deg) * Math.PI) / 180)
+  }
+  /** Projeção do plano inclinado (rotateX + perspectiva) para enquadrar a vista. */
+  function project(x, y) {
+    const th = (TILT * Math.PI) / 180
+    const z = y * Math.sin(th)
+    const s = PERSP / (PERSP - z)
+    return { x: x * s, y: y * Math.cos(th) * s }
+  }
+
+  /* ============================================================ estado da interface */
+  const S = {
+    cells: new Map(),
+    slots: new Map(),
+    links: new Map(),
+    beams: new Set(),
+    pending: [],
+    selected: null,
+    cam: { x: 0, y: 0, k: 1 },
+    userCam: false,
+    tilt: { x: TILT, y: 0, tx: TILT, ty: 0 },
+    stick: true,
+    unseen: 0,
+    tkOffset: 0,
+    rafAt: 0,
+    lastVisual: 0,
+    blockT: new Map(),
+    busCount: 0,
+    lastTickUI: 0,
+    lastPanelUI: 0,
+    helpOpen: false,
+    suppressClick: false,
+    hoverId: null,
+    tipPoint: null,
+    reticle: { x: -100, y: -100, tx: -100, ty: -100, on: false },
+  }
+
+  const el = {
+    stage: $('#stage'), cam: $('#cam'), plane: $('#plane'), radar: $('#radar'), links: $('#links'), beams: $('#beams'),
+    back: $('#cells-back'), front: $('#cells-front'), top: $('#cells-top'), tags: $('#tags'),
+    track: $('#tk-track'), counts: $('#counts'), bus: $('#bus'), busCount: $('#bus-count'), legend: $('#legend'),
+    rail: $('#rail'), panel: $('#panel'), alert: $('#alert'), tip: $('#tip'), live: $('#live'),
+    goal: $('#goal'), session: $('#hdr-session'), project: $('#hdr-project'),
+    clock: $('#ro-clock'), overall: $('#ro-overall'), roVu: $('#ro-vu'), roScribe: $('#ro-scribe'),
+    pause: $('#btn-pause'), speed: $('#speed'), theme: $('#btn-theme'), help: $('#btn-help'),
+    zIn: $('#z-in'), zOut: $('#z-out'), zFit: $('#z-fit'), zLevel: $('#z-level'), zoom: $('#zoom'),
+    pId: $('#p-id'), pRole: $('#p-role'), pAvatar: $('#p-avatar'), pBadge: $('#p-badge'), pPct: $('#p-pct'), pVu: $('#p-vu'),
+    pTokens: $('#p-tokens'), pCost: $('#p-cost'), pTime: $('#p-time'), pK4: $('#p-k4'), pV4: $('#p-v4'),
+    pTask: $('#p-task'), pAfter: $('#p-after'), pPerm: $('#p-perm'), pPermText: $('#p-perm-text'), pPermAuto: $('#p-perm-auto'),
+    pYes: $('#p-yes'), pNo: $('#p-no'), pFiles: $('#p-files'), term: $('#term'), termNew: $('#term-new'), copy: $('#p-copy'),
+    send: $('#p-send'), msg: $('#p-msg'), close: $('#p-close'),
+    alText: $('#al-text'), alYes: $('#al-yes'), alNo: $('#al-no'), alOpen: $('#al-open'), alAuto: $('#al-auto'),
+    notes: $('#notes'), notesToggle: $('#notes-toggle'),
+    helpBack: $('#help-back'), helpClose: $('#help-close'), reticle: $('#reticle'), defs: $('#defs-svg'),
+  }
+
+  /* ============================================================ montagem estática */
+  function buildChrome() {
+    el.goal.textContent = sim.goal
+    el.project.textContent = sim.project
+    for (const s of SPEEDS) {
+      const b = doc.createElement('button')
+      b.type = 'button'
+      b.dataset.speed = String(s)
+      b.textContent = String(s).replace('.', ',') + '×'
+      b.setAttribute('aria-label', 'Velocidade ' + String(s).replace('.', ',') + '×')
+      b.addEventListener('click', () => sim.setSpeed(s))
+      el.speed.appendChild(b)
+    }
+    let vu = ''
+    for (let i = 0; i < 10; i++) vu += `<i style="height:${6 + i * 1.3}px"></i>`
+    el.roVu.innerHTML = vu
+    let pvu = ''
+    for (let i = 0; i < 10; i++) pvu += `<i style="height:${8 + i * 1.5}px"></i>`
+    el.pVu.innerHTML = pvu
+    const order = ['starting', 'thinking', 'reading', 'editing', 'testing', 'blocked', 'waiting', 'done', 'exited']
+    el.counts.innerHTML = order.map((st) => `<span class="cnt" data-st="${st}" data-zero="1" title="${label(st)}"><span aria-hidden="true">${icon(st)}</span><span class="sr-only">${label(st)}:</span><b>0</b></span>`).join('')
+    el.legend.innerHTML = order.map((st) => `<li>${swatch(st)}<span><span aria-hidden="true">${icon(st)}</span> ${label(st)}</span></li>`).join('')
+    buildRadar()
+  }
+
+  function swatch(st) {
+    const P = ptsAttr(hexPts(9))
+    const clip = `<clipPath id="sw-${st}"><polygon points="${P}"/></clipPath>`
+    let inner = ''
+    switch (st) {
+      case 'starting': for (let y = -8; y <= 8; y += 3) inner += `<line x1="-9" x2="9" y1="${y}" y2="${y}" style="stroke:var(--fg-2)" stroke-width=".8"/>`; break
+      case 'thinking': inner = '<polygon points="-6,10 0,10 7,-10 1,-10" style="fill:var(--fg-2)" opacity=".75"/>'; break
+      case 'reading': inner = '<rect x="-9" y="-1" width="18" height="2.2" style="fill:var(--fg)"/>'; break
+      case 'editing': inner = '<text x="-6" y="-2" font-size="5.5" style="fill:var(--fg-2)" font-family="monospace">ア1</text><text x="-4" y="5" font-size="5.5" style="fill:var(--fg-2)" font-family="monospace">0カ</text>'; break
+      case 'testing': inner = '<circle r="5.8" fill="none" style="stroke:var(--fg)" stroke-width="1.6" stroke-dasharray="2.5 1.8"/>'; break
+      case 'blocked': for (let x = -18; x <= 18; x += 5) inner += `<line x1="${x}" y1="10" x2="${x + 20}" y2="-10" style="stroke:var(--haz-a)" stroke-width="2.4"/>`; break
+      case 'waiting': inner = ''; break
+      case 'done': inner = '<rect x="-10" y="-10" width="20" height="20" fill="url(#plate)"/><text y="3.6" text-anchor="middle" font-size="9" font-weight="700" style="fill:var(--plate-fg)">✓</text>'; break
+      case 'exited': inner = '<path d="M-3,-9 L1,-3 L-2,1 L3,8" fill="none" style="stroke:var(--t-red)" stroke-width="1.2"/>'; break
+    }
+    let rim = `<polygon points="${P}" class="sw-face"/>`
+    if (st === 'waiting') rim = `<polygon points="${P}" fill="none" style="stroke:var(--fg-2)" stroke-width="1.2" stroke-dasharray="1.6 2"/>`
+    if (st === 'exited') rim = `<path d="${jagged(9, 1.6, 4)}" style="fill:var(--face);stroke:var(--fg-2)" stroke-width="1"/>`
+    if (st === 'done') rim = `<polygon points="${P}" fill="none" style="stroke:var(--fg)" stroke-width="1.6"/>`
+    return `<svg viewBox="-10 -11 20 22" aria-hidden="true" focusable="false"><defs>${clip}</defs>${st === 'waiting' || st === 'done' || st === 'exited' ? '' : rim}<g clip-path="url(#sw-${st})">${inner}</g>${st === 'waiting' || st === 'done' || st === 'exited' ? rim : ''}</svg>`
+  }
+
+  function buildRadar() {
+    const R1 = 208
+    const R2 = 300
+    let s = '<circle class="r-glow" r="330" fill="url(#proj-glow)"/><g class="r-static">'
+    s += `<line class="r-cross" x1="${-R2}" y1="0" x2="${R2}" y2="0"/><line class="r-cross" x1="0" y1="${-R2}" x2="0" y2="${R2}"/>`
+    s += `<circle class="r-c" r="${R1}"/><circle class="r-c" r="${R2}"/>`
+    for (let a = 0; a < 360; a += 5) {
+      const big = a % 30 === 0
+      const rad = (a * Math.PI) / 180
+      const r0 = R2 + (big ? 2 : 2)
+      const r1 = R2 + (big ? 14 : 6)
+      s += `<line class="r-tick${big ? ' big' : ''}" x1="${r2(Math.cos(rad) * r0)}" y1="${r2(Math.sin(rad) * r0)}" x2="${r2(Math.cos(rad) * r1)}" y2="${r2(Math.sin(rad) * r1)}"/>`
+    }
+    const labels = [[0, '090'], [90, '180'], [180, '270'], [270, '000']]
+    for (const [a, t] of labels) {
+      const rad = (a * Math.PI) / 180
+      s += `<text class="r-lbl" text-anchor="middle" x="${r2(Math.cos(rad) * (R2 + 26))}" y="${r2(Math.sin(rad) * (R2 + 26) + 3)}">${t}</text>`
+    }
+    s += '</g>'
+    s += `<g class="r-core"><circle class="r-c r-dash" r="${RO + 22}"/></g>`
+    s += '<g class="r-sweep">'
+    const N = 12
+    for (let i = 0; i < N; i++) {
+      const a0 = (-i * 3.2 * Math.PI) / 180
+      const a1 = (-(i + 1) * 3.2 * Math.PI) / 180
+      const op = (0.13 * Math.pow(1 - i / N, 1.6)).toFixed(3)
+      s += `<path d="M0,0 L${r2(Math.cos(a0) * R2)},${r2(Math.sin(a0) * R2)} A${R2},${R2} 0 0,0 ${r2(Math.cos(a1) * R2)},${r2(Math.sin(a1) * R2)} Z" style="fill:rgba(var(--radar-sweep),${op})"/>`
+    }
+    s += `<line class="r-arm" x1="0" y1="0" x2="${R2}" y2="0"/></g>`
+    el.radar.innerHTML = s
+  }
+
+  /* ============================================================ hexágonos */
+  const GLYPHS = 'アイウエオカキクケコサシスセソタチツテト01<>{}=+*/#$%ﾊﾐﾋｰ'
+  function rainHTML() {
+    let html = ''
+    for (let c = 0; c < 7; c++) {
+      let s = ''
+      for (let k = 0; k < 15; k++) s += GLYPHS[(Math.random() * GLYPHS.length) | 0] + '\n'
+      const dur = (3.4 + Math.random() * 2.8).toFixed(2)
+      const delay = (-Math.random() * 5).toFixed(2)
+      html += `<span style="left:${(10 + c * 13.3).toFixed(1)}%;animation-duration:${dur}s;animation-delay:${delay}s">${s}${s}</span>`
+    }
+    return html
+  }
+  function vuRects() {
+    const n = 10
+    const w = 5.4
+    const gap = 1.9
+    const total = n * w + (n - 1) * gap
+    let out = ''
+    for (let i = 0; i < n; i++) {
+      const h = 5 + i * 0.85
+      out += `<rect x="${r2(-total / 2 + i * (w + gap))}" y="${r2(-h)}" width="${w}" height="${r2(h)}" rx="1"/>`
+    }
+    return out
+  }
+  function brackets(rad) {
+    const P = hexPts(rad + 9)
+    const L = 0.2
+    let d = ''
+    for (let i = 0; i < 6; i++) {
+      const v = P[i]
+      const a = P[(i + 5) % 6]
+      const b = P[(i + 1) % 6]
+      d += `M${r2(v[0] + (a[0] - v[0]) * L)},${r2(v[1] + (a[1] - v[1]) * L)} L${v[0]},${v[1]} L${r2(v[0] + (b[0] - v[0]) * L)},${r2(v[1] + (b[1] - v[1]) * L)} `
+    }
+    return `<path d="${d.trim()}"/>`
+  }
+
+  /** Carimbo ✓ do concluído: ao lado do %, sem cobrir o id. */
+  function stampAt(role, rad) {
+    return role === 'orchestrator' ? `translate(${r2(rad * 0.63)} ${r2(rad * 0.2)}) scale(.86)` : `translate(${r2(rad * 0.57)} ${r2(rad * 0.47)})`
+  }
+
+  function chooseSlot(agent) {
+    const taken = new Set(S.slots.keys())
+    let anchor = null
+    if (agent.after && S.cells.has(agent.after)) anchor = S.cells.get(agent.after)
+    else {
+      const m = /claude-\d+/.exec(agent.task || '')
+      if (m && m[0] !== agent.id && S.cells.has(m[0])) anchor = S.cells.get(m[0])
+    }
+    const free = []
+    for (let n = 1; n <= 4; n++) for (const c of ringCells(n)) if (!taken.has(c.q + ',' + c.r)) free.push(c)
+    const ring = (c) => hexDist(c, { q: 0, r: 0 })
+    const absY = (c) => Math.abs(xy(c.q, c.r).y)
+    if (anchor) {
+      free.sort((a, b) => hexDist(a, anchor) - hexDist(b, anchor) || ring(a) - ring(b) || absY(a) - absY(b) || xy(b.q, b.r).x - xy(a.q, a.r).x)
+      return free[0]
+    }
+    for (const [q, r] of RING1) if (!taken.has(q + ',' + r)) return { q, r }
+    free.sort((a, b) => ring(a) - ring(b) || absY(a) - absY(b) || xy(b.q, b.r).x - xy(a.q, a.r).x)
+    return free[0]
+  }
+
+  function makeCell(agent, animate) {
+    const isOrch = agent.role === 'orchestrator'
+    const rad = isOrch ? RO : R
+    const W = r2(SQ3 * rad)
+    const H = 2 * rad
+    let q = 0
+    let r = 0
+    if (!isOrch) ({ q, r } = chooseSlot(agent))
+    const { x, y } = xy(q, r)
+    const vb = `${r2(-W / 2)} ${-H / 2} ${W} ${H}`
+    const top = hexPts(rad)
+    const bot = hexPts(rad, DEPTH)
+    const edges = [1, 2, 3, 4, 5].map((i) => `M${top[i][0]},${top[i][1]}L${bot[i][0]},${bot[i][1]}`).join('')
+    const jag = jagged(rad, 2.6, 6)
+    const hue = agent.role === 'creative' ? 'hc' : 'h' + (agent.hue || 0)
+    const style = `--w:${W}px;--h:${H}px;left:${r2(x - W / 2)}px;top:${r2(y - H / 2)}px;--hue:var(--${hue});--per:${6 * rad}px;--out:${x < -1 ? -22 : x > 1 ? 22 : 0}px`
+
+    const back = doc.createElement('div')
+    back.className = 'cb role-' + agent.role
+    back.setAttribute('style', style)
+    back.innerHTML =
+      `<svg viewBox="${vb}" aria-hidden="true" focusable="false">` +
+      `<polygon class="c-depth" points="${ptsAttr(bot)}"/><path class="c-edges" d="${edges}"/><polygon class="c-face" points="${ptsAttr(top)}"/></svg>` +
+      `<div class="c-fx"><i class="fx-sheen"></i><i class="fx-scan"></i><i class="fx-rain">${rainHTML()}</i><i class="fx-haz"></i><i class="fx-plate"></i><i class="fx-mat"></i><i class="fx-ghost"></i><i class="fx-glitch"></i></div>`
+
+    const front = doc.createElement('div')
+    front.className = 'cf role-' + agent.role
+    front.setAttribute('style', style)
+    front.innerHTML =
+      `<svg class="c-front" viewBox="${vb}" aria-hidden="true" focusable="false">` +
+      `<polygon class="c-glow" points="${ptsAttr(top)}"/>` +
+      `<polygon class="c-rim" points="${ptsAttr(top)}"/>` +
+      `<polygon class="c-rim2" points="${ptsAttr(hexPts(rad - 5))}"/>` +
+      `<path class="c-jag c-jag-c" d="${jag}"/><path class="c-jag c-jag-m" d="${jag}"/><path class="c-jag c-jag-w" d="${jag}"/>` +
+      `<path class="c-crack" d="M${r2(rad * 0.36)},${r2(-rad * 0.8)} L${r2(rad * 0.22)},${r2(-rad * 0.58)} L${r2(rad * 0.4)},${r2(-rad * 0.44)} L${r2(rad * 0.26)},${r2(-rad * 0.3)} M${r2(-rad * 0.62)},${r2(rad * 0.36)} L${r2(-rad * 0.44)},${r2(rad * 0.42)} L${r2(-rad * 0.5)},${r2(rad * 0.58)} L${r2(-rad * 0.3)},${r2(rad * 0.66)}"/>` +
+      `<circle class="c-ring" r="${rad - 13}"/>` +
+      `<g class="c-vu" transform="translate(0 ${isOrch ? 26 : 21})">${vuRects()}</g>` +
+      `<g class="c-stamp" transform="${stampAt(agent.role, rad)} rotate(-14)"><circle r="12.5"/><circle class="in" r="9.6"/><text y="4.6">✓</text></g>` +
+      `<polygon class="c-flash" points="${ptsAttr(top)}"/>` +
+      `<polygon class="c-focus" points="${ptsAttr(hexPts(rad + 7))}"/>` +
+      `</svg>` +
+      `<svg class="c-brk" viewBox="${vb}" aria-hidden="true" focusable="false">${brackets(rad)}</svg>` +
+      `<button type="button" class="c-btn" aria-pressed="false">` +
+      `<span class="c-st"><i class="c-ic" aria-hidden="true"></i><span class="c-lb"></span></span>` +
+      `<span class="c-id">${esc(isOrch ? 'ORQUESTRADOR' : agent.id)}</span>` +
+      `<span class="c-area"></span>` +
+      `<span class="c-pct"></span>` +
+      `</button>` +
+      (isOrch ? '' : `<div class="c-act" role="group" aria-label="Permissão pedida por ${esc(agent.id)}"><button type="button" class="c-yes" data-act="approve" aria-label="Aprovar o pedido de ${esc(agent.id)}">Aprovar</button><button type="button" class="c-no" data-act="deny" aria-label="Negar o pedido de ${esc(agent.id)}">Negar</button></div><span class="c-perm" aria-hidden="true">⏸&#xFE0E; PERMISSÃO</span>`) +
+      (agent.role === 'creative' ? '<span class="c-spark" aria-hidden="true">✦</span>' : '')
+
+    el.back.appendChild(back)
+    el.front.appendChild(front)
+    const c = {
+      id: agent.id, role: agent.role, q, r, x, y, rad, W, H, back, front,
+      btn: front.querySelector('.c-btn'), ic: front.querySelector('.c-ic'), lb: front.querySelector('.c-lb'),
+      area: front.querySelector('.c-area'), pct: front.querySelector('.c-pct'), flash: front.querySelector('.c-flash'),
+      vu: Array.from(front.querySelectorAll('.c-vu rect')),
+      state: null, pctV: -1, areaText: null, ariaKey: '',
+    }
+    S.cells.set(agent.id, c)
+    S.slots.set(q + ',' + r, agent.id)
+
+    c.btn.addEventListener('click', () => { if (!S.suppressClick && !EMBED) select(c.id) })
+    c.btn.addEventListener('mouseenter', (e) => hoverOn(c, e))
+    c.btn.addEventListener('mousemove', (e) => { S.tipPoint = { x: e.clientX, y: e.clientY }; placeTip() })
+    c.btn.addEventListener('mouseleave', () => hoverOff(c))
+    c.btn.addEventListener('focus', () => { hoverOn(c, null) })
+    c.btn.addEventListener('blur', () => hoverOff(c))
+    const act = front.querySelector('.c-act')
+    if (act) act.addEventListener('click', (e) => {
+      const b = e.target.closest('button')
+      if (!b) return
+      e.stopPropagation()
+      if (b.dataset.act === 'approve') sim.approve(c.id)
+      else sim.deny(c.id)
+    })
+    if (animate && !REDUCED) { back.classList.add('spawn'); front.classList.add('spawn'); setTimeout(() => { back.classList.remove('spawn'); front.classList.remove('spawn') }, 900) }
+    applyState(c, agent)
+    applyProgress(c, isOrch ? sim.overall() : agent.progress)
+    return c
+  }
+
+  function applyState(c, agent) {
+    const st = agent.state
+    if (c.state !== st) {
+      const first = c.state === null
+      c.state = st
+      c.back.dataset.state = st
+      c.front.dataset.state = st
+      c.ic.textContent = icon(st)
+      c.lb.textContent = label(st)
+      if (!first && !REDUCED) flashCell(c, 'var(--hue)')
+      if (st === 'done' && !first && !REDUCED) {
+        const stamp = c.front.querySelector('.c-stamp')
+        const at = stampAt(c.role, c.rad)
+        tween(560, (p) => {
+          const e = easeOut(p)
+          stamp.setAttribute('transform', `${at} rotate(${r2(-34 + 20 * e)}) scale(${r2(2.1 - 1.1 * e)})`)
+          stamp.style.opacity = String(r2(Math.min(1, p * 2.2)))
+        }, () => { stamp.setAttribute('transform', `${at} rotate(-14)`); stamp.style.opacity = '' })
+      }
+    }
+    let area = agent.area
+    if (c.role === 'orchestrator') area = orchSub()
+    else if (st === 'waiting' && agent.after) area = '--after ' + agent.after
+    else if (st === 'exited') area = 'SINAL PERDIDO'
+    else if (st === 'blocked' && agent.permission) area = agent.permission.tool + ' · ' + shortDetail(agent.permission.detail)
+    if (c.ideaUntil && performance.now() < c.ideaUntil) area = c.areaText
+    if (c.areaText !== area) { c.areaText = area; c.area.textContent = area }
+    updateAria(c, agent)
+  }
+
+  function orchSub() {
+    const ws = sim.workers
+    const failed = ws.filter((a) => a.state === 'exited').length
+    const done = ws.filter((a) => a.state === 'done').length
+    if (!ws.length) return 'dividindo a meta…'
+    return `${ws.length} frentes · ${done} ✓` + (failed ? ` · ${failed} ✕` : '')
+  }
+
+  function applyProgress(c, value) {
+    const p = clamp(Math.floor(value), 0, 100)
+    if (p === c.pctV) return
+    c.pctV = p
+    if (c.role === 'orchestrator') c.pct.innerHTML = 'GERAL <b>' + p + '%</b>'
+    else c.pct.textContent = p + '%'
+    const lit = Math.floor(p / 10)
+    const frac = p % 10
+    for (let i = 0; i < 10; i++) {
+      const cls = i < lit ? 'on' : i === lit && frac > 0 ? 'part' : ''
+      if ((c.vu[i].getAttribute('class') || '') !== cls) c.vu[i].setAttribute('class', cls)
+    }
+  }
+
+  function updateAria(c, agent) {
+    const p = Math.floor((c.role === 'orchestrator' ? sim.overall() : agent.progress) / 5) * 5
+    const key = agent.state + ':' + p + ':' + (c.id === S.selected)
+    if (key === c.ariaKey) return
+    c.ariaKey = key
+    const role = ROLES[agent.role] || agent.role
+    const extra = agent.state === 'waiting' && agent.after ? `, aguardando ${agent.after} (--after)` : agent.state === 'blocked' ? ', pede permissão' : ''
+    const prog = c.role === 'orchestrator' ? `progresso geral ${p}%` : `${p}%`
+    c.btn.setAttribute('aria-label', `${nameOf(agent.id)}, ${role}, ${agent.area}: ${label(agent.state)}${extra}, ${prog}. Enter abre o painel.`)
+    c.btn.setAttribute('aria-pressed', String(c.id === S.selected))
+  }
+
+  /* ---------- tweens: animações curtas no laço visual (rAF; no headless, reserva pelo tick do motor) */
+  const tweens = new Set()
+  const easeOut = (p) => 1 - Math.pow(1 - p, 4)
+  function tween(dur, step, done, delay) {
+    const tw = { t0: performance.now() + (delay || 0), dur, step, done }
+    tweens.add(tw)
+    return tw
+  }
+  function runTweens(now) {
+    for (const tw of tweens) {
+      const p = (now - tw.t0) / tw.dur
+      if (p < 0) continue
+      if (p >= 1) {
+        tweens.delete(tw)
+        tw.step(1)
+        if (tw.done) tw.done()
+      } else tw.step(p)
+    }
+  }
+
+  /* ---------- cristal do escriba + "você" */
+  let crystal = null
+  function buildCrystal() {
+    crystal = doc.createElement('button')
+    crystal.type = 'button'
+    crystal.className = 'crystal'
+    crystal.style.left = CRYSTAL.x + 'px'
+    crystal.style.top = CRYSTAL.y + 'px'
+    crystal.innerHTML =
+      '<svg viewBox="-15 -35 30 70" aria-hidden="true" focusable="false">' +
+      '<line class="cr-up" x1="0" y1="-30" x2="0" y2="-52"/>' +
+      '<ellipse class="cr-glow" cx="0" cy="2" rx="15" ry="30"/>' +
+      '<g class="cr-bob">' +
+      '<polygon class="cr-body" points="0,-31 11,-15 11,15 0,31 -11,15 -11,-15"/>' +
+      '<polygon class="cr-left" points="0,-31 -11,-15 -11,15 0,31"/>' +
+      '<path class="cr-facet" d="M0,-31 L0,31 M-11,-15 L0,-7 L11,-15 M-11,15 L0,7 L11,15"/>' +
+      '<polygon class="cr-ring" points="0,-31 11,-15 11,15 0,31 -11,15 -11,-15"/>' +
+      '</g></svg>' +
+      '<span class="cr-count" aria-hidden="true">◆ <b id="cr-n">0</b> <span id="cr-w">gravações</span></span>' +
+      '<span class="cr-plus" aria-hidden="true"></span>'
+    crystal.addEventListener('click', () => { if (!S.suppressClick && !EMBED) select('obsidian') })
+    crystal.addEventListener('mouseenter', (e) => hoverOn({ id: 'obsidian', crystal: true }, e))
+    crystal.addEventListener('mousemove', (e) => { S.tipPoint = { x: e.clientX, y: e.clientY }; placeTip() })
+    crystal.addEventListener('mouseleave', () => hoverOff({ id: 'obsidian', crystal: true }))
+    crystal.addEventListener('focus', () => hoverOn({ id: 'obsidian', crystal: true }, null))
+    crystal.addEventListener('blur', () => hoverOff({ id: 'obsidian', crystal: true }))
+    el.top.appendChild(crystal)
+    const you = doc.createElement('span')
+    you.className = 'you'
+    you.style.left = YOU.x + 'px'
+    you.style.top = YOU.y + 'px'
+    you.innerHTML = '<i></i>VOCÊ'
+    el.top.appendChild(you)
+    syncCrystal()
+  }
+  function syncCrystal() {
+    const sc = sim.scribe
+    $('#cr-n').textContent = String(sc.writes)
+    $('#cr-w').textContent = sc.writes === 1 ? 'gravação' : 'gravações'
+    crystal.setAttribute('aria-label', `Escriba Obsidian: ${sc.writes} ${sc.writes === 1 ? 'gravação' : 'gravações'} em ${sc.note}${sc.writing ? ', gravando agora' : ''}. Enter abre o painel.`)
+    crystal.classList.toggle('writing', !!sc.writing)
+    crystal.classList.toggle('sel', S.selected === 'obsidian')
+    el.roScribe.textContent = '◆ ' + sc.writes
+  }
+  function crystalPulse(text) {
+    syncCrystal()
+    if (REDUCED) return
+    const ring = crystal.querySelector('.cr-ring')
+    const plus = crystal.querySelector('.cr-plus')
+    plus.textContent = '+1 · ' + trunc(text || '', 30)
+    tween(1000, (p) => { ring.setAttribute('transform', `scale(${r2(1 + 1.5 * easeOut(p))})`); ring.style.opacity = String(r2(0.95 * (1 - p))) }, () => { ring.style.opacity = '0' })
+    tween(2400, (p) => {
+      const o = p < 0.16 ? p / 0.16 : p > 0.76 ? (1 - p) / 0.24 : 1
+      plus.style.opacity = String(r2(o))
+      plus.style.transform = `translate(-50%, ${r2(6 - 18 * p)}px)`
+    }, () => { plus.style.opacity = '0' })
+  }
+
+  /* ---------- laser do --after */
+  function syncLinks() {
+    for (const c of S.cells.values()) {
+      const a = sim.agent(c.id)
+      if (!a || !a.after) continue
+      const dep = S.cells.get(a.after)
+      if (!dep) continue
+      let L = S.links.get(c.id)
+      if (!L) {
+        const dx = dep.x - c.x
+        const dy = dep.y - c.y
+        const len = Math.hypot(dx, dy)
+        const ux = dx / len
+        const uy = dy / len
+        const end = len - edgeDist(Math.atan2(-uy, -ux), dep.rad) + 6
+        const start = Math.max(4, edgeDist(Math.atan2(uy, ux), c.rad) - 6)
+        const x1 = r2(c.x + ux * start)
+        const y1 = r2(c.y + uy * start)
+        const x2 = r2(c.x + ux * end)
+        const y2 = r2(c.y + uy * end)
+        const g = svgEl('g', { class: 'link' })
+        g.append(
+          svgEl('line', { class: 'l-glow', x1, y1, x2, y2 }),
+          svgEl('line', { class: 'l-core', x1, y1, x2, y2 }),
+          svgEl('circle', { class: 'l-end', cx: x2, cy: y2, r: 3.4 }),
+          svgEl('circle', { class: 'l-end', cx: x1, cy: y1, r: 2.4 }),
+        )
+        el.links.appendChild(g)
+        L = { g, state: '' }
+        S.links.set(c.id, L)
+      }
+      const cls = a.state === 'waiting' ? 'is-wait' : 'is-chain'
+      if (L.state !== cls) { L.state = cls; L.g.setAttribute('class', 'link ' + cls) }
+    }
+  }
+
+  /* ---------- feixes de mensagem */
+  function endpoint(id) {
+    if (id === 'você') return YOU
+    if (id === 'obsidian') return CRYSTAL
+    const c = S.cells.get(id)
+    return c ? { x: c.x, y: c.y } : null
+  }
+  function fireBeam(m) {
+    if (m.kind === 'scribe') { crystalPulse(m.text); return }
+    const a = endpoint(m.from)
+    const b = endpoint(m.to)
+    if (!a || !b) {
+      m._tries = (m._tries || 0) + 1
+      if (m._tries < 30) S.pending.push(m)
+      return
+    }
+    if (S.beams.size > 12) { const first = S.beams.values().next().value; first.remove(); S.beams.delete(first) }
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const len = Math.hypot(dx, dy)
+    if (len < 2) return
+    const sign = m.from < m.to ? 1 : -1
+    const nx = -dy / len
+    const ny = dx / len
+    const bend = Math.min(34, len * 0.17) * sign
+    let d
+    if (m.kind === 'fail') {
+      d = `M${r2(a.x)},${r2(a.y)}`
+      const steps = Math.max(4, Math.round(len / 16))
+      for (let i = 1; i < steps; i++) {
+        const t = i / steps
+        const off = i % 2 ? 6 : -6
+        d += ` L${r2(a.x + dx * t + nx * off)},${r2(a.y + dy * t + ny * off)}`
+      }
+      d += ` L${r2(b.x)},${r2(b.y)}`
+    } else {
+      const cx = (a.x + b.x) / 2 + nx * bend
+      const cy = (a.y + b.y) / 2 + ny * bend
+      d = `M${r2(a.x)},${r2(a.y)} Q${r2(cx)},${r2(cy)} ${r2(b.x)},${r2(b.y)}`
+    }
+    const g = svgEl('g', { class: 'beam k-' + m.kind })
+    const glow = svgEl('path', { d, class: 'b-glow' })
+    const core = svgEl('path', { d, class: 'b-core' })
+    const head = svgEl('g', { class: 'b-head' })
+    head.append(svgEl('circle', { r: m.kind === 'idea' ? 8 : 6.5, class: 'h-o' }), svgEl('circle', { r: 2.6, class: 'h-i' }))
+    g.append(glow, core, head)
+    el.beams.appendChild(g)
+    S.beams.add(g)
+    const L = core.getTotalLength ? core.getTotalLength() : len
+    const T = clamp(300 + L * 1.25, 380, 820)
+    let gone = false
+    const done = () => { if (gone) return; gone = true; g.remove(); S.beams.delete(g) }
+    if (REDUCED) {
+      head.setAttribute('transform', `translate(${r2(b.x)} ${r2(b.y)})`)
+      setTimeout(done, 1600)
+      return
+    }
+    const N = 20
+    const pts = []
+    for (let i = 0; i <= N; i++) { const pt = core.getPointAtLength((L * i) / N); pts.push([pt.x, pt.y]) }
+    core.style.strokeDasharray = glow.style.strokeDasharray = `${r2(L)} ${r2(L)}`
+    const draw = (e) => {
+      const off = String(r2(L * (1 - e)))
+      core.style.strokeDashoffset = off
+      glow.style.strokeDashoffset = off
+      const f = e * N
+      const i = Math.min(N - 1, Math.floor(f))
+      const t = f - i
+      head.setAttribute('transform', `translate(${r2(pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t)} ${r2(pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t)})`)
+    }
+    draw(0)
+    tween(T, (p) => draw(easeOut(p)), () => {
+      impact(m.to, m.kind)
+      tween(760, (p) => { g.style.opacity = String(r2(1 - p)) }, done, 320)
+    })
+    setTimeout(done, T + 2200)
+  }
+  function impact(id, kind) {
+    const c = S.cells.get(id)
+    if (!c || REDUCED) return
+    flashCell(c, `var(--k-${kind})`)
+  }
+  function flashCell(c, color) {
+    c.flash.style.setProperty('--hitc', color)
+    if (c.flashTw) tweens.delete(c.flashTw)
+    c.flash.style.opacity = '0.95'
+    c.flashTw = tween(700, (p) => { c.flash.style.opacity = String(r2(0.95 * (1 - easeOut(p)))) }, () => { c.flash.style.opacity = '0'; c.flashTw = null })
+  }
+  /** Espaço livre (em unidades do plano) ao lado de fora da célula, já descontando zoom e perspectiva. */
+  function ideaRoom(c) {
+    const A = freeArea()
+    const k = S.cam.k
+    const ps = PERSP / (PERSP - c.y * Math.sin((TILT * Math.PI) / 180))
+    if (c.x >= 0) return (A.x + A.w - 12 - (S.cam.x + project(c.x + c.W / 2 + 12, c.y).x * k)) / (k * ps) - 4
+    return (S.cam.x + project(c.x - c.W / 2 - 12, c.y).x * k - A.x - 12) / (k * ps) - 4
+  }
+  /** Reposiciona a etiqueta de ideia (chamado ao criar e a cada reenquadramento da câmera). */
+  function placeIdea() {
+    const tag = S.ideaTag
+    const c = tag && S.cells.get(tag.dataset.cell)
+    if (!c) return
+    const room = ideaRoom(c)
+    tag.style.maxWidth = Math.round(clamp(room, 90, 230)) + 'px'
+    tag.style.left = r2(c.x >= 0 ? c.x + c.W / 2 + 12 : c.x - c.W / 2 - 12) + 'px'
+    tag.style.top = r2(c.y - 24) + 'px'
+  }
+  function floatIdea(m) {
+    const c = S.cells.get(m.from)
+    if (!c) return
+    if (S.ideaTag) { S.ideaTag.remove(); S.ideaTag = null }
+    const ag = sim.agent(m.from)
+    const n = ag ? ag.lines.filter((l) => /proposta \d/.test(l.text)).length : 0
+    if (ideaRoom(c) < 104) {
+      // sem espaço do lado de fora: a própria célula anuncia a proposta por alguns segundos
+      c.ideaUntil = performance.now() + 3600
+      c.front.classList.add('idea')
+      c.area.textContent = `✦ proposta${n ? ' ' + n : ''}`
+      c.areaText = c.area.textContent
+      setTimeout(() => { if (performance.now() >= c.ideaUntil - 30) { c.front.classList.remove('idea'); c.areaText = null; const ag2 = sim.agent(c.id); if (ag2) applyState(c, ag2) } }, 3600)
+      return
+    }
+    const tag = doc.createElement('div')
+    tag.className = 'float-tag'
+    tag.dataset.cell = c.id
+    tag.innerHTML = `<b>✦ IDEIA${n ? ' ' + n : ''}</b>${esc(trunc(m.text.replace(/^proposta:\s*/, ''), 72))}`
+    const base = c.x >= 0 ? '' : 'translateX(-100%) '
+    tag.style.transform = base
+    el.tags.appendChild(tag)
+    S.ideaTag = tag
+    placeIdea()
+    const kill = () => { tag.remove(); if (S.ideaTag === tag) S.ideaTag = null }
+    if (REDUCED) { tag.style.opacity = '1'; setTimeout(kill, 3600); return }
+    tag.style.opacity = '0'
+    tween(3800, (p) => {
+      const o = p < 0.12 ? p / 0.12 : p > 0.84 ? (1 - p) / 0.16 : 1
+      tag.style.opacity = String(r2(o))
+      tag.style.transform = base + `translateY(${r2(8 - 26 * p)}px)`
+    }, kill)
+    setTimeout(kill, 5200)
+  }
+
+  /* ============================================================ bus: lista + fita */
+  function busRow(m) {
+    const k = KIND[m.kind] || KIND.chat
+    const li = doc.createElement('li')
+    li.className = 'msg k-' + m.kind
+    li.innerHTML = `<div class="m-head"><span class="m-k" aria-hidden="true">${k.icon}</span><span class="sr-only">${k.label}:</span><span class="m-route"><b>${esc(nameOf(m.from))}</b><i aria-hidden="true">→</i><span class="sr-only">para</span><b>${esc(nameOf(m.to))}</b></span><time>${AletheSim.clock(m.at)}</time></div><p class="m-text">${esc(m.text)}</p>`
+    el.bus.prepend(li)
+    if (!REDUCED) {
+      li.style.opacity = '0'
+      tween(560, (p) => {
+        const e = easeOut(p)
+        li.style.opacity = String(r2(e))
+        li.style.transform = p < 1 ? `translateX(${r2(-14 * (1 - e))}px)` : ''
+        li.style.filter = p < 1 ? `blur(${r2(4 * (1 - e))}px)` : ''
+      })
+    }
+    while (el.bus.children.length > 60) el.bus.lastElementChild.remove()
+    S.busCount += 1
+    el.busCount.textContent = String(S.busCount)
+  }
+  function tickerItem(m) {
+    const k = KIND[m.kind] || KIND.chat
+    const it = doc.createElement('span')
+    it.className = 'tk-item k-' + m.kind
+    it.innerHTML = `<span class="tk-k" aria-hidden="true">${k.icon}</span><time>${AletheSim.clock(m.at)}</time><b>${esc(nameOf(m.from))}</b><span class="tk-ar" aria-hidden="true">→</span><b>${esc(nameOf(m.to))}</b><span class="tk-txt">${esc(trunc(m.text, 84))}</span>`
+    pushTicker(it)
+  }
+  function pushTicker(it) {
+    el.track.appendChild(it)
+    if (!REDUCED && performance.now() - S.rafAt < 250) S.tkOffset += it.getBoundingClientRect().width + 26
+    while (el.track.children.length > 22) el.track.firstElementChild.remove()
+  }
+  function separator(n) {
+    const li = doc.createElement('li')
+    li.className = 'sep'
+    li.textContent = `── sessão ${n} ──`
+    el.bus.prepend(li)
+    const it = doc.createElement('span')
+    it.className = 'tk-sep'
+    it.textContent = `◇ SESSÃO ${n} ◇`
+    pushTicker(it)
+  }
+
+  /* ============================================================ seleção + painel */
+  function select(id) {
+    if (EMBED) return
+    if (!id || (!S.cells.has(id) && id !== 'obsidian')) return
+    const prev = S.selected
+    S.selected = id
+    for (const c of S.cells.values()) {
+      const on = c.id === id
+      c.front.classList.toggle('sel', on)
+      c.back.classList.toggle('sel', on)
+      c.btn.setAttribute('aria-pressed', String(on))
+    }
+    syncCrystal()
+    const wasOpen = el.panel.classList.contains('open')
+    el.panel.classList.add('open')
+    renderPanel(prev !== id || !wasOpen)
+    if (!wasOpen && !S.userCam) fit(true)
+  }
+  function deselect() {
+    if (!S.selected) return
+    S.selected = null
+    for (const c of S.cells.values()) { c.front.classList.remove('sel'); c.back.classList.remove('sel'); c.btn.setAttribute('aria-pressed', 'false') }
+    syncCrystal()
+    el.panel.classList.remove('open')
+    if (!S.userCam) fit(true)
+  }
+  function hueOf(a) {
+    if (a.role === 'orchestrator') return 'var(--h1)'
+    if (a.role === 'scribe') return 'var(--scribe)'
+    if (a.role === 'creative') return 'var(--hc)'
+    return `var(--h${a.hue || 0})`
+  }
+  function renderPanel(full) {
+    const id = S.selected
+    if (!id) return
+    const a = sim.agent(id)
+    if (!a) return
+    const isOrch = a.role === 'orchestrator'
+    const isScribe = a.role === 'scribe'
+    if (full) {
+      el.panel.style.setProperty('--p-hue', hueOf(a))
+      el.pId.textContent = isOrch ? 'orquestrador' : isScribe ? 'escriba Obsidian' : a.id
+      el.pRole.textContent = isOrch ? `sessão ${String(sim.session).padStart(2, '0')} · ${sim.project}` : isScribe ? `cristal · ${sim.scribe.note}` : `${ROLES[a.role] || a.role} · ${a.area}`
+      el.pAvatar.textContent = isOrch ? '⬢' : isScribe ? '◆' : a.role === 'creative' ? '✦' : a.id.replace('claude-', '')
+      el.pTask.textContent = a.task
+      el.msg.placeholder = `Mensagem para ${isOrch ? 'o orquestrador' : isScribe ? 'o escriba' : a.id}…`
+      el.pK4.textContent = isOrch ? 'FRENTES' : isScribe ? 'GRAVAÇÕES' : 'ARQUIVOS'
+      renderTranscript(a)
+      S.panelKey = ''
+    }
+    // estado e progresso
+    const st = a.state
+    const prog = isOrch ? sim.overall() : isScribe ? 0 : a.progress
+    const key = st + '|' + Math.floor(prog) + '|' + a.touched.length + '|' + (a.permission ? 1 : 0)
+    if (key !== S.panelKey) {
+      S.panelKey = key
+      el.pBadge.dataset.state = st
+      el.pBadge.firstElementChild.textContent = icon(st)
+      el.pBadge.lastElementChild.textContent = label(st)
+      if (isScribe) el.pPct.innerHTML = String(sim.scribe.writes) + '<small> grav.</small>'
+      else el.pPct.innerHTML = Math.floor(prog) + '<small>%</small>'
+      const lit = Math.floor(prog / 10)
+      const frac = prog % 10
+      Array.from(el.pVu.children).forEach((n, i) => { n.className = isScribe ? (i < Math.min(10, sim.scribe.writes) ? 'on' : '') : i < lit ? 'on' : i === lit && frac >= 1 ? 'part' : '' })
+      if (a.after) {
+        const dep = sim.agent(a.after)
+        el.pAfter.hidden = false
+        el.pAfter.textContent = `⧗ --after ${a.after} · ${dep ? (dep.state === 'done' ? 'dependência concluída' : 'dependência ' + label(dep.state)) : ''}`
+      } else el.pAfter.hidden = true
+      const files = isScribe ? [sim.scribe.note] : isOrch ? [] : a.files
+      el.pFiles.innerHTML = files.map((f) => `<li class="${a.touched.includes(f) ? 't' : ''}" title="${esc(f)}">${esc(f.split('/').slice(-2).join('/'))}</li>`).join('')
+      el.pFiles.hidden = !files.length
+      if (st === 'blocked' && a.permission) {
+        el.pPerm.hidden = false
+        el.pPermText.textContent = `${a.permission.tool}(${a.permission.detail})`
+      } else el.pPerm.hidden = true
+    }
+    if (S.stick) el.term.scrollTop = el.term.scrollHeight
+    // leituras
+    el.pTokens.textContent = AletheSim.tokens(a.tokens)
+    el.pCost.textContent = money(a.tokens)
+    const end = a.endedAt != null ? a.endedAt : sim.t
+    el.pTime.textContent = AletheSim.clock(isOrch || isScribe ? sim.t : Math.max(0, end - a.startedAt))
+    el.pV4.textContent = isOrch ? String(sim.workers.length) : isScribe ? String(sim.scribe.writes) : `${a.touched.length}/${a.files.length}`
+    if (st === 'blocked') {
+      const t0 = S.blockT.get(a.id)
+      el.pPermAuto.textContent = t0 != null ? `auto em ${Math.max(0, Math.ceil(14 - (sim.t - t0)))} s` : ''
+    }
+  }
+  function lineEl(l) {
+    const d = doc.createElement('div')
+    d.className = 'ln k-' + l.kind
+    const t = doc.createElement('span')
+    t.className = 'ln-t'
+    t.textContent = AletheSim.clock(l.at)
+    d.append(t, doc.createTextNode(l.text))
+    return d
+  }
+  function renderTranscript(a) {
+    el.term.textContent = ''
+    const frag = doc.createDocumentFragment()
+    for (const l of a.lines) frag.appendChild(lineEl(l))
+    el.term.appendChild(frag)
+    S.stick = true
+    S.unseen = 0
+    el.termNew.hidden = true
+    el.term.scrollTop = el.term.scrollHeight
+  }
+  function appendLine(l) {
+    el.term.appendChild(lineEl(l))
+    while (el.term.childElementCount > 400) el.term.firstElementChild.remove()
+    if (S.stick) el.term.scrollTop = el.term.scrollHeight
+    else {
+      S.unseen += 1
+      el.termNew.hidden = false
+      el.termNew.textContent = `↓ novas linhas (${S.unseen})`
+    }
+  }
+  if (window.ResizeObserver) new ResizeObserver(() => { if (S.stick) el.term.scrollTop = el.term.scrollHeight }).observe(el.term)
+  el.term.addEventListener('scroll', () => {
+    const atBottom = el.term.scrollHeight - el.term.scrollTop - el.term.clientHeight < 8
+    S.stick = atBottom
+    if (atBottom) { S.unseen = 0; el.termNew.hidden = true }
+  })
+  el.termNew.addEventListener('click', () => { S.stick = true; el.term.scrollTop = el.term.scrollHeight; el.termNew.hidden = true; S.unseen = 0 })
+
+  function copySelected() {
+    if (!S.selected) return
+    const txt = sim.transcript(S.selected)
+    const ok = () => { el.copy.textContent = 'Copiado ✓'; el.copy.classList.add('copied'); announce(`Transcrição de ${nameOf(S.selected)} copiada.`); setTimeout(() => { el.copy.textContent = 'Copiar'; el.copy.classList.remove('copied') }, 1800) }
+    const bad = () => { el.copy.textContent = 'Não copiou'; setTimeout(() => { el.copy.textContent = 'Copiar' }, 1800) }
+    Promise.resolve(AletheSim.copyText(txt)).then((res) => (res === false ? bad() : ok()), bad)
+  }
+  function approveSelected(yes) {
+    const a = S.selected && sim.agent(S.selected)
+    if (!a || a.state !== 'blocked') return false
+    return yes ? sim.approve(a.id) : sim.deny(a.id)
+  }
+
+  /* ============================================================ alerta, contagens, leituras */
+  function syncAlert() {
+    const blocked = sim.workers.filter((a) => a.state === 'blocked')
+    root.dataset.blocked = blocked.length ? '1' : '0'
+    if (!blocked.length) {
+      if (el.alert.classList.contains('show')) {
+        el.alert.classList.remove('show')
+        el.alert.setAttribute('aria-hidden', 'true')
+        if (!S.userCam) fit(true)
+      }
+      return
+    }
+    const a = blocked[0]
+    el.alert.dataset.id = a.id
+    if (a.permission) el.alText.innerHTML = `<b>${esc(a.id)}</b> pede <code>${esc(a.permission.tool)}</code> · <code>${esc(a.permission.detail)}</code>`
+    const t0 = S.blockT.get(a.id)
+    el.alAuto.textContent = t0 != null ? `auto-aprova em ${Math.max(0, Math.ceil(14 - (sim.t - t0)))} s` : ''
+    if (!el.alert.classList.contains('show')) {
+      el.alert.classList.add('show')
+      el.alert.setAttribute('aria-hidden', 'false')
+      if (!S.userCam) fit(true)
+    }
+  }
+  function syncCounts() {
+    const counts = sim.counts()
+    for (const n of el.counts.children) {
+      const v = counts[n.dataset.st] || 0
+      const b = n.querySelector('b')
+      if (b.textContent !== String(v)) b.textContent = String(v)
+      n.dataset.zero = v ? '0' : '1'
+    }
+  }
+  function syncReadouts() {
+    el.clock.textContent = AletheSim.clock(sim.t)
+    const ov = Math.floor(sim.overall())
+    el.overall.innerHTML = ov + '<span class="u">%</span>'
+    const lit = Math.floor(ov / 10)
+    Array.from(el.roVu.children).forEach((n, i) => { n.className = i < lit ? 'on' : '' })
+    el.session.textContent = 'sessão ' + String(sim.session).padStart(2, '0')
+  }
+  function announce(text) {
+    const p = doc.createElement('p')
+    p.textContent = text
+    el.live.appendChild(p)
+    while (el.live.children.length > 4) el.live.firstElementChild.remove()
+  }
+
+  /* ============================================================ câmera: zoom, pan, ajuste */
+  function freeArea() {
+    const w = el.stage.clientWidth
+    const h = el.stage.clientHeight
+    if (EMBED) return { x: 6, y: 6, w: w - 12, h: h - 12 }
+    let left = 14
+    let right = 14
+    const top = el.alert.classList.contains('show') ? 12 + el.alert.offsetHeight + 8 : 12
+    const railShown = el.rail.offsetParent !== null
+    if (railShown) left = el.rail.offsetLeft + el.rail.offsetWidth + 14
+    if (el.panel.classList.contains('open') && w > 860) right = w - el.panel.offsetLeft + 14
+    return { x: left, y: top, w: Math.max(120, w - left - right), h: Math.max(120, h - top - 58) }
+  }
+  function bounds() {
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    const add = (x, y) => { const p = project(x, y); minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y) }
+    for (const c of S.cells.values()) {
+      const hw = (c.rad * SQ3) / 2
+      add(c.x - hw, c.y - c.rad)
+      add(c.x + hw, c.y - c.rad)
+      add(c.x - hw, c.y + c.rad + DEPTH)
+      add(c.x + hw, c.y + c.rad + DEPTH)
+    }
+    add(CRYSTAL.x - 50, CRYSTAL.y - 78)
+    add(YOU.x, YOU.y + 12)
+    return { w: maxX - minX, h: maxY - minY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }
+  }
+  function fit(animate) {
+    const b = bounds()
+    const A = freeArea()
+    const pad = EMBED ? 8 : 30
+    const k = clamp(Math.min((A.w - pad * 2) / Math.max(b.w, 260), (A.h - pad * 2) / Math.max(b.h, 260)), 0.3, EMBED ? 1.35 : 1.75)
+    S.cam.k = k
+    S.cam.x = A.x + A.w / 2 - b.cx * k
+    S.cam.y = A.y + A.h / 2 - b.cy * k
+    applyCam(animate)
+    placeZoomBar()
+    placeIdea()
+  }
+  function applyCam(animate) {
+    el.cam.classList.toggle('ease', !!animate && !REDUCED)
+    el.cam.style.transform = `translate(${r2(S.cam.x)}px, ${r2(S.cam.y)}px) scale(${S.cam.k.toFixed(4)})`
+    el.zLevel.textContent = Math.round(S.cam.k * 100) + '%'
+  }
+  function zoomAt(sx, sy, f) {
+    const k2 = clamp(S.cam.k * f, 0.3, 3.2)
+    const wx = (sx - S.cam.x) / S.cam.k
+    const wy = (sy - S.cam.y) / S.cam.k
+    S.cam.k = k2
+    S.cam.x = sx - wx * k2
+    S.cam.y = sy - wy * k2
+    S.userCam = true
+    applyCam(false)
+  }
+  function zoomCenter(f) {
+    const A = freeArea()
+    zoomAt(A.x + A.w / 2, A.y + A.h / 2, f)
+    el.cam.classList.toggle('ease', !REDUCED)
+  }
+  function placeZoomBar() {
+    const A = freeArea()
+    el.zoom.style.left = r2(A.x + A.w / 2) + 'px'
+    el.alert.style.left = r2(A.x + A.w / 2) + 'px'
+    const pt = document.getElementById('paused-tag')
+    if (pt) pt.style.left = r2(A.x + A.w / 2) + 'px'
+    el.alert.style.width = Math.round(Math.min(620, A.w - 16)) + 'px'
+  }
+
+  /* ============================================================ hover + dica */
+  function hoverOn(c, e) {
+    S.hoverId = c.id
+    if (!c.crystal) { const cell = S.cells.get(c.id); if (cell) { cell.front.classList.add('hov'); cell.back.classList.add('hov') } }
+    if (e) S.tipPoint = { x: e.clientX, y: e.clientY }
+    else {
+      const target = c.crystal ? crystal : S.cells.get(c.id) && S.cells.get(c.id).btn
+      if (target) { const rc = target.getBoundingClientRect(); S.tipPoint = { x: rc.right, y: rc.top + rc.height / 2 } }
+    }
+    el.reticle.classList.add('lock')
+    renderTip()
+  }
+  function hoverOff(c) {
+    if (!c.crystal) { const cell = S.cells.get(c.id); if (cell) { cell.front.classList.remove('hov'); cell.back.classList.remove('hov') } }
+    if (S.hoverId === c.id) { S.hoverId = null; el.tip.classList.remove('show') }
+    el.reticle.classList.remove('lock')
+  }
+  function renderTip() {
+    if (!S.hoverId || EMBED) return
+    const a = sim.agent(S.hoverId)
+    if (!a) return
+    const last = a.lines.length ? a.lines[a.lines.length - 1].text : '—'
+    const isScribe = a.role === 'scribe'
+    const w = sim.scribe.writes
+    const prog = a.role === 'orchestrator' ? `geral ${Math.floor(sim.overall())}%` : isScribe ? `${w} ${w === 1 ? 'gravação' : 'gravações'}` : `${Math.floor(a.progress)}%`
+    const extra = a.after ? ` · --after ${a.after}` : ''
+    const title = isScribe ? 'escriba Obsidian' : nameOf(a.id)
+    const role = isScribe ? 'cristal' : a.role === 'orchestrator' ? 'sessão ' + String(sim.session).padStart(2, '0') : ROLES[a.role] || a.role
+    el.tip.innerHTML = `<div class="t-id">${esc(title)} <span style="font-weight:500;color:var(--fg-2)">· ${esc(role)}</span></div><div class="t-st">${icon(a.state)} ${esc(label(a.state))} · ${prog}${esc(extra)}</div><div class="t-area">${esc(a.area)} — ${esc(trunc(a.task, 90))}</div><div class="t-last">${esc(trunc(last.trim(), 110))}</div>`
+    el.tip.classList.add('show')
+    placeTip()
+  }
+  function placeTip() {
+    if (!S.tipPoint) return
+    const w = el.tip.offsetWidth
+    const h = el.tip.offsetHeight
+    let x = S.tipPoint.x + 18
+    let y = S.tipPoint.y + 18
+    if (x + w > innerWidth - 8) x = S.tipPoint.x - w - 18
+    if (y + h > innerHeight - 8) y = S.tipPoint.y - h - 18
+    el.tip.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(Math.max(8, y))}px)`
+  }
+
+  /* ============================================================ laço visual (rAF; com reserva no tick do motor) */
+  function visual(now) {
+    const rawDt = Math.max(0, Math.min(2000, now - (S.lastVisual || now)))
+    const dt = Math.min(64, rawDt)
+    S.lastVisual = now
+    if (tweens.size) runTweens(now)
+    if (S.tkOffset > 0.4) {
+      S.tkOffset *= Math.pow(0.88, rawDt / 16.7)
+      el.track.style.transform = `translate3d(${r2(S.tkOffset)}px,0,0)`
+    } else if (S.tkOffset !== 0) {
+      S.tkOffset = 0
+      el.track.style.transform = ''
+    }
+    if (!REDUCED && !EMBED) {
+      const t = S.tilt
+      const k = 1 - Math.pow(0.9, dt / 16.7)
+      t.x += (t.tx - t.x) * k
+      t.y += (t.ty - t.y) * k
+      if (Math.abs(t.tx - t.x) > 0.01 || Math.abs(t.ty - t.y) > 0.01 || !t.applied) {
+        el.plane.style.transform = `rotateX(${t.x.toFixed(3)}deg) rotateY(${t.y.toFixed(3)}deg)`
+        t.applied = true
+      }
+      const rt = S.reticle
+      if (rt.on) {
+        rt.x += (rt.tx - rt.x) * (1 - Math.pow(0.62, dt / 16.7))
+        rt.y += (rt.ty - rt.y) * (1 - Math.pow(0.62, dt / 16.7))
+        el.reticle.style.transform = `translate(${r2(rt.x)}px, ${r2(rt.y)}px)`
+      }
+    }
+  }
+  function frame(now) {
+    S.rafAt = performance.now()
+    visual(now)
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+
+  /* ============================================================ eventos do motor */
+  function buildSession() {
+    for (const c of S.cells.values()) { c.back.remove(); c.front.remove() }
+    S.cells.clear()
+    S.slots.clear()
+    for (const L of S.links.values()) L.g.remove()
+    S.links.clear()
+    for (const b of S.beams) b.remove()
+    S.beams.clear()
+    S.pending.length = 0
+    S.blockT.clear()
+    el.tags.textContent = ''
+    for (const a of sim.agents) if (a.role === 'orchestrator') makeCell(a, false)
+    for (const a of sim.workers) makeCell(a, false)
+    syncLinks()
+    syncCrystal()
+  }
+
+  sim.on('spawn', (e) => {
+    if (S.cells.has(e.agent.id)) return
+    makeCell(e.agent, true)
+    syncLinks()
+    const orch = S.cells.get('orchestrator')
+    if (orch) applyState(orch, sim.agent('orchestrator'))
+    if (!S.userCam) fit(true)
+    placeZoomBar()
+  })
+  sim.on('state', (e) => {
+    const a = e.agent
+    if (a.role === 'scribe') { syncCrystal(); if (S.selected === 'obsidian') renderPanel(false); return }
+    const c = S.cells.get(a.id)
+    if (c) applyState(c, a)
+    const orch = S.cells.get('orchestrator')
+    if (orch && a.role !== 'orchestrator') applyState(orch, sim.agent('orchestrator'))
+    if (a.after || sim.workers.some((w) => w.after === a.id)) syncLinks()
+    if (S.selected === a.id) renderPanel(false)
+    syncAlert()
+    if (e.to === 'exited') announce(`${a.id} falhou: sinal perdido. O orquestrador manda um substituto.`)
+    else if (e.to === 'done' && a.role !== 'orchestrator') announce(`${a.id} concluído: ${a.area}.`)
+    else if (e.to === 'done' && a.role === 'orchestrator') announce('Sessão concluída: verificação final ok.')
+  })
+  sim.on('permission', (e) => {
+    S.blockT.set(e.agent.id, e.t)
+    syncAlert()
+    announce(`${e.agent.id} bloqueado: pede permissão para ${e.request.tool} em ${e.request.detail}. Selecione e tecle A para aprovar ou N para negar.`)
+  })
+  sim.on('resolved', (e) => {
+    S.blockT.delete(e.agent.id)
+    syncAlert()
+    announce(`${e.agent.id}: permissão ${e.approved ? 'aprovada' : 'negada'}.`)
+  })
+  sim.on('line', (e) => {
+    if (S.selected === e.agent.id) appendLine(e.line)
+    if (S.hoverId === e.agent.id) renderTip()
+  })
+  sim.on('message', (e) => {
+    const m = e.message
+    busRow(m)
+    tickerItem(m)
+    fireBeam(m)
+    if (m.kind === 'idea') floatIdea(m)
+  })
+  sim.on('scribe', () => syncCrystal())
+  sim.on('reset', () => {
+    buildSession()
+    separator(sim.session)
+    const keep = S.selected
+    if (keep) {
+      S.selected = null
+      select(S.cells.has(keep) || keep === 'obsidian' ? keep : 'orchestrator')
+      renderPanel(true)
+    }
+    if (!S.userCam) fit(true)
+    syncReadouts()
+  })
+  sim.on('pause', () => syncPause())
+  sim.on('speed', () => syncSpeed())
+  sim.on('tick', () => {
+    const now = performance.now()
+    if (now - S.rafAt > 200) visual(now)
+    if (S.pending.length) { const list = S.pending.splice(0); for (const m of list) fireBeam(m) }
+    for (const c of S.cells.values()) {
+      const a = sim.agent(c.id)
+      if (!a) continue
+      applyProgress(c, c.role === 'orchestrator' ? sim.overall() : a.progress)
+    }
+    if (now - S.lastTickUI > 220) {
+      S.lastTickUI = now
+      syncReadouts()
+      syncCounts()
+      syncAlert()
+      for (const c of S.cells.values()) { const a = sim.agent(c.id); if (a) updateAria(c, a) }
+      const orch = S.cells.get('orchestrator')
+      if (orch) applyState(orch, sim.agent('orchestrator'))
+    }
+    if (S.selected && now - S.lastPanelUI > 250) { S.lastPanelUI = now; renderPanel(false) }
+  })
+
+  function syncPause() {
+    const p = sim.paused
+    el.pause.setAttribute('aria-pressed', String(p))
+    el.pause.querySelector('.ic').textContent = p ? '▶︎' : '⏸︎'
+    el.pause.querySelector('.lb').textContent = p ? 'Continuar' : 'Pausar'
+    el.pause.setAttribute('aria-label', (p ? 'Continuar' : 'Pausar') + ' a simulação (Espaço)')
+    root.dataset.paused = p ? '1' : '0'
+  }
+  function syncSpeed() {
+    for (const b of el.speed.children) b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === sim.speed))
+  }
+  function stepSpeed(dir) {
+    let i = SPEEDS.indexOf(sim.speed)
+    if (i < 0) i = 1
+    sim.setSpeed(SPEEDS[clamp(i + dir, 0, SPEEDS.length - 1)])
+  }
+  function setTheme(t) {
+    root.dataset.theme = t
+    el.theme.setAttribute('aria-label', t === 'dark' ? 'Alternar para o tema claro (T)' : 'Alternar para o tema escuro (T)')
+  }
+  const toggleTheme = () => setTheme(root.dataset.theme === 'light' ? 'dark' : 'light')
+
+  /* ============================================================ ajuda */
+  let helpReturn = null
+  function openHelp() {
+    helpReturn = doc.activeElement
+    S.helpOpen = true
+    el.helpBack.classList.add('show')
+    setTimeout(() => el.helpClose.focus(), 30)
+  }
+  function closeHelp() {
+    S.helpOpen = false
+    el.helpBack.classList.remove('show')
+    if (helpReturn && helpReturn.focus) helpReturn.focus()
+  }
+
+  /* ============================================================ navegação espacial (setas) */
+  function navigate(key) {
+    const items = Array.from(S.cells.values()).map((c) => ({ id: c.id, x: c.x, y: c.y }))
+    items.push({ id: 'obsidian', x: CRYSTAL.x, y: CRYSTAL.y })
+    if (!S.selected) { select('orchestrator'); return }
+    const cur = items.find((i) => i.id === S.selected) || items[0]
+    const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key]
+    let best = null
+    let bestScore = Infinity
+    for (const it of items) {
+      if (it.id === cur.id) continue
+      const dx = it.x - cur.x
+      const dy = it.y - cur.y
+      const along = dx * dir[0] + dy * dir[1]
+      if (along <= 4) continue
+      const across = Math.abs(dx * dir[1] - dy * dir[0])
+      const score = along + across * 1.6
+      if (score < bestScore) { bestScore = score; best = it }
+    }
+    if (best) select(best.id)
+  }
+  function selectDigit(d) {
+    if (d === 0) return select('orchestrator')
+    const id = 'claude-' + d
+    if (S.cells.has(id)) return select(id)
+    const ws = sim.workers
+    if (ws[d - 1]) select(ws[d - 1].id)
+  }
+
+  /* ============================================================ ligações da interface */
+  function wire() {
+    el.pause.addEventListener('click', () => sim.toggle())
+    el.theme.addEventListener('click', toggleTheme)
+    el.help.addEventListener('click', openHelp)
+    el.helpClose.addEventListener('click', closeHelp)
+    el.helpBack.addEventListener('click', (e) => { if (e.target === el.helpBack) closeHelp() })
+    el.helpBack.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return
+      e.preventDefault()
+      el.helpClose.focus()
+    })
+    el.close.addEventListener('click', deselect)
+    el.copy.addEventListener('click', copySelected)
+    el.pYes.addEventListener('click', () => approveSelected(true))
+    el.pNo.addEventListener('click', () => approveSelected(false))
+    el.alYes.addEventListener('click', () => { const id = el.alert.dataset.id; if (id) sim.approve(id) })
+    el.alNo.addEventListener('click', () => { const id = el.alert.dataset.id; if (id) sim.deny(id) })
+    el.alOpen.addEventListener('click', () => { const id = el.alert.dataset.id; if (id) select(id) })
+    el.send.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const text = el.msg.value.trim()
+      if (!text || !S.selected) return
+      sim.send(S.selected, text)
+      el.msg.value = ''
+      S.stick = true
+      el.term.scrollTop = el.term.scrollHeight
+    })
+    el.notesToggle.addEventListener('click', () => {
+      const open = el.notes.dataset.open !== 'true'
+      el.notes.dataset.open = String(open)
+      el.notesToggle.setAttribute('aria-expanded', String(open))
+      requestAnimationFrame(() => { if (!S.userCam) fit(true); placeZoomBar() })
+      setTimeout(() => { if (!S.userCam) fit(true); placeZoomBar() }, 60)
+    })
+    el.zIn.addEventListener('click', () => zoomCenter(1.2))
+    el.zOut.addEventListener('click', () => zoomCenter(1 / 1.2))
+    el.zFit.addEventListener('click', () => { S.userCam = false; fit(true) })
+
+    // zoom com a roda (com ou sem Ctrl)
+    el.stage.addEventListener('wheel', (e) => {
+      if (EMBED) return
+      if (e.target.closest('.rail, .panel, .alert, .zoom')) return
+      e.preventDefault()
+      const rc = el.stage.getBoundingClientRect()
+      // roda do mouse (com ou sem Ctrl) ~17% por "dente"; pinça do trackpad (Ctrl + deltas pequenos) mais sensível
+      const dy = clamp(e.deltaY * (e.deltaMode === 1 ? 33 : 1), -150, 150)
+      const f = Math.exp(-dy * (e.ctrlKey && Math.abs(dy) < 40 ? 0.012 : 0.0016))
+      zoomAt(e.clientX - rc.left, e.clientY - rc.top, f)
+    }, { passive: false })
+
+    // arrastar para mover
+    let drag = null
+    el.stage.addEventListener('pointerdown', (e) => {
+      if (EMBED || e.button !== 0) return
+      if (e.target.closest('.rail, .panel, .alert, .zoom, .c-act, input, a')) return
+      drag = { x: e.clientX, y: e.clientY, cx: S.cam.x, cy: S.cam.y, moved: false, id: e.pointerId }
+    })
+    window.addEventListener('pointermove', (e) => {
+      if (S.reticle.on) { S.reticle.tx = e.clientX; S.reticle.ty = e.clientY }
+      if (!drag) return
+      const dx = e.clientX - drag.x
+      const dy = e.clientY - drag.y
+      if (!drag.moved && Math.hypot(dx, dy) > 5) {
+        drag.moved = true
+        el.stage.classList.add('dragging')
+        el.cam.classList.remove('ease')
+      }
+      if (drag.moved) {
+        S.cam.x = drag.cx + dx
+        S.cam.y = drag.cy + dy
+        S.userCam = true
+        applyCam(false)
+      }
+    })
+    const endDrag = () => {
+      if (drag && drag.moved) { S.suppressClick = true; setTimeout(() => { S.suppressClick = false }, 0) }
+      drag = null
+      el.stage.classList.remove('dragging')
+    }
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
+    el.stage.addEventListener('dblclick', (e) => {
+      if (EMBED || e.target.closest('.rail, .panel, .alert, .zoom, .c-act')) return
+      S.userCam = false
+      fit(true)
+    })
+
+    // parallax + retícula
+    el.stage.addEventListener('pointermove', (e) => {
+      if (REDUCED || EMBED) return
+      const rc = el.stage.getBoundingClientRect()
+      S.tilt.ty = ((e.clientX - rc.left) / rc.width - 0.5) * 7
+      S.tilt.tx = TILT - ((e.clientY - rc.top) / rc.height - 0.5) * 5
+      if (!COARSE && !e.target.closest('.rail, .panel, .alert, .zoom')) {
+        if (!S.reticle.on) { S.reticle.on = true; S.reticle.x = S.reticle.tx = e.clientX; S.reticle.y = S.reticle.ty = e.clientY }
+        el.reticle.classList.add('on')
+      } else el.reticle.classList.remove('on')
+    })
+    el.stage.addEventListener('pointerleave', () => {
+      S.tilt.tx = TILT
+      S.tilt.ty = 0
+      el.reticle.classList.remove('on')
+      S.reticle.on = false
+    })
+
+    window.addEventListener('resize', () => { if (!S.userCam) fit(false); placeZoomBar() })
+    if (mqReduce && mqReduce.addEventListener) mqReduce.addEventListener('change', (e) => { REDUCED = e.matches; applyReduced() })
+
+    if (!EMBED) doc.addEventListener('keydown', onKey)
+  }
+
+  function onKey(e) {
+    const t = e.target
+    if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) {
+      if (e.key === 'Escape') t.blur()
+      return
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return
+    if (S.helpOpen) {
+      if (e.key === 'Escape' || e.key === '?') { e.preventDefault(); closeHelp() }
+      return
+    }
+    const k = e.key
+    if (k === ' ' || k === 'Spacebar') { e.preventDefault(); sim.toggle(); return }
+    if (k === '+' || k === '=') { e.preventDefault(); stepSpeed(1); return }
+    if (k === '-' || k === '_' || k === '−') { e.preventDefault(); stepSpeed(-1); return }
+    if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown') {
+      if (t && t.closest && t.closest('.term-body')) return
+      e.preventDefault()
+      navigate(k)
+      return
+    }
+    if (k === 'Escape') { deselect(); return }
+    if (k === '?') { e.preventDefault(); openHelp(); return }
+    const low = k.toLowerCase()
+    if (low === 'a') { approveSelected(true); return }
+    if (low === 'n') { approveSelected(false); return }
+    if (low === 'c') { copySelected(); return }
+    if (low === 't') { toggleTheme(); return }
+    if (low === 'f') { S.userCam = false; fit(true); return }
+    if (/^[0-9]$/.test(k)) selectDigit(Number(k))
+  }
+
+  function applyReduced() {
+    try { if (REDUCED) el.defs.pauseAnimations(); else el.defs.unpauseAnimations() } catch (err) { /* sem SMIL */ }
+    if (REDUCED) {
+      el.plane.style.transform = `rotateX(${TILT}deg)`
+      S.tilt.x = S.tilt.tx = TILT
+      S.tilt.y = S.tilt.ty = 0
+      S.tkOffset = 0
+      el.track.style.transform = ''
+      el.reticle.classList.remove('on')
+    }
+  }
+
+  /* ============================================================ início */
+  buildChrome()
+  setTheme(root.dataset.theme === 'light' ? 'light' : 'dark')
+  buildCrystal()
+  buildSession()
+  wire()
+  syncPause()
+  syncSpeed()
+  syncReadouts()
+  syncCounts()
+  applyReduced()
+  if (!EMBED && innerHeight < 760) {
+    el.notes.dataset.open = 'false'
+    el.notesToggle.setAttribute('aria-expanded', 'false')
+  }
+  if (!EMBED && innerWidth > 1100) select('orchestrator')
+  fit(false)
+  placeZoomBar()
+  sim.start()
+})()
+</script>
+</body>
+</html>

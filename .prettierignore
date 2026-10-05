@@ -9,3 +9,5 @@ package-lock.json
 *.yaml
 .github
 assets
+docs/concepts
+docs/prototypes

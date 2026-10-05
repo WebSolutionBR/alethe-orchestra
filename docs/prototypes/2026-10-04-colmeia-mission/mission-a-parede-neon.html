@@ -1,0 +1,2977 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control A · Parede de terminais neon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&family=Readex+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ Tokens · escuro (padrão) ============ */
+:root {
+  color-scheme: dark;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.45, 0, 0.55, 1);
+  --r: 14px;
+  --f-title: 'Readex Pro', 'Segoe UI', system-ui, sans-serif;
+  --f-ui: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  --f-sym: 'Segoe UI Symbol', 'Cascadia Mono', 'JetBrains Mono', sans-serif;
+
+  --bg: #121212;
+  --glass: rgba(27, 26, 35, 0.58);
+  --glass-2: rgba(34, 32, 44, 0.66);
+  --glass-hi: rgba(255, 255, 255, 0.07);
+  --term: rgba(5, 5, 9, 0.5);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.18);
+  --shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --chip: rgba(255, 255, 255, 0.05);
+
+  --fg: #F4F4F7;
+  --fg-2: #CFCFD9;
+  --fg-3: #A3A3B3;
+
+  --neon-purple: #5600FF;
+  --neon-cyan: #00F0FF;
+  --neon-pink: #FF6AFF;
+  --neon-lime: #8FFF00;
+
+  --tool: #00F0FF;
+  --ok: #8FFF00;
+  --err: #FF5CE6;
+  --think: #A78BFA;
+  --note: #A9A9B8;
+  --prompt: #FFFFFF;
+
+  --amber: #FFB020;
+  --amber-txt: #FFC861;
+  --amber-bg: rgba(255, 176, 32, 0.12);
+  --err-bg: rgba(255, 92, 230, 0.10);
+  --ok-bg: rgba(143, 255, 0, 0.09);
+  --obs: #8b6cef;
+  --obs-txt: #B6A3FF;
+  --obs-bg: rgba(139, 108, 239, 0.15);
+  --pink: #FF6AFF;
+  --pink-txt: #FF8CFF;
+  --pink-bg: rgba(255, 106, 255, 0.07);
+  --orch: #FFFFFF;
+  --you: #FFFFFF;
+
+  /* identidade dos workers: --hN texto, --bN barra/brilho */
+  --h1: #00F0FF; --b1: #00F0FF;
+  --h2: #9BFF2E; --b2: #9BFF2E;
+  --h3: #6AA8FF; --b3: #4D8DFF;
+  --h4: #2EFFC4; --b4: #2EFFC4;
+  --h5: #C79BFF; --b5: #A56BFF;
+  --h6: #FFE45C; --b6: #FFE45C;
+  --h7: #FF9466; --b7: #FF7A45;
+  --hc: #FF8CFF; --bc: #FF6AFF;
+
+  --st-starting: #D9D9D9;
+  --st-thinking: #B9A2FF;
+  --st-reading: #00F0FF;
+  --st-editing: #9BFF2E;
+  --st-testing: #7DB4FF;
+  --st-blocked: #FFC861;
+  --st-waiting: #C2C2CF;
+  --st-done: #8FFF00;
+  --st-exited: #FF5CE6;
+  --st-idle: #A9A9B8;
+
+  --btn-ok-bg: #8FFF00;
+  --btn-ok-fg: #0A0A0A;
+  --focus: #00F0FF;
+  --ring-track: rgba(255, 255, 255, 0.09);
+  --grain-op: 0.08;
+  --blob-1: #5600FF;
+  --blob-2: #00FFFF;
+  --blob-3: #FF6AFF;
+  --blob-4: #8FFF00;
+  --blob-op: 0.3;
+  --tint: 10%;
+  --scroll: rgba(255, 255, 255, 0.14);
+}
+
+/* ============ Tokens · claro "laboratório" ============ */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #E8EAEF;
+  --glass: rgba(255, 255, 255, 0.64);
+  --glass-2: rgba(255, 255, 255, 0.8);
+  --glass-hi: rgba(255, 255, 255, 0.95);
+  --term: rgba(251, 251, 253, 0.86);
+  --line: rgba(20, 20, 46, 0.11);
+  --line-2: rgba(20, 20, 46, 0.22);
+  --shadow: 0 16px 36px -22px rgba(28, 28, 72, 0.4), 0 1px 3px rgba(28, 28, 72, 0.1);
+  --chip: rgba(20, 20, 46, 0.045);
+
+  --fg: #121218;
+  --fg-2: #33333F;
+  --fg-3: #535362;
+
+  --tool: #00636E;
+  --ok: #2B6400;
+  --err: #9C0080;
+  --think: #5B2FD6;
+  --note: #535362;
+  --prompt: #121218;
+
+  --amber: #D98500;
+  --amber-txt: #6E4000;
+  --amber-bg: rgba(230, 150, 0, 0.15);
+  --err-bg: rgba(168, 0, 138, 0.07);
+  --ok-bg: rgba(43, 100, 0, 0.08);
+  --obs: #6c4ee0;
+  --obs-txt: #5A3AD2;
+  --obs-bg: rgba(108, 78, 224, 0.1);
+  --pink: #C21BA6;
+  --pink-txt: #9C0F86;
+  --pink-bg: rgba(194, 27, 166, 0.05);
+  --orch: #121218;
+  --you: #121218;
+
+  --h1: #00636E; --b1: #00A9B8;
+  --h2: #2B6400; --b2: #4C9A00;
+  --h3: #1A4DB8; --b3: #2F6BFF;
+  --h4: #006045; --b4: #00A374;
+  --h5: #6B2BD0; --b5: #8A4DFF;
+  --h6: #6B5700; --b6: #B39200;
+  --h7: #963A0F; --b7: #E0561C;
+  --hc: #9C0F86; --bc: #D61FB8;
+
+  --st-starting: #3D3D4A;
+  --st-thinking: #5B2FD6;
+  --st-reading: #00636E;
+  --st-editing: #2B6400;
+  --st-testing: #1A4DB8;
+  --st-blocked: #6E4000;
+  --st-waiting: #45454F;
+  --st-done: #2B6400;
+  --st-exited: #9C0080;
+  --st-idle: #535362;
+
+  --btn-ok-bg: #2B6400;
+  --btn-ok-fg: #FFFFFF;
+  --focus: #5600FF;
+  --ring-track: rgba(20, 20, 46, 0.1);
+  --grain-op: 0.06;
+  --blob-1: #7B3BFF;
+  --blob-2: #00D5E0;
+  --blob-3: #FF7AF0;
+  --blob-4: #9BE000;
+  --blob-op: 0.36;
+  --tint: 6%;
+  --scroll: rgba(20, 20, 46, 0.18);
+}
+
+/* ============ Base ============ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 14px/1.4 var(--f-ui);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+::selection { background: color-mix(in srgb, var(--neon-purple) 55%, transparent); color: #fff; }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll) transparent; }
+kbd {
+  font: 600 10.5px/1 var(--f-mono);
+  padding: 2px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--chip);
+  color: var(--fg-2);
+}
+
+/* ============ Fundo: manchas neon + granulado ============ */
+.aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: var(--blob-op);
+  will-change: transform;
+}
+.blob.b1 { width: 46vw; height: 40vw; left: -12vw; top: -14vw; background: var(--blob-1); animation: drift1 46s var(--ease-io) infinite alternate; }
+.blob.b2 { width: 34vw; height: 30vw; right: -10vw; top: 18vh; background: var(--blob-2); opacity: calc(var(--blob-op) * 0.42); animation: drift2 58s var(--ease-io) infinite alternate; }
+.blob.b3 { width: 40vw; height: 32vw; left: 30vw; bottom: -20vw; background: var(--blob-3); opacity: calc(var(--blob-op) * 0.55); animation: drift3 52s var(--ease-io) infinite alternate; }
+.blob.b4 { width: 18vw; height: 16vw; left: 8vw; bottom: 6vh; background: var(--blob-4); opacity: calc(var(--blob-op) * 0.22); animation: drift2 64s var(--ease-io) infinite alternate-reverse; }
+@keyframes drift1 { to { transform: translate3d(8vw, 6vh, 0) scale(1.12); } }
+@keyframes drift2 { to { transform: translate3d(-7vw, 10vh, 0) scale(0.9); } }
+@keyframes drift3 { to { transform: translate3d(-10vw, -8vh, 0) scale(1.15); } }
+.grain {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: var(--grain-op);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+[data-theme="light"] .grain {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.1  0 0 0 0 0.2  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ============ Vidro ============ */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
+}
+
+/* ============ Esqueleto ============ */
+.app {
+  position: relative; z-index: 1;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; min-height: 0; }
+
+/* ============ Cabeçalho ============ */
+.top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "ring title stats ctrl" "ring counts counts counts";
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 8px;
+  padding: 12px 16px 12px 14px;
+  position: relative;
+}
+.top::before {
+  content: ""; position: absolute; left: 18px; right: 18px; top: -1px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan) 45%, var(--neon-pink) 75%, var(--neon-lime));
+  opacity: 0.9;
+  box-shadow: 0 0 14px rgba(86, 0, 255, 0.55);
+}
+.ring { grid-area: ring; position: relative; width: 78px; height: 78px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.ring .track { fill: none; stroke: var(--ring-track); stroke-width: 7; }
+.ring .val { fill: none; stroke: url(#ringGrad); stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.55)); transition: stroke-dashoffset 0.6s var(--ease); }
+[data-theme="light"] .ring .val { filter: none; stroke: url(#ringGradL); }
+.ring .lbl { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.ring .lbl b { font: 700 18px/1 var(--f-title); letter-spacing: -0.04em; }
+.ring .lbl span { font-size: 10.5px; color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+
+.title { grid-area: title; min-width: 0; }
+.title-row { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.title h1 { margin: 0; font: 700 21px/1.1 var(--f-title); letter-spacing: -0.02em; white-space: nowrap; }
+.title h1 .neon { color: var(--fg); text-shadow: 0 0 18px rgba(0, 240, 255, 0.35); }
+[data-theme="light"] .title h1 .neon { text-shadow: none; }
+.title .sess { font-size: 12px; color: var(--fg-3); white-space: nowrap; }
+.paused-pill { display: none; font: 600 11px/1 var(--f-ui); color: var(--amber-txt); border: 1px solid var(--amber); border-radius: 999px; padding: 3px 8px; background: var(--amber-bg); }
+html[data-paused] .paused-pill { display: inline-block; }
+.goal { margin-top: 5px; font-size: 13px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal b { color: var(--fg-3); font-weight: 500; margin-right: 6px; }
+
+.stats { grid-area: stats; display: flex; gap: 6px; }
+.stat { min-width: 78px; padding: 6px 10px; border-radius: 10px; background: var(--chip); border: 1px solid var(--line); }
+.stat dt { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+.stat dd { margin: 2px 0 0; font: 600 15px/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.stats dl, .stats { margin: 0; }
+
+.ctrl { grid-area: ctrl; display: flex; align-items: center; gap: 8px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--chip); border: 1px solid var(--line); }
+.seg button {
+  border: 0; background: transparent; color: var(--fg-2);
+  font: 600 12px/1 var(--f-mono); padding: 7px 8px; border-radius: 8px;
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+.seg button:hover { color: var(--fg); background: var(--chip); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); box-shadow: 0 0 16px rgba(0, 240, 255, 0.25); }
+.ibtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--line-2); background: var(--chip); color: var(--fg);
+  font: 600 13px/1 var(--f-ui);
+  transition: transform 0.4s var(--ease), background-color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.ibtn:hover { border-color: var(--fg-3); transform: translateY(-1px); }
+.ibtn:active { transform: translateY(0) scale(0.97); }
+.ibtn .g { font-family: var(--f-sym); font-size: 13px; }
+.ibtn.sq { width: 34px; padding: 0; justify-content: center; }
+.ibtn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+.counts { grid-area: counts; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.cnt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 8px; border-radius: 999px;
+  font-size: 12px; color: var(--fg-3);
+  border: 1px solid var(--line); background: var(--chip);
+  transition: border-color 0.4s var(--ease), background-color 0.4s var(--ease), color 0.4s var(--ease);
+}
+.cnt i { font-style: normal; font-family: var(--f-sym); width: 14px; text-align: center; }
+.cnt b { font: 700 12.5px/1 var(--f-mono); color: var(--fg-2); }
+.cnt.on { color: var(--fg); border-color: color-mix(in srgb, var(--sc) 55%, transparent); background: color-mix(in srgb, var(--sc) 10%, transparent); }
+.cnt.on i, .cnt.on b { color: var(--sc); }
+.cnt.on[data-state="blocked"] { box-shadow: 0 0 0 1px var(--amber), 0 0 18px rgba(255, 176, 32, 0.35); }
+.cnt-sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+
+/* ============ Parede de terminais ============ */
+.wall { min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; padding: 8px 10px 18px 6px; margin: -8px -10px 0 -6px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-auto-rows: 4px;
+  column-gap: 14px;
+  grid-auto-flow: row dense;
+  align-items: start;
+}
+.card.orch { grid-column: span 2; }
+.grid[data-cols="1"] .card.orch { grid-column: 1 / -1; }
+
+.card {
+  position: relative;
+  align-self: start;
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 13px 14px 11px;
+  border-radius: var(--r);
+  background: radial-gradient(130% 70% at 50% 0%, color-mix(in srgb, var(--cb) var(--tint), transparent), transparent 62%), var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
+  cursor: pointer;
+  transition: transform 0.5s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease), background-color 0.4s var(--ease);
+}
+.card.enter { animation: card-in 0.75s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+html[data-boot] .grid { opacity: 0; }
+@keyframes card-in { from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(8px); } }
+.card::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: -1px; height: 2px; border-radius: 2px;
+  background: var(--cb);
+  box-shadow: 0 0 10px var(--cb), 0 0 28px color-mix(in srgb, var(--cb) 45%, transparent);
+  transition: opacity 0.4s var(--ease);
+}
+[data-theme="light"] .card::before { box-shadow: 0 0 8px color-mix(in srgb, var(--cb) 45%, transparent); }
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-2);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow), 0 16px 44px -18px color-mix(in srgb, var(--cb) 55%, transparent);
+}
+.card:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: var(--r); }
+.card[aria-current="true"] {
+  border-color: color-mix(in srgb, var(--cb) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow), 0 0 0 1px var(--cb), 0 0 36px -8px color-mix(in srgb, var(--cb) 70%, transparent);
+}
+.card .glow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0; }
+.card.is-target .glow { box-shadow: 0 0 0 2px var(--cb), 0 0 34px 4px color-mix(in srgb, var(--cb) 55%, transparent); animation: target 1.3s var(--ease) 2; }
+@keyframes target { 0%, 100% { opacity: 0; } 40% { opacity: 1; } }
+
+/* cabeçalho do card */
+.c-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.c-id { flex: none; font: 700 14px/1 var(--f-mono); color: var(--c); letter-spacing: -0.01em; text-shadow: 0 0 16px color-mix(in srgb, var(--cb) 60%, transparent); }
+[data-theme="light"] .c-id { text-shadow: none; }
+.c-badge {
+  flex: none; font: 600 10.5px/1 var(--f-ui); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 6px; border-radius: 6px; color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--cb) 50%, transparent);
+  background: color-mix(in srgb, var(--cb) 9%, transparent);
+}
+.c-area { font-size: 12.5px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sp { flex: 1 1 auto; min-width: 0; }
+.c-fold {
+  flex: none; display: none; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line-2);
+  background: var(--chip); color: var(--fg-2); font: 13px/1 var(--f-sym);
+}
+.c-fold:hover { color: var(--fg); border-color: var(--fg-3); }
+.card[data-state="done"]:not(.is-compact) .c-fold { display: inline-grid; place-items: center; }
+.c-task { margin: 0; font-size: 12.5px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* chip de estado: ícone + rótulo + microanimação */
+.st {
+  position: relative; flex: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 8px; border-radius: 999px;
+  font: 600 11.5px/1 var(--f-ui); letter-spacing: 0.01em;
+  color: var(--sc);
+  background: color-mix(in srgb, var(--sc) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sc) 42%, transparent);
+  white-space: nowrap;
+}
+.st .ico { position: relative; display: inline-grid; place-items: center; width: 14px; height: 14px; font: 13px/1 var(--f-sym); }
+[data-state="starting"] { --sc: var(--st-starting); }
+[data-state="thinking"] { --sc: var(--st-thinking); }
+[data-state="reading"] { --sc: var(--st-reading); }
+[data-state="editing"] { --sc: var(--st-editing); }
+[data-state="testing"] { --sc: var(--st-testing); }
+[data-state="blocked"] { --sc: var(--st-blocked); }
+[data-state="waiting"] { --sc: var(--st-waiting); }
+[data-state="done"] { --sc: var(--st-done); }
+[data-state="exited"] { --sc: var(--st-exited); }
+[data-state="idle"] { --sc: var(--st-idle); }
+.st[data-motion="spin"] .ico { animation: spin 1.2s steps(8) infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.st[data-motion="breathe"] .ico { animation: breathe 2.2s var(--ease-io) infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1.12) rotate(0deg); opacity: 1; } 50% { transform: scale(0.74) rotate(45deg); opacity: 0.5; } }
+.st[data-motion="scan"] .ico::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%;
+  border: 1.5px solid transparent; border-top-color: currentColor; border-right-color: color-mix(in srgb, currentColor 35%, transparent);
+  animation: sweep 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes sweep { to { transform: rotate(360deg); } }
+.st[data-motion="type"] .ico { animation: scribble 0.9s var(--ease-io) infinite; }
+@keyframes scribble { 0%, 100% { transform: translate(-1px, 1px) rotate(-10deg); } 50% { transform: translate(2px, -1px) rotate(8deg); } }
+.st[data-motion="type"] .lbl::after { content: "▍"; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.st[data-motion="tick"] .ico { animation: tick 0.9s steps(3) infinite; }
+@keyframes tick { from { transform: translateX(-2px); } to { transform: translateX(4px); } }
+.st[data-motion="tick"] .lbl::after { content: " ···"; letter-spacing: 1px; }
+.st[data-motion="alert"]::before {
+  content: ""; position: absolute; inset: -3px; border-radius: inherit;
+  border: 2px solid var(--amber); animation: alert 1.4s var(--ease) infinite;
+}
+@keyframes alert { from { transform: scale(0.96); opacity: 0.95; } to { transform: scale(1.22, 1.5); opacity: 0; } }
+
+/* progresso */
+.c-prog { display: flex; align-items: center; gap: 10px; }
+.bar { position: relative; flex: 1; height: 6px; border-radius: 99px; background: var(--ring-track); overflow: hidden; }
+.bar i {
+  position: absolute; inset: 0; border-radius: inherit; transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cb) 35%, transparent), var(--cb));
+  box-shadow: 0 0 12px var(--cb);
+  transition: transform 0.6s var(--ease);
+}
+.pct { min-width: 40px; text-align: right; font: 700 12.5px/1 var(--f-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* terminal ao vivo do card */
+.term {
+  position: relative;
+  height: calc(10 * 17px + 18px);
+  border-radius: 10px;
+  background: var(--term);
+  border: 1px solid var(--line);
+  font: 400 11.75px/17px var(--f-mono);
+}
+.term .vp {
+  position: absolute; inset: 9px 10px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 34px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 34px);
+}
+.term .lines { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
+.ln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg-2); min-height: 17px; }
+.ln.new { animation: ln-in 0.55s var(--ease) both; }
+@keyframes ln-in { from { opacity: 0; transform: translateY(9px); filter: blur(4px); } }
+.ln .bul { margin-right: 1px; }
+.k-tool { color: var(--tool); }
+.k-tool .tn { font-weight: 700; }
+.k-tool .ta { color: var(--fg-2); }
+.k-ok { color: var(--ok); }
+.k-error { color: var(--err); font-weight: 500; }
+.k-think { color: var(--think); font-style: italic; }
+.k-note { color: var(--note); }
+.k-prompt { color: var(--prompt); font-weight: 700; }
+.k-prompt .bul { color: var(--neon-pink); }
+[data-theme="light"] .k-prompt .bul { color: var(--pink); }
+.ln.cur { color: var(--c); display: none; }
+.ln.cur i { display: inline-block; width: 7px; height: 13px; margin-left: 6px; vertical-align: -2px; background: var(--cb); box-shadow: 0 0 8px var(--cb); animation: blink 1.05s steps(1) infinite; }
+.card[data-busy] .ln.cur { display: block; }
+
+/* rodapé do card */
+.c-foot { display: flex; align-items: center; gap: 10px; min-width: 0; font: 500 11.5px/1.2 var(--f-mono); color: var(--fg-3); }
+.f-files { display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+.f-files .g { font-family: var(--f-sym); }
+.f-files .fl { overflow: hidden; text-overflow: ellipsis; color: var(--fg-2); }
+.diff { flex: none; display: inline-flex; gap: 6px; }
+.diff .plus { color: var(--ok); }
+.diff .minus { color: var(--err); }
+.tok, .time { flex: none; }
+.time::before { content: "⏱ "; font-family: var(--f-sym); }
+
+/* ===== bloqueado: borda listrada âmbar + faixa de permissão ===== */
+.card[data-state="blocked"] { border-color: transparent; }
+.card[data-state="blocked"]::after {
+  content: ""; position: absolute; inset: -1px; border-radius: 15px; padding: 3px; pointer-events: none;
+  background: repeating-linear-gradient(-45deg, var(--amber) 0 7px, transparent 7px 14px);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.card[data-state="blocked"] .glow { box-shadow: 0 0 0 1px var(--amber), 0 0 34px 2px rgba(255, 176, 32, 0.42); animation: glow 1.6s var(--ease-io) infinite; }
+@keyframes glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.perm {
+  position: relative; overflow: hidden;
+  display: grid; gap: 8px;
+  padding: 10px 11px 12px; border-radius: 10px;
+  background: var(--amber-bg);
+  border: 1px solid color-mix(in srgb, var(--amber) 60%, transparent);
+}
+.perm-t { font: 600 13px/1.35 var(--f-ui); color: var(--amber-txt); }
+.perm-t .g { font-family: var(--f-sym); margin-right: 4px; }
+.perm-t code { font: 600 12px/1.3 var(--f-mono); color: var(--fg); background: var(--chip); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.perm-d { font-size: 12px; color: var(--fg-2); }
+.perm-a { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.perm-auto { margin-left: auto; font: 500 11.5px/1 var(--f-mono); color: var(--fg-2); }
+.perm-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--amber); transform-origin: left center; transform: scaleX(var(--left, 1)); transition: transform 0.3s ease-out; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 31px; padding: 0 12px; border-radius: 9px;
+  font: 700 12.5px/1 var(--f-ui);
+  border: 1px solid transparent;
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), background-color 0.3s var(--ease);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: scale(0.96); }
+.btn .g { font-family: var(--f-sym); }
+.btn.ok { background: var(--btn-ok-bg); color: var(--btn-ok-fg); box-shadow: 0 0 20px -2px color-mix(in srgb, var(--btn-ok-bg) 55%, transparent); }
+.btn.ok kbd { color: var(--btn-ok-fg); border-color: color-mix(in srgb, var(--btn-ok-fg) 35%, transparent); background: transparent; }
+.btn.no { background: var(--err-bg); color: var(--err); border-color: color-mix(in srgb, var(--err) 60%, transparent); }
+.btn.no kbd { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, transparent); background: transparent; }
+.btn.ghost { background: var(--chip); color: var(--fg); border-color: var(--line-2); }
+
+/* ===== aguardando: tracejado + chip de dependência ===== */
+.card[data-state="waiting"] {
+  background: color-mix(in srgb, var(--glass) 55%, transparent);
+  border: 1.5px dashed var(--line-2);
+  box-shadow: none;
+}
+.card[data-state="waiting"]::before { background: repeating-linear-gradient(90deg, var(--cb) 0 10px, transparent 10px 18px); box-shadow: none; opacity: 0.85; }
+.card[data-state="waiting"] .term { background-image: repeating-linear-gradient(-45deg, var(--chip) 0 6px, transparent 6px 13px); }
+.card[data-state="waiting"] .term::after {
+  content: "⧗"; position: absolute; right: 16px; top: 10px;
+  font: 54px/1 var(--f-sym); color: var(--line-2);
+}
+.card[data-state="waiting"] .c-prog, .card[data-state="waiting"] .c-foot { opacity: 0.6; }
+.wait {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 8px 10px; border-radius: 10px;
+  border: 1px dashed var(--line-2); background: var(--chip);
+  font-size: 12.5px; color: var(--fg-2);
+}
+.wait .hg { font: 16px/1 var(--f-sym); color: var(--st-waiting); display: inline-block; animation: flip 4s var(--ease) infinite; }
+@keyframes flip { 0%, 70% { transform: rotate(0deg); } 85%, 100% { transform: rotate(180deg); } }
+.dep {
+  --dc: var(--fg-3);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--dcb, var(--dc)) 60%, transparent);
+  background: color-mix(in srgb, var(--dcb, var(--dc)) 10%, transparent);
+  color: var(--fg); font: 600 12px/1 var(--f-ui);
+  transition: background-color 0.3s var(--ease), transform 0.4s var(--ease);
+}
+.dep b { font-family: var(--f-mono); color: var(--dc); }
+.dep .pc { font: 500 11.5px/1 var(--f-mono); color: var(--fg-2); }
+.dep:hover { background: color-mix(in srgb, var(--dcb, var(--dc)) 20%, transparent); transform: translateX(2px); }
+.dep .ar { font-family: var(--f-sym); }
+
+/* ===== falhou: apagado, rachado, cauda de erro ===== */
+.card[data-state="exited"] {
+  border-color: color-mix(in srgb, var(--err) 38%, transparent);
+  background: color-mix(in srgb, var(--glass) 70%, transparent);
+}
+.card[data-state="exited"]::before { background: var(--fg-3); box-shadow: none; opacity: 0.45; }
+.card[data-state="exited"]::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M100 6 L82 20 L86 31 L66 44 L70 55 L49 63 L53 74 L31 83 L34 92 L0 100' fill='none' stroke='rgb(255,92,230)' stroke-opacity='0.5' stroke-width='1.6' vector-effect='non-scaling-stroke'/></svg>") center / 100% 100% no-repeat;
+}
+[data-theme="light"] .card[data-state="exited"]::after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M100 6 L82 20 L86 31 L66 44 L70 55 L49 63 L53 74 L31 83 L34 92 L0 100' fill='none' stroke='rgb(168,0,138)' stroke-opacity='0.45' stroke-width='1.6' vector-effect='non-scaling-stroke'/></svg>");
+}
+.card[data-state="exited"] .c-head .c-id, .card[data-state="exited"] .c-area, .card[data-state="exited"] .c-task, .card[data-state="exited"] .c-prog, .card[data-state="exited"] .c-foot { opacity: 0.6; }
+.card[data-state="exited"] .c-id { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--err); text-shadow: none; }
+.card[data-state="exited"] .ln:not(.k-error) { opacity: 0.42; }
+.card[data-state="exited"] .bar i { background: var(--fg-3); box-shadow: none; }
+.card[data-state="exited"] .bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, var(--err) 0 2px, transparent 2px 6px); }
+.fail {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px;
+  padding: 8px 10px; border-radius: 10px;
+  background: var(--err-bg);
+  border: 1px solid color-mix(in srgb, var(--err) 50%, transparent);
+  color: var(--err); font: 600 12.5px/1.3 var(--f-ui);
+}
+.fail .x { font: 15px/1 var(--f-sym); }
+
+/* ===== concluído: recolhe num resumo compacto ===== */
+.c-compact { display: none; }
+.card[data-state="done"] { border-color: color-mix(in srgb, var(--st-done) 26%, var(--line)); }
+.card.is-compact { gap: 0; padding: 12px 14px 11px; }
+.card.is-compact > :not(.c-head):not(.c-compact):not(.glow) { display: none; }
+.card.is-compact .c-head .st { display: none; }
+.card.is-compact .c-compact {
+  display: flex; align-items: center; gap: 8px; margin-top: 9px;
+  font: 500 12px/1.2 var(--f-mono); color: var(--fg-2); min-width: 0;
+}
+.card.enter-c .c-compact { animation: ln-in 0.6s var(--ease) both; }
+.c-compact .ck {
+  flex: none; display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%;
+  background: var(--st-done); color: var(--bg); font: 700 11px/1 var(--f-sym);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--st-done) 55%, transparent);
+}
+.c-compact .done-l { color: var(--st-done); font-weight: 700; font-family: var(--f-ui); font-size: 12.5px; }
+.c-compact .more { margin-left: auto; flex: none; color: var(--fg-3); font-family: var(--f-ui); }
+.c-compact .more .g { font-family: var(--f-sym); }
+.c-compact .cs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* ===== criativo: rosa, ideias como post-its em cascata ===== */
+.card[data-role="creative"] {
+  background: linear-gradient(165deg, var(--pink-bg), transparent 55%), var(--glass);
+  border-color: color-mix(in srgb, var(--bc) 30%, var(--line));
+}
+.card[data-role="creative"] .term { height: calc(5 * 17px + 18px); }
+.c-ideas { list-style: none; margin: 0; padding: 2px 0 0; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 7px; min-height: 104px; }
+.c-ideas:empty::before { content: "✦ esperando a primeira ideia…"; font-size: 12px; color: var(--fg-3); }
+.idea {
+  position: relative; max-width: 100%;
+  padding: 6px 9px 6px 8px;
+  border-radius: 9px 9px 9px 2px;
+  font: 500 12px/1.3 var(--f-ui); color: var(--fg);
+  background: color-mix(in srgb, var(--bc) 13%, var(--glass-2));
+  border: 1px solid color-mix(in srgb, var(--bc) 48%, transparent);
+  box-shadow: 0 8px 18px -12px var(--bc);
+  transform: rotate(var(--rot, 0deg));
+}
+.idea.enter { animation: idea-in 0.8s var(--ease) both; animation-delay: var(--d, 0ms); }
+.idea b { font: 700 11px/1 var(--f-mono); color: var(--hc); margin-right: 5px; }
+@keyframes idea-in { from { opacity: 0; transform: translateY(-12px) rotate(calc(var(--rot, 0deg) * -4)) scale(0.88); filter: blur(5px); } }
+
+/* ===== orquestrador: 2 colunas, terminal + frentes ===== */
+.card.orch {
+  --c: var(--orch); --cb: var(--neon-purple);
+  background: linear-gradient(120deg, rgba(86, 0, 255, 0.13), transparent 42%), var(--glass);
+}
+[data-theme="light"] .card.orch { background: linear-gradient(120deg, rgba(86, 0, 255, 0.07), transparent 42%), var(--glass); }
+.card.orch::before { background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan) 60%, var(--neon-pink)); box-shadow: 0 0 18px rgba(86, 0, 255, 0.7); }
+.card.orch .c-id { font-family: var(--f-title); font-size: 15px; letter-spacing: 0; text-shadow: 0 0 18px rgba(86, 0, 255, 0.9); }
+[data-theme="light"] .card.orch .c-id { text-shadow: none; }
+.orch-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
+.card.orch .term { height: calc(9 * 17px + 18px); }
+.fronts { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fronts h3 { margin: 0 0 4px; display: flex; justify-content: space-between; font: 600 11px/1 var(--f-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-3); }
+.fr {
+  display: grid; grid-template-columns: 8px 92px minmax(0, 1fr) 16px 54px 36px;
+  align-items: center; gap: 7px;
+  width: 100%; padding: 4px 6px; border: 0; border-radius: 7px;
+  background: transparent; text-align: left; font-size: 12px; color: var(--fg-2);
+  transition: background-color 0.3s var(--ease);
+}
+.fr:hover { background: var(--chip); }
+.fr .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cb); box-shadow: 0 0 8px var(--cb); }
+.fr .fid { font: 600 12px/1 var(--f-mono); color: var(--c); white-space: nowrap; }
+.fr .fid .tree { color: var(--fg-3); font-family: var(--f-sym); margin-right: 3px; }
+.fr .far { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fr .far em { font-style: normal; color: var(--fg-3); }
+.fr .fst { font: 13px/1 var(--f-sym); color: var(--sc); text-align: center; }
+.fr .fbar { height: 4px; border-radius: 9px; background: var(--ring-track); overflow: hidden; position: relative; }
+.fr .fbar i { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--p, 0)); background: var(--cb); transition: transform 0.6s var(--ease); }
+.fr .fpct { font: 600 11.5px/1 var(--f-mono); text-align: right; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.fr[data-state="exited"] .fid { text-decoration: line-through; text-decoration-color: var(--err); }
+.fr[data-state="exited"] .dot, .fr[data-state="waiting"] .dot { background: transparent; box-shadow: none; border: 1.5px dashed var(--cb); }
+.fr[data-state="blocked"] { background: var(--amber-bg); }
+.fronts { container-type: inline-size; }
+@container (max-width: 360px) {
+  .fr { grid-template-columns: 8px 96px 16px minmax(0, 1fr) 36px; }
+  .fr .far { display: none; }
+}
+
+/* ============ Bus (coluna de vidro) ============ */
+.bus { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.bus-head { display: flex; align-items: baseline; gap: 8px; padding: 13px 14px 9px; }
+.bus-head h2 { margin: 0; font: 700 15px/1 var(--f-title); letter-spacing: -0.01em; }
+.bus-head .n { margin-left: auto; font: 500 11.5px/1 var(--f-mono); color: var(--fg-3); }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); align-self: center; animation: glow 2s var(--ease-io) infinite; }
+
+/* faixa do escriba Obsidian */
+.scribe {
+  position: relative;
+  margin: 0 10px 9px; width: calc(100% - 20px);
+  display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 3px; align-items: center;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--obs-bg);
+  border: 1px solid color-mix(in srgb, var(--obs) 50%, transparent);
+  text-align: left; color: var(--fg);
+  transition: border-color 0.4s var(--ease), transform 0.4s var(--ease);
+}
+.scribe:hover { border-color: var(--obs); transform: translateY(-1px); }
+.cry { position: relative; grid-row: span 2; width: 42px; height: 42px; display: grid; place-items: center; color: var(--obs); }
+.cry svg { width: 27px; height: 27px; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--obs) 80%, transparent)); }
+.cry .pulse { position: absolute; inset: 3px; border-radius: 50%; border: 2px solid var(--obs); opacity: 0; }
+.scribe.writing .cry .pulse { animation: cry-pulse 1.3s var(--ease) both; }
+.scribe.writing .cry .pulse.p2 { animation-delay: 0.22s; }
+.scribe.writing .cry svg { animation: cry-pop 1.3s var(--ease); }
+@keyframes cry-pulse { from { transform: scale(0.55); opacity: 1; } to { transform: scale(1.95); opacity: 0; } }
+@keyframes cry-pop { 30% { transform: scale(1.18) rotate(-6deg); } }
+.sc-t { display: flex; align-items: baseline; gap: 6px; min-width: 0; font: 600 12.5px/1.2 var(--f-ui); color: var(--obs-txt); }
+.sc-t .st { padding: 2px 7px 2px 5px; font-size: 10.5px; }
+.sc-note { font: 500 11px/1.2 var(--f-mono); color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-n { grid-row: span 2; text-align: right; }
+.sc-n b { display: block; font: 700 22px/1 var(--f-title); color: var(--obs-txt); }
+.sc-n span { font-size: 10.5px; color: var(--fg-3); letter-spacing: 0.05em; }
+.sc-last { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-last time { font-family: var(--f-mono); color: var(--fg-3); margin-right: 6px; }
+.sc-ticks { grid-column: 1 / -1; display: flex; gap: 5px; margin-top: 5px; min-height: 8px; }
+.sc-ticks i { width: 7px; height: 7px; transform: rotate(45deg); border-radius: 1.5px; background: color-mix(in srgb, var(--obs) 55%, transparent); }
+.sc-ticks i.enter { animation: idea-in 0.6s var(--ease) both; }
+.sc-ticks i:last-child { background: var(--obs); box-shadow: 0 0 9px var(--obs); }
+
+/* filtros por agente */
+.filters { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
+.fchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px 4px 7px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--chip);
+  font: 500 11.5px/1 var(--f-ui); color: var(--fg-2);
+  transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+.fchip:hover { color: var(--fg); border-color: var(--line-2); }
+.fchip .d { width: 7px; height: 7px; border-radius: 50%; background: var(--cb, var(--fg-3)); box-shadow: 0 0 7px var(--cb, transparent); }
+.fchip .nm { font-family: var(--f-mono); }
+.fchip .n { font: 600 10.5px/1 var(--f-mono); color: var(--fg-3); }
+.fchip[aria-pressed="true"] { color: var(--fg); border-color: var(--cb, var(--fg-2)); background: color-mix(in srgb, var(--cb, var(--fg)) 15%, transparent); }
+.fchip[aria-pressed="true"] .n { color: var(--fg-2); }
+
+/* mensagens */
+.feed { flex: 1; min-height: 0; overflow-y: auto; padding: 9px 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.feed { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
+.feed-empty { margin: auto; text-align: center; font-size: 12.5px; color: var(--fg-3); }
+.msg {
+  --kc: var(--fg-2);
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 9px;
+  padding: 7px 9px 8px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--chip);
+}
+.msg.new { animation: msg-in 0.55s var(--ease) both; }
+@keyframes msg-in { from { opacity: 0; transform: translateX(16px); filter: blur(4px); } }
+.m-ico { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font: 12.5px/1 var(--f-sym); color: var(--kc); background: color-mix(in srgb, var(--kc) 15%, transparent); }
+.m-head { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 11.5px; color: var(--fg-3); white-space: nowrap; overflow: hidden; }
+.m-head time { font: 500 11px/1 var(--f-mono); }
+.who { font: 600 11.5px/1 var(--f-mono); color: var(--c, var(--fg)); }
+.m-kind { margin-left: auto; padding-left: 6px; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); }
+.m-text { margin: 3px 0 0; font-size: 12.5px; line-height: 1.38; color: var(--fg); overflow-wrap: anywhere; }
+.msg.k-task { --kc: var(--tool); }
+.msg.k-report { --kc: var(--fg-2); }
+.msg.k-block { --kc: var(--amber-txt); border-color: color-mix(in srgb, var(--amber) 60%, transparent); background: var(--amber-bg); }
+.msg.k-answer { --kc: var(--ok); }
+.msg.k-fail { --kc: var(--err); border-color: color-mix(in srgb, var(--err) 50%, transparent); background: var(--err-bg); }
+.msg.k-idea { --kc: var(--hc); border-color: color-mix(in srgb, var(--bc) 40%, transparent); background: var(--pink-bg); }
+.msg.k-scribe { --kc: var(--obs-txt); border-color: color-mix(in srgb, var(--obs) 35%, transparent); background: var(--obs-bg); }
+.msg.k-chat { --kc: var(--h3); }
+.msg.k-user { --kc: var(--fg); border-color: var(--line-2); }
+.newer {
+  position: absolute; left: 50%; bottom: 66px; z-index: 3;
+  transform: translateX(-50%);
+  padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--glass-2); color: var(--fg);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  font: 600 12px/1 var(--f-ui); box-shadow: var(--shadow);
+}
+.newer[hidden] { display: none; }
+.composer { display: flex; align-items: center; gap: 8px; padding: 10px 10px 11px; border-top: 1px solid var(--line); }
+.composer .pr { font: 700 15px/1 var(--f-mono); color: var(--neon-pink); }
+[data-theme="light"] .composer .pr { color: var(--pink); }
+.field {
+  flex: 1; min-width: 0; height: 34px; padding: 0 11px; border-radius: 9px;
+  border: 1px solid var(--line-2); background: var(--term); color: var(--fg); font-size: 13px;
+}
+.field::placeholder { color: var(--fg-3); }
+.field:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+
+/* ============ Terminal em foco ============ */
+.focus { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 3vh 3vw; }
+.focus[hidden], .help[hidden] { display: none; }
+.fz-back { position: absolute; inset: 0; background: rgba(5, 5, 9, 0.58); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+html[data-live] .fz-back { animation: fade 0.45s var(--ease) both; }
+[data-theme="light"] .fz-back { background: rgba(225, 228, 236, 0.62); }
+@keyframes fade { from { opacity: 0; } }
+.fz-win {
+  position: relative;
+  width: min(1120px, 94vw); height: min(780px, 92vh);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--glass-2);
+  transform-origin: top left;
+}
+.fz-win::before {
+  content: ""; position: absolute; left: 14px; right: 14px; top: -1px; height: 2px; border-radius: 2px; z-index: 2;
+  background: var(--cb); box-shadow: 0 0 14px var(--cb), 0 0 34px color-mix(in srgb, var(--cb) 50%, transparent);
+}
+.fz-win.max { width: 98vw; height: 96vh; }
+.fz-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+.lights { display: flex; gap: 7px; margin-right: 4px; }
+.tl { width: 13px; height: 13px; padding: 0; border-radius: 50%; border: 0; display: grid; place-items: center; font: 700 9px/1 var(--f-sym); color: transparent; }
+.tl.r { background: #FF5F57; }
+.tl.y { background: #FEBC2E; }
+.tl.g { background: #28C840; }
+.lights:hover .tl, .tl:focus-visible { color: rgba(0, 0, 0, 0.65); }
+.fz-title { margin: 0; display: flex; align-items: baseline; gap: 10px; min-width: 0; font: 700 17px/1.1 var(--f-title); }
+.fz-title .c-id { font-size: 16px; }
+.fz-title .c-area { font: 400 13px/1 var(--f-ui); }
+.fz-nav { display: inline-flex; gap: 4px; margin-left: auto; }
+.fz-meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 22px; padding: 12px 16px 12px; border-bottom: 1px solid var(--line); }
+.fz-task { margin: 0; font-size: 13.5px; color: var(--fg); }
+.fz-task b { color: var(--fg-3); font-weight: 500; margin-right: 6px; }
+.fz-files { display: flex; flex-wrap: wrap; gap: 5px; font: 500 11.5px/1 var(--f-mono); }
+.fz-files span { padding: 4px 7px; border-radius: 6px; border: 1px solid var(--line); background: var(--chip); color: var(--fg-2); }
+.fz-files span.t { color: var(--fg); border-color: color-mix(in srgb, var(--cb) 45%, transparent); }
+.fz-files span.t::before { content: "✎ "; font-family: var(--f-sym); color: var(--c); }
+.fz-nums { display: flex; gap: 6px; margin: 0; grid-column: 2; grid-row: 1 / span 3; align-self: start; }
+.fz-nums .stat { min-width: 74px; }
+.fz-prog { display: flex; align-items: center; gap: 10px; }
+.fz-slot:empty { display: none; }
+.fz-slot { padding: 10px 16px 0; }
+.fz-term-wrap { position: relative; flex: 1; min-height: 0; margin: 10px 16px 0; border-radius: 12px; background: var(--term); border: 1px solid var(--line); overflow: hidden; }
+.fz-term { position: absolute; inset: 0; overflow-y: auto; padding: 12px 14px 16px; font: 400 13px/20px var(--f-mono); }
+.fz-term .ln { white-space: pre-wrap; overflow: visible; text-overflow: clip; display: grid; grid-template-columns: 50px minmax(0, 1fr); min-height: 20px; }
+.fz-term .ln time { color: var(--fg-3); font-size: 11px; font-style: normal; font-weight: 400; }
+.fz-newer { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); }
+.fz-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px 14px; }
+.fz-hint { font-size: 11.5px; color: var(--fg-3); white-space: nowrap; }
+
+/* ============ Ajuda ============ */
+.help { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; }
+.help-win { position: relative; width: min(560px, 94vw); padding: 18px 20px 16px; background: var(--glass-2); }
+html[data-live] .help-win { animation: pop 0.5s var(--ease) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.97); filter: blur(6px); } }
+.help-win h2 { margin: 0 0 12px; font: 700 17px/1 var(--f-title); }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 0; font-size: 13px; color: var(--fg-2); }
+.keys dt { text-align: right; white-space: nowrap; }
+.keys dd { margin: 0; }
+.help-win .close { position: absolute; top: 12px; right: 12px; }
+
+/* ============ Toast e anúncios ============ */
+.toast {
+  position: fixed; left: 50%; bottom: 26px; z-index: 80;
+  transform: translate(-50%, 18px); opacity: 0; pointer-events: none;
+  padding: 10px 16px; border-radius: 999px;
+  background: var(--glass-2); border: 1px solid var(--line-2); color: var(--fg);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  box-shadow: var(--shadow); font: 600 13px/1 var(--f-ui);
+  transition: transform 0.5s var(--ease), opacity 0.4s var(--ease);
+}
+.toast.on { transform: translate(-50%, 0); opacity: 1; }
+
+/* ============ Rodapé: notas do protótipo ============ */
+.notes { padding: 10px 16px 11px; }
+.notes-head { display: flex; align-items: center; gap: 10px; }
+.notes-head h2 { margin: 0; font: 600 11.5px/1 var(--f-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-3); }
+.notes-head .owner { font-size: 12px; color: var(--fg-2); }
+.notes-head .ibtn { margin-left: auto; height: 28px; font-size: 12px; }
+.notes-body { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 9px; }
+.notes[data-open="false"] .notes-body { display: none; }
+.notes h3 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font: 700 13px/1.2 var(--f-title); }
+.notes h3 i { width: 8px; height: 8px; border-radius: 50%; }
+.notes .yes h3 i { background: var(--neon-lime); box-shadow: 0 0 10px var(--neon-lime); }
+.notes .no h3 i { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+.notes ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 18px; }
+.notes li { break-inside: avoid; position: relative; padding-left: 13px; margin-bottom: 4px; font-size: 12px; line-height: 1.38; color: var(--fg-2); }
+.notes li::before { content: "›"; position: absolute; left: 0; color: var(--fg-3); }
+.notes code { font: 500 11px/1 var(--f-mono); color: var(--fg); }
+
+/* ============ Pausa, movimento reduzido, embed, telas menores ============ */
+/* sem quadros rodando (miniatura parada, headless): nada de transição presa no meio */
+html:not([data-live]) *, html:not([data-live]) *::before, html:not([data-live]) *::after { transition: none !important; }
+html[data-paused] .st .ico, html[data-paused] .st::before, html[data-paused] .st .ico::after, html[data-paused] .st .lbl::after,
+html[data-paused] .ln.cur i, html[data-paused] .glow, html[data-paused] .blob, html[data-paused] .wait .hg, html[data-paused] .live-dot {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .card[data-state="blocked"] .glow { opacity: 0.85; }
+  .card.is-target .glow { opacity: 1; }
+  .ln.cur i { opacity: 1; }
+}
+html[data-reduced] *, html[data-reduced] *::before, html[data-reduced] *::after { animation: none !important; transition: none !important; }
+html[data-reduced] .card[data-state="blocked"] .glow { opacity: 0.85; }
+html[data-reduced] .card.is-target .glow { opacity: 1; }
+
+/* embed (?embed=1): miniatura da parede inteira, sem bus nem rodapé */
+html[data-embed] body { zoom: 0.66; }
+html[data-embed] .app { height: calc(100vh / 0.66); padding: 12px; gap: 12px; grid-template-rows: auto minmax(0, 1fr); }
+html[data-embed] .main { grid-template-columns: minmax(0, 1fr); }
+html[data-embed] .bus, html[data-embed] .notes, html[data-embed] .ctrl, html[data-embed] .stats { display: none; }
+html[data-embed] .top { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ring title" "ring counts"; padding: 10px 14px; }
+html[data-embed] .grid { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+html[data-embed] .wall { overflow: hidden; }
+
+@media (max-width: 1180px) {
+  html:not([data-embed]) .main { grid-template-columns: minmax(0, 1fr) 310px; }
+  html:not([data-embed]) .top { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "ring title ctrl" "ring counts counts" "stats stats stats"; }
+  html:not([data-embed]) .stats { flex-wrap: wrap; }
+}
+@media (max-width: 860px) {
+  html:not([data-embed]) body { overflow: auto; }
+  html:not([data-embed]) .app { height: auto; min-height: 100vh; }
+  html:not([data-embed]) .main { grid-template-columns: minmax(0, 1fr); }
+  html:not([data-embed]) .wall { overflow: visible; margin: 0; padding: 4px 0 8px; }
+  html:not([data-embed]) .bus { height: 520px; }
+  html:not([data-embed]) .top { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ring title" "ctrl ctrl" "counts counts" "stats stats"; }
+  html:not([data-embed]) .ctrl { flex-wrap: wrap; }
+  html:not([data-embed]) .grid { grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); }
+  html:not([data-embed]) .orch-body { grid-template-columns: minmax(0, 1fr); }
+  .notes-body { grid-template-columns: 1fr; }
+  .notes ul { columns: 1; }
+  .fz-meta { grid-template-columns: minmax(0, 1fr); }
+  .fz-nums { grid-column: auto; grid-row: auto; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<pre id="__errors" hidden></pre>
+<script>
+  window.addEventListener('error', (e) => { const p = document.getElementById('__errors'); p.textContent += (e.message || e) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+  window.addEventListener('unhandledrejection', (e) => { const p = document.getElementById('__errors'); p.textContent += 'promise: ' + (e.reason && e.reason.message || e.reason) + '\n'; document.documentElement.dataset.errors = String((+document.documentElement.dataset.errors || 0) + 1) })
+</script>
+
+<div class="aurora" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="blob b4"></i></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="app">
+  <header class="top glass" aria-label="Painel geral da orquestração">
+    <div class="ring" id="ring" role="img" aria-label="Progresso geral 0%">
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5600FF"/><stop offset="0.55" stop-color="#00F0FF"/><stop offset="1" stop-color="#8FFF00"/>
+          </linearGradient>
+          <linearGradient id="ringGradL" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5600FF"/><stop offset="0.6" stop-color="#0090A8"/><stop offset="1" stop-color="#3C8A00"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="40" cy="40" r="34"/>
+        <circle class="val" id="ringVal" cx="40" cy="40" r="34" stroke-dasharray="213.63" stroke-dashoffset="213.63"/>
+      </svg>
+      <div class="lbl"><b id="ringPct">0%</b><span>geral</span></div>
+    </div>
+    <div class="title">
+      <div class="title-row">
+        <h1><span class="neon">Mission Control</span></h1>
+        <span class="sess" id="sess">sessão 1 · alethe-orchestra</span>
+        <span class="paused-pill">⏸&#xFE0E; pausado</span>
+      </div>
+      <div class="goal" id="goal"><b>Objetivo</b><span id="goalText"></span></div>
+    </div>
+    <dl class="stats">
+      <div class="stat"><dt>decorrido</dt><dd id="sElapsed">00:00</dd></div>
+      <div class="stat"><dt>tokens</dt><dd id="sTokens">0</dd></div>
+      <div class="stat" title="Estimativa: US$ 9 por milhão de tokens"><dt>custo est.</dt><dd id="sCost">US$ 0,00</dd></div>
+      <div class="stat" title="Frentes trabalhando agora / total de frentes"><dt>ativas</dt><dd id="sFronts">0/0</dd></div>
+    </dl>
+    <div class="ctrl">
+      <div class="seg" id="speedSeg" role="group" aria-label="Velocidade da simulação">
+        <button type="button" data-speed="0.5" aria-pressed="false">0,5×</button>
+        <button type="button" data-speed="1" aria-pressed="true">1×</button>
+        <button type="button" data-speed="2" aria-pressed="false">2×</button>
+        <button type="button" data-speed="4" aria-pressed="false">4×</button>
+      </div>
+      <button class="ibtn primary" id="pauseBtn" type="button" aria-pressed="false" title="Pausar ou continuar (Espaço)"><span class="g" id="pauseG">⏸&#xFE0E;</span><span id="pauseT">Pausar</span></button>
+      <button class="ibtn sq" id="themeBtn" type="button" aria-label="Alternar tema claro ou escuro (T)" title="Tema (T)"><span class="g" id="themeG">☀</span></button>
+      <button class="ibtn sq" id="helpBtn" type="button" aria-label="Atalhos de teclado (?)" title="Atalhos (?)"><span class="g">?</span></button>
+    </div>
+    <div class="counts" id="counts" role="group" aria-label="Agentes por estado"></div>
+  </header>
+
+  <main class="main">
+    <section class="wall" id="wall" aria-label="Parede de terminais">
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <aside class="bus glass" id="bus" aria-label="Bus de mensagens">
+      <div class="bus-head"><span class="live-dot" aria-hidden="true"></span><h2>Bus</h2><span class="n" id="busN">0 mensagens</span></div>
+      <button class="scribe" id="scribe" type="button" aria-label="Escriba Obsidian: abrir a transcrição das gravações">
+        <span class="cry" aria-hidden="true">
+          <i class="pulse"></i><i class="pulse p2"></i>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2.5 19.5 8.5 16.5 21h-9L4.5 8.5Z" fill="currentColor" fill-opacity="0.22"/><path d="M4.5 8.5h15M12 2.5 9 8.5 12 21l3-12.5Z"/></svg>
+        </span>
+        <span class="sc-t">Escriba Obsidian <span class="st" id="scSt" data-state="idle" data-motion="none"><i class="ico">·</i><span class="lbl">ocioso</span></span></span>
+        <span class="sc-n"><b id="scN">0</b><span>gravações</span></span>
+        <span class="sc-note" id="scNote">2026-10-04 Orchestra.md</span>
+        <span class="sc-last" id="scLast">ainda sem gravações</span>
+        <span class="sc-ticks" id="scTicks"></span>
+      </button>
+      <div class="filters" id="filters" role="group" aria-label="Filtrar o bus por agente"></div>
+      <div class="feed" id="feed" role="log" aria-live="off" aria-label="Mensagens do bus"></div>
+      <button class="newer" id="busNewer" type="button" hidden>↓ novas mensagens</button>
+      <form class="composer" id="busForm" autocomplete="off">
+        <span class="pr" aria-hidden="true">›</span>
+        <input class="field" id="busInput" type="text" placeholder="Mensagem para o orquestrador…" aria-label="Mensagem para o orquestrador">
+        <button class="ibtn" type="submit">Enviar</button>
+      </form>
+    </aside>
+  </main>
+
+  <footer class="notes glass" id="notes" data-open="true" aria-label="Notas do protótipo">
+    <div class="notes-head">
+      <h2>Notas do protótipo</h2>
+      <span class="owner">Mission Control A · parede de terminais neon — a decisão é do dono.</span>
+      <button class="ibtn" id="notesBtn" type="button" aria-expanded="true" aria-controls="notesBody">Recolher ▾</button>
+    </div>
+    <div class="notes-body" id="notesBody">
+      <section class="yes">
+        <h3><i aria-hidden="true"></i>Dá para levar ao app</h3>
+        <ul>
+          <li>Aprovar/Negar no card, com contagem do auto-aprovar</li>
+          <li>Concluído recolhe em “✓ concluído · N arquivos”</li>
+          <li>Chip “depois de claude-N” que leva à dependência</li>
+          <li>“substituído por claude-7” no card que falhou</li>
+          <li>Linha colorida por tipo; rodapé com +/− e tokens</li>
+          <li>Foco: “↓ novas linhas”, Copiar e mensagem (LiveTerminal)</li>
+        </ul>
+      </section>
+      <section class="no">
+        <h3><i aria-hidden="true"></i>Conflita com a regra atual</h3>
+        <ul>
+          <li>Gradientes (anel, manchas, listras): o repo proíbe</li>
+          <li>Neon literal fora de <code>theme.css</code>: viram <code>--neon-*</code></li>
+          <li>Vidro + blur + granulado: GPU no WebView2 × 8 cards</li>
+          <li>Readex/Outfit/JetBrains do Google: dependência nova</li>
+          <li>Textos fixos em pt-BR; no app tudo passa por <code>t()</code></li>
+          <li>Grade masonry medida por JS + FLIP: layout novo</li>
+        </ul>
+      </section>
+    </div>
+  </footer>
+</div>
+
+<div class="focus" id="focus" hidden>
+  <div class="fz-back" data-close></div>
+  <section class="fz-win glass" id="fzWin" role="dialog" aria-modal="true" aria-labelledby="fzTitle">
+    <header class="fz-bar">
+      <span class="lights">
+        <button class="tl r" type="button" data-close aria-label="Fechar o terminal (Esc)">×</button>
+        <button class="tl y" type="button" data-close aria-label="Recolher o terminal">−</button>
+        <button class="tl g" type="button" id="fzMax" aria-label="Alternar tamanho do terminal">+</button>
+      </span>
+      <h2 class="fz-title" id="fzTitle"><span class="c-id" id="fzId"></span><span class="c-area" id="fzArea"></span></h2>
+      <span class="st" id="fzSt" data-state="idle" data-motion="none"><i class="ico" aria-hidden="true">·</i><span class="lbl">ocioso</span></span>
+      <span class="fz-nav">
+        <button class="ibtn sq" id="fzPrev" type="button" aria-label="Agente anterior (←)"><span class="g">‹</span></button>
+        <button class="ibtn sq" id="fzNext" type="button" aria-label="Próximo agente (→)"><span class="g">›</span></button>
+      </span>
+      <button class="ibtn" id="fzCopy" type="button"><span class="g">⧉</span>Copiar <kbd>C</kbd></button>
+      <button class="ibtn" type="button" data-close>Fechar <kbd>Esc</kbd></button>
+    </header>
+    <div class="fz-meta">
+      <p class="fz-task" id="fzTask"></p>
+      <dl class="fz-nums">
+        <div class="stat"><dt>tokens</dt><dd id="fzTok">0</dd></div>
+        <div class="stat"><dt>tempo</dt><dd id="fzTime">00:00</dd></div>
+        <div class="stat"><dt>+/−</dt><dd id="fzDiff">0</dd></div>
+      </dl>
+      <div class="fz-prog"><span class="bar"><i id="fzBar"></i></span><b class="pct" id="fzPct">0%</b></div>
+      <div class="fz-files" id="fzFiles"></div>
+    </div>
+    <div class="fz-slot" id="fzSlot"></div>
+    <div class="fz-term-wrap">
+      <div class="fz-term" id="fzTerm" tabindex="0" role="log" aria-live="off" aria-label="Transcrição do agente"></div>
+      <button class="newer fz-newer" id="fzNewer" type="button" hidden>↓ novas linhas</button>
+    </div>
+    <form class="fz-foot" id="fzForm" autocomplete="off">
+      <span class="pr" aria-hidden="true">›</span>
+      <input class="field" id="fzInput" type="text" placeholder="Mensagem para o agente…" aria-label="Mensagem para o agente">
+      <button class="ibtn primary" type="submit">Enviar</button>
+      <span class="fz-hint">← → troca de agente</span>
+    </form>
+  </section>
+</div>
+
+<div class="help" id="help" hidden>
+  <div class="fz-back" data-close-help></div>
+  <section class="help-win glass" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">Atalhos de teclado</h2>
+    <button class="ibtn sq close" type="button" data-close-help aria-label="Fechar a ajuda"><span class="g">✕</span></button>
+    <dl class="keys">
+      <dt><kbd>Espaço</kbd></dt><dd>pausar / continuar a simulação</dd>
+      <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>velocidade: 0,5× · 1× · 2× · 4×</dd>
+      <dt><kbd>1</kbd>–<kbd>9</kbd> · <kbd>0</kbd></dt><dd>selecionar claude-N · orquestrador</dd>
+      <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>mover a seleção pela parede (no terminal: trocar de agente)</dd>
+      <dt><kbd>Enter</kbd></dt><dd>abrir o terminal grande do selecionado</dd>
+      <dt><kbd>Esc</kbd></dt><dd>fechar o terminal · limpar a seleção</dd>
+      <dt><kbd>A</kbd> · <kbd>N</kbd></dt><dd>aprovar · negar (selecionado bloqueado)</dd>
+      <dt><kbd>C</kbd></dt><dd>copiar a transcrição do selecionado</dd>
+      <dt><kbd>T</kbd></dt><dd>tema claro “laboratório” / escuro neon</dd>
+      <dt><kbd>?</kbd></dt><dd>mostrar esta ajuda</dd>
+    </dl>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="sr-only" id="live" aria-live="polite"></div>
+<script>
+/* <sim-engine> Motor de simulação dos protótipos da Orquestra (Colmeia e Mission Control).
+   Fonte única: prototipos/_fonte/sim-engine.js. Cada variante leva uma cópia inline entre os
+   marcadores <sim-engine> e </sim-engine>; rode `node _fonte/sync-engine.mjs` para atualizar todas.
+   Sem dependências e sem DOM: as variantes desenham, o motor só simula a orquestração. */
+;(function (global) {
+  'use strict'
+
+  /** Estados reais da Orquestra. Ícone + rótulo + `motion` garantem leitura sem depender de cor. */
+  const STATES = {
+    starting: { label: 'iniciando', icon: '◌', busy: true, motion: 'spin' },
+    thinking: { label: 'pensando', icon: '✻', busy: true, motion: 'breathe' },
+    reading: { label: 'lendo', icon: '◎', busy: true, motion: 'scan' },
+    editing: { label: 'editando', icon: '✎', busy: true, motion: 'type' },
+    testing: { label: 'testando', icon: '▶', busy: true, motion: 'tick' },
+    blocked: { label: 'bloqueado', icon: '⏸', busy: false, motion: 'alert' },
+    waiting: { label: 'aguardando', icon: '⧗', busy: false, motion: 'none' },
+    done: { label: 'concluído', icon: '✓', busy: false, motion: 'none' },
+    exited: { label: 'falhou', icon: '✕', busy: false, motion: 'none' },
+    idle: { label: 'ocioso', icon: '·', busy: false, motion: 'none' },
+  }
+
+  const ROLES = {
+    orchestrator: 'orquestrador',
+    worker: 'worker',
+    creative: 'criativo',
+    scribe: 'escriba Obsidian',
+  }
+
+  const GOAL = 'Terminal próprio na Orquestra: rolar, copiar e acabar com o texto embaralhado'
+  const PROJECT = 'alethe-orchestra'
+  const NOTE = '2026-10-04 Orchestra.md'
+
+  /** A equipe do cenário (a sessão real de 04/10/2026, comprimida em ~3 minutos). */
+  const PLAN = [
+    {
+      id: 'claude-2',
+      area: 'espelho-core',
+      task: 'Um terminal headless por PTY, sempre no tamanho real do PTY',
+      files: ['src/lib/terminalMirror/mirror.ts', 'src/lib/terminalMirror/lines.ts', 'src-tauri/src/pty.rs'],
+      duration: 52,
+      spawnAt: 3,
+      blockAt: 0.34,
+      permission: { tool: 'Edit', detail: 'src-tauri/src/pty.rs: emitir o pendente antes do clear' },
+    },
+    {
+      id: 'claude-1',
+      area: 'xterm-clássico',
+      task: 'Restaurar o histórico pelo espelho, sem replay em outra largura',
+      files: ['src/components/XTermView/useXtermSession.ts', 'src/lib/terminalReplay.ts'],
+      duration: 64,
+      spawnAt: 3.6,
+      failAt: 0.58,
+    },
+    {
+      id: 'claude-5',
+      area: 'obsidian-contexto',
+      task: 'Consultar o Obsidian antes de cada orquestração começar',
+      files: ['src-tauri/src/obsidian.rs', 'src/components/Orchestra/scribe/context.ts'],
+      duration: 58,
+      spawnAt: 4.2,
+    },
+    {
+      id: 'claude-6',
+      area: 'agente-criativo',
+      role: 'creative',
+      task: 'Propor recursos úteis e o que costuma passar despercebido',
+      files: ['docs/ideias-orquestra.md'],
+      duration: 80,
+      spawnAt: 4.8,
+    },
+    {
+      id: 'claude-3',
+      area: 'live-terminal-ui',
+      task: 'Renderizador DOM com grade exata, seleção, busca e links',
+      files: ['src/components/LiveTerminal/index.tsx', 'src/components/LiveTerminal/cells.ts', 'src/components/LiveTerminal/layout.ts'],
+      duration: 56,
+      spawnAt: 5.6,
+      after: 'claude-2',
+    },
+    {
+      id: 'claude-4',
+      area: 'integração',
+      task: 'LiveTerminal no painel do agente e nas células da visão Terminais',
+      files: ['src/components/Orchestra/AgentTerminal.tsx', 'src/stores/orchestraStore.ts'],
+      duration: 38,
+      spawnAt: 6.4,
+      after: 'claude-3',
+    },
+  ]
+
+  const RETRY = {
+    id: 'claude-7',
+    area: 'xterm-clássico · retomada',
+    task: 'Retomar de onde o claude-1 parou e corrigir a restauração',
+    files: ['src/components/XTermView/useXtermSession.ts'],
+    duration: 30,
+  }
+
+  const IDEAS = [
+    'atalho para copiar a última resposta de um agente',
+    'estado vazio do bus com exemplos de comando',
+    'desfazer “parar orquestração” por 5 s',
+    'aviso quando um worker fica 2 min sem reportar',
+    'exportar a sessão inteira como nota do Obsidian',
+  ]
+
+  const THINK = [
+    'Pensando no menor caminho que não quebra o contrato…',
+    'Comparando com o que o XTermView já faz…',
+    'Conferindo o histórico do embaralhamento (7 causas)…',
+    'Separando o que é pure function do que é DOM…',
+    'Lendo o contrato 00-contrato-live-terminal.md…',
+  ]
+
+  function seeded(seed) {
+    let s = seed >>> 0 || 1
+    return () => {
+      s ^= s << 13
+      s ^= s >>> 17
+      s ^= s << 5
+      return ((s >>> 0) % 1000003) / 1000003
+    }
+  }
+
+  function clock(seconds) {
+    const s = Math.max(0, Math.floor(seconds))
+    const m = Math.floor(s / 60)
+    return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  }
+
+  function tokens(n) {
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2).replace('.', ',')}M`
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace('.', ',')}k`
+    return String(Math.round(n))
+  }
+
+  /** Copia texto; usa a Clipboard API e cai para execCommand fora de contexto seguro. */
+  function copyText(text) {
+    if (global.navigator && navigator.clipboard && global.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).catch(() => legacyCopy(text))
+    }
+    return Promise.resolve(legacyCopy(text))
+  }
+
+  function legacyCopy(text) {
+    if (typeof document === 'undefined') return false
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch (error) {
+      ok = false
+    }
+    area.remove()
+    return ok
+  }
+
+  function create(options) {
+    const opts = Object.assign({ speed: 1, seed: 7, loop: true, autoApproveAfter: 14 }, options)
+    const listeners = new Map()
+    let rand = seeded(opts.seed)
+    let speed = opts.speed
+    let paused = false
+    let running = false
+    let frame = null
+    let last = 0
+    let session = 0
+    let world = null
+
+    function emit(type, payload) {
+      const event = Object.assign({ type, t: world ? world.t : 0 }, payload)
+      for (const key of [type, '*']) {
+        const set = listeners.get(key)
+        if (set) for (const fn of [...set]) {
+          try {
+            fn(event)
+          } catch (error) {
+            if (global.console) console.error('[sim] listener', error)
+          }
+        }
+      }
+    }
+
+    function on(type, fn) {
+      if (!listeners.has(type)) listeners.set(type, new Set())
+      listeners.get(type).add(fn)
+      return () => listeners.get(type).delete(fn)
+    }
+
+    function makeAgent(def, role, hue) {
+      return {
+        id: def.id,
+        role,
+        area: def.area,
+        task: def.task,
+        files: def.files ? def.files.slice() : [],
+        touched: [],
+        state: role === 'scribe' ? 'idle' : 'starting',
+        progress: 0,
+        after: def.after || null,
+        hue,
+        duration: def.duration || 60,
+        blockAt: def.blockAt,
+        failAt: def.failAt,
+        permission: null,
+        pendingPermission: def.permission || null,
+        lines: [],
+        tokens: 0,
+        startedAt: world.t,
+        endedAt: null,
+        nextLine: 0,
+        phaseUntil: 0,
+        reported: 0,
+        unread: 0,
+      }
+    }
+
+    function fresh() {
+      session += 1
+      rand = seeded(opts.seed + session * 97)
+      world = {
+        t: 0,
+        session,
+        goal: GOAL,
+        project: PROJECT,
+        agents: [],
+        byId: new Map(),
+        bus: [],
+        scribe: { note: NOTE, writes: 0, last: null, writing: false },
+        timeline: [],
+        finishedAt: null,
+        nextMessageId: 1,
+        spawned: new Set(),
+        retried: false,
+        ideas: 0,
+      }
+      const orch = makeAgent(
+        { id: 'orchestrator', area: 'orquestração', task: 'Dividir a meta, despachar workers, responder bloqueios e fechar a sessão', duration: 999 },
+        'orchestrator',
+        0,
+      )
+      orch.state = 'starting'
+      add(orch)
+      const scribe = makeAgent({ id: 'obsidian', area: 'escriba', task: `Registrar a sessão em ${NOTE}`, duration: 999 }, 'scribe', 0)
+      add(scribe)
+      schedule(0.6, () => setState(orch, 'reading'))
+      schedule(0.8, () => line(orch, 'tool', '⏺ Read(Alethe Orchestra/2026-10-04 Orchestra.md)'))
+      schedule(1.2, () => line(orch, 'note', '  ⎿  Contexto do Obsidian: 3 notas lidas'))
+      schedule(1.4, () => scribeWrite('Sessão iniciada · objetivo e contexto'))
+      schedule(1.8, () => setState(orch, 'thinking'))
+      schedule(2.0, () => line(orch, 'think', '✻ Dividindo a meta em 6 frentes com posse de arquivos disjunta…'))
+      for (const def of PLAN) schedule(def.spawnAt, () => spawn(def))
+    }
+
+    function add(agent) {
+      world.agents.push(agent)
+      world.byId.set(agent.id, agent)
+    }
+
+    const queue = []
+    function schedule(at, fn) {
+      queue.push({ at, fn })
+      queue.sort((a, b) => a.at - b.at)
+    }
+
+    function spawn(def) {
+      if (world.spawned.has(def.id)) return
+      world.spawned.add(def.id)
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      const agent = makeAgent(def, def.role || 'worker', workers.length + 1)
+      add(agent)
+      const orch = world.byId.get('orchestrator')
+      line(orch, 'tool', `⏺ Bash(orch spawn ${agent.id}${agent.after ? ` --after ${agent.after}` : ''})`)
+      message('orchestrator', agent.id, `tarefa: ${agent.task}`, 'task')
+      emit('spawn', { agent })
+      line(agent, 'prompt', `> ${agent.task}`)
+      if (agent.after) {
+        const dep = world.byId.get(agent.after)
+        if (!dep || dep.state !== 'done') {
+          setState(agent, 'waiting')
+          line(agent, 'note', `  aguardando ${agent.after} terminar (--after)`)
+          return
+        }
+      }
+      setState(agent, 'starting')
+      agent.phaseUntil = world.t + 1.2
+    }
+
+    function setState(agent, next) {
+      if (agent.state === next) return
+      const from = agent.state
+      agent.state = next
+      if (next === 'done' || next === 'exited') agent.endedAt = world.t
+      world.timeline.push({ at: world.t, id: agent.id, state: next })
+      if (world.timeline.length > 600) world.timeline.splice(0, world.timeline.length - 600)
+      emit('state', { agent, from, to: next })
+    }
+
+    function line(agent, kind, text) {
+      const entry = { at: world.t, kind, text }
+      agent.lines.push(entry)
+      if (agent.lines.length > 400) agent.lines.splice(0, agent.lines.length - 400)
+      agent.unread += 1
+      emit('line', { agent, line: entry })
+    }
+
+    function message(from, to, text, kind) {
+      const entry = { id: world.nextMessageId++, at: world.t, from, to, text, kind: kind || 'chat' }
+      world.bus.push(entry)
+      if (world.bus.length > 250) world.bus.splice(0, world.bus.length - 250)
+      emit('message', { message: entry })
+      return entry
+    }
+
+    function scribeWrite(text) {
+      const scribe = world.byId.get('obsidian')
+      world.scribe.writes += 1
+      world.scribe.last = { at: world.t, text }
+      world.scribe.writing = true
+      setState(scribe, 'editing')
+      line(scribe, 'tool', `⏺ Append(${NOTE})`)
+      line(scribe, 'ok', `  ⎿  ${text}`)
+      message('obsidian', NOTE, text, 'scribe')
+      emit('scribe', { write: world.scribe.last, count: world.scribe.writes })
+      schedule(world.t + 1.4, () => {
+        world.scribe.writing = false
+        setState(scribe, 'idle')
+      })
+    }
+
+    function pick(list) {
+      return list[Math.floor(rand() * list.length) % list.length]
+    }
+
+    function workPhase(agent) {
+      const p = agent.progress / 100
+      if (p < 0.12) return rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.72) return rand() < 0.7 ? 'editing' : rand() < 0.5 ? 'reading' : 'thinking'
+      if (p < 0.9) return 'testing'
+      return 'editing'
+    }
+
+    function narrate(agent) {
+      const file = pick(agent.files.length ? agent.files : ['README.md'])
+      switch (agent.state) {
+        case 'starting':
+          line(agent, 'note', '  iniciando Claude Code…')
+          break
+        case 'thinking':
+          line(agent, 'think', `✻ ${pick(THINK)}`)
+          break
+        case 'reading':
+          line(agent, 'tool', `⏺ Read(${file})`)
+          line(agent, 'note', `  ⎿  Read ${80 + Math.floor(rand() * 400)} lines`)
+          break
+        case 'editing': {
+          const plus = 4 + Math.floor(rand() * 60)
+          const minus = Math.floor(rand() * 20)
+          line(agent, 'tool', `⏺ Update(${file})`)
+          line(agent, 'ok', `  ⎿  Updated ${file} with ${plus} additions and ${minus} removals`)
+          if (!agent.touched.includes(file)) agent.touched.push(file)
+          break
+        }
+        case 'testing': {
+          const files = 3 + Math.floor(rand() * 6)
+          const tests = 20 + Math.floor(rand() * 70)
+          line(agent, 'tool', '⏺ Bash(npx vitest run)')
+          line(agent, 'ok', `  ⎿  ✓ ${tests} passed (${files} files)`)
+          break
+        }
+        default:
+          break
+      }
+    }
+
+    function report(agent) {
+      const step = Math.floor(agent.progress / 25) * 25
+      if (step <= agent.reported || step === 0 || step >= 100) return
+      agent.reported = step
+      const label = STATES[agent.state] ? STATES[agent.state].label : agent.state
+      line(agent, 'tool', `⏺ Bash(orch report ${step} ${agent.state} "${agent.area}")`)
+      message(agent.id, 'orchestrator', `${step}% · ${label}: ${agent.area}`, 'report')
+    }
+
+    function finish(agent) {
+      agent.progress = 100
+      setState(agent, 'done')
+      line(agent, 'tool', `⏺ Bash(orch report 100 done "${agent.area} pronto")`)
+      line(agent, 'ok', '  ⎿  ✓ tsc limpo · testes ok · seção registrada no Obsidian')
+      message(agent.id, 'orchestrator', `100% · concluído: ${agent.area}`, 'report')
+      scribeWrite(`${agent.id} · ${agent.area} concluído`)
+      for (const other of world.agents) {
+        if (other.after === agent.id && other.state === 'waiting') {
+          message('orchestrator', other.id, `${agent.id} terminou: pode começar`, 'task')
+          setState(other, 'starting')
+          other.startedAt = world.t
+          other.phaseUntil = world.t + 1.2
+          line(other, 'note', `  ${agent.id} terminou; começando agora`)
+        }
+      }
+    }
+
+    function fail(agent) {
+      agent.failing = false
+      setState(agent, 'exited')
+      line(agent, 'error', '  ⎿  ✕ 2 failed · restaura o histórico em 80 colunas')
+      line(agent, 'error', '  processo encerrado com código 1')
+      message(agent.id, 'orchestrator', 'falhei: 2 testes de restauração; o PTY encerrou', 'fail')
+      scribeWrite(`${agent.id} falhou · substituto a caminho`)
+      const orch = world.byId.get('orchestrator')
+      schedule(world.t + 2.2, () => {
+        line(orch, 'think', `✻ ${agent.id} caiu; mando um substituto que continua do estado atual`)
+        if (!world.retried) {
+          world.retried = true
+          spawn(Object.assign({}, RETRY))
+        }
+      })
+    }
+
+    function block(agent) {
+      agent.permission = agent.pendingPermission || { tool: 'Bash', detail: 'npm install' }
+      agent.pendingPermission = null
+      agent.blockedAt = world.t
+      setState(agent, 'blocked')
+      line(agent, 'error', `⏸ Permissão: ${agent.permission.tool}(${agent.permission.detail})`)
+      line(agent, 'note', '  aguardando aprovação (A aprova, N nega)')
+      message(agent.id, 'orchestrator', `pede permissão: ${agent.permission.tool} ${agent.permission.detail}`, 'block')
+      emit('permission', { agent, request: agent.permission })
+    }
+
+    function resolve(id, approved, by) {
+      const agent = world.byId.get(id)
+      if (!agent || agent.state !== 'blocked') return false
+      const request = agent.permission
+      agent.permission = null
+      message(by === 'auto' ? 'orchestrator' : 'você', agent.id, approved ? 'aprovado, pode seguir' : 'negado: siga sem tocar nesse arquivo', 'answer')
+      line(agent, approved ? 'ok' : 'error', approved ? '  ✓ aprovado' : '  ✕ negado; seguindo por outro caminho')
+      setState(agent, approved ? 'editing' : 'thinking')
+      agent.phaseUntil = world.t + 2
+      emit('resolved', { agent, approved, request })
+      return true
+    }
+
+    function stepAgent(agent, dt) {
+      if (agent.role === 'scribe' || agent.role === 'orchestrator') return
+      if (!STATES[agent.state].busy || agent.failing) return
+      if (agent.state === 'starting') {
+        if (world.t >= agent.phaseUntil) setState(agent, 'reading')
+        return
+      }
+      const rate = (100 / agent.duration) * (0.75 + rand() * 0.5)
+      agent.progress = Math.min(100, agent.progress + rate * dt)
+      agent.tokens += (60 + rand() * 140) * dt
+      if (agent.blockAt && agent.pendingPermission && agent.progress >= agent.blockAt * 100) {
+        block(agent)
+        return
+      }
+      if (agent.failAt && agent.progress >= agent.failAt * 100) {
+        agent.failAt = null
+        agent.failing = true
+        setState(agent, 'testing')
+        line(agent, 'tool', '⏺ Bash(npx vitest run src/components/XTermView)')
+        schedule(world.t + 1.6, () => fail(agent))
+        return
+      }
+      if (agent.id === 'claude-3' && !world.chatted && agent.progress > 30) {
+        world.chatted = true
+        message('claude-3', 'claude-4', 'deixo data-live-terminal na raiz e no textarea, combinado?', 'chat')
+        schedule(world.t + 2, () => message('claude-4', 'claude-3', 'combinado: uso para focar a célula e para o Esc', 'chat'))
+      }
+      if (agent.progress >= 100) {
+        finish(agent)
+        return
+      }
+      if (world.t >= agent.phaseUntil) {
+        setState(agent, workPhase(agent))
+        agent.phaseUntil = world.t + 2.5 + rand() * 4
+      }
+      if (world.t >= agent.nextLine) {
+        narrate(agent)
+        agent.nextLine = world.t + 1.4 + rand() * 2.6
+      }
+      report(agent)
+      if (agent.role === 'creative' && world.ideas < IDEAS.length && agent.progress > 12 + world.ideas * 16) {
+        const idea = IDEAS[world.ideas]
+        world.ideas += 1
+        line(agent, 'ok', `💡 proposta ${world.ideas}: ${idea}`)
+        message(agent.id, 'orchestrator', `proposta: ${idea}`, 'idea')
+      }
+    }
+
+    function stepOrchestrator(dt) {
+      const orch = world.byId.get('orchestrator')
+      const workers = world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      orch.tokens += 30 * dt
+      if (world.finishedAt !== null) return
+      const blocked = workers.find((a) => a.state === 'blocked')
+      if (blocked && opts.autoApproveAfter > 0 && world.t - blocked.blockedAt > opts.autoApproveAfter) {
+        line(orch, 'think', `✻ ${blocked.id} esperou demais; aprovo (edição dentro da posse dele)`)
+        resolve(blocked.id, true, 'auto')
+      }
+      if (world.t < 7) return
+      if (workers.length > 0 && workers.every((a) => a.state === 'done' || (a.state === 'exited' && world.retried))) {
+        world.finishedAt = world.t
+        setState(orch, 'testing')
+        line(orch, 'tool', '⏺ Bash(npm test)')
+        schedule(world.t + 2.5, () => {
+          line(orch, 'ok', '  ⎿  ✓ 856 passed (96 files) · tsc limpo')
+          setState(orch, 'done')
+          message('orchestrator', 'você', 'tudo pronto: 6 frentes concluídas, 1 retomada', 'report')
+          scribeWrite('Fechamento da sessão · verificação final ok')
+          if (opts.loop) schedule(world.t + 9, () => reset())
+        })
+        return
+      }
+      if (orch.state !== 'thinking' && orch.state !== 'reading' && world.t > (orch.phaseUntil || 0)) {
+        setState(orch, rand() < 0.6 ? 'thinking' : 'reading')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+      } else if (world.t > (orch.phaseUntil || 0)) {
+        setState(orch, orch.state === 'thinking' ? 'reading' : 'thinking')
+        orch.phaseUntil = world.t + 4 + rand() * 4
+        if (rand() < 0.5) line(orch, 'think', `✻ ${pick(['Conferindo os reports…', 'Respondendo o bus…', 'Revisando a posse de arquivos…'])}`)
+      }
+    }
+
+    function advance(dt) {
+      world.t += dt
+      while (queue.length && queue[0].at <= world.t) queue.shift().fn()
+      for (const agent of world.agents) stepAgent(agent, dt)
+      stepOrchestrator(dt)
+      emit('tick', { dt })
+    }
+
+    // Relógio por timer (~30 Hz), não por requestAnimationFrame: segue rodando em miniaturas e no
+    // Edge headless (onde o rAF quase não dispara). As variantes animam com CSS e redesenham no 'tick'.
+    const TICK_MS = 33
+    const now = () => (global.performance && performance.now ? performance.now() : Date.now())
+
+    function loop() {
+      frame = null
+      if (!running) return
+      const current = now()
+      const dt = last ? Math.min(0.25, (current - last) / 1000) : 0
+      last = current
+      if (!paused && dt > 0) advance(dt * speed)
+      frame = setTimeout(loop, TICK_MS)
+    }
+
+    function start() {
+      if (running) return api
+      running = true
+      last = 0
+      frame = setTimeout(loop, 0)
+      return api
+    }
+
+    function stop() {
+      running = false
+      if (frame !== null) clearTimeout(frame)
+      frame = null
+    }
+
+    function reset() {
+      queue.length = 0
+      fresh()
+      emit('reset', {})
+    }
+
+    function counts() {
+      const out = {}
+      for (const key of Object.keys(STATES)) out[key] = 0
+      for (const agent of world.agents) if (agent.role !== 'scribe') out[agent.state] += 1
+      return out
+    }
+
+    function overall() {
+      const workers = world.agents.filter((a) => (a.role === 'worker' || a.role === 'creative') && !(a.state === 'exited' && world.retried))
+      if (!workers.length) return 0
+      return workers.reduce((sum, a) => sum + a.progress, 0) / workers.length
+    }
+
+    const api = {
+      STATES,
+      ROLES,
+      on,
+      start,
+      stop,
+      reset,
+      pause() {
+        paused = true
+        emit('pause', { paused })
+      },
+      resume() {
+        paused = false
+        emit('pause', { paused })
+      },
+      toggle() {
+        paused = !paused
+        emit('pause', { paused })
+        return paused
+      },
+      get paused() {
+        return paused
+      },
+      get speed() {
+        return speed
+      },
+      setSpeed(value) {
+        speed = Math.max(0.25, Math.min(8, value))
+        emit('speed', { speed })
+      },
+      /** Avança a simulação na mão (útil com pausa ou em testes). */
+      step(seconds) {
+        advance(seconds)
+      },
+      get t() {
+        return world.t
+      },
+      get session() {
+        return world.session
+      },
+      get goal() {
+        return world.goal
+      },
+      get project() {
+        return world.project
+      },
+      get agents() {
+        return world.agents
+      },
+      get workers() {
+        return world.agents.filter((a) => a.role === 'worker' || a.role === 'creative')
+      },
+      get bus() {
+        return world.bus
+      },
+      get scribe() {
+        return world.scribe
+      },
+      get timeline() {
+        return world.timeline
+      },
+      agent(id) {
+        return world.byId.get(id) || null
+      },
+      overall,
+      counts,
+      approve(id) {
+        return resolve(id, true, 'você')
+      },
+      deny(id) {
+        return resolve(id, false, 'você')
+      },
+      /** Mensagem do usuário a um agente: entra no bus e o agente responde. */
+      send(to, text) {
+        const agent = world.byId.get(to)
+        if (!agent || !text) return null
+        const entry = message('você', to, text, 'user')
+        line(agent, 'prompt', `> ${text}`)
+        schedule(world.t + 1.4, () => {
+          const reply = agent.state === 'done' ? 'já terminei; posso revisar se quiser' : 'entendido, incorporo agora'
+          line(agent, 'ok', `⏺ ${reply}`)
+          message(to, 'você', reply, 'chat')
+        })
+        return entry
+      },
+      transcript(id) {
+        const agent = world.byId.get(id)
+        return agent ? agent.lines.map((l) => l.text).join('\n') : ''
+      },
+      clock,
+      tokens,
+      copyText,
+    }
+
+    fresh()
+    return api
+  }
+
+  global.AletheSim = { create, STATES, ROLES, clock, tokens, copyText }
+})(typeof window !== 'undefined' ? window : globalThis)
+/* </sim-engine> */
+</script>
+<script>
+;(() => {
+  'use strict'
+  const $ = (s, r = document) => r.querySelector(s)
+  const root = document.documentElement
+  const Q = new URLSearchParams(location.search)
+  const EMBED = Q.get('embed') === '1'
+  const STATES = AletheSim.STATES
+  const SPEEDS = [0.5, 1, 2, 4]
+  const AUTO_APPROVE = 14 // padrão do motor (autoApproveAfter)
+  const ORDER = ['starting', 'thinking', 'reading', 'editing', 'testing', 'blocked', 'waiting', 'done', 'exited']
+  const ROW = 4
+  const GAP = 14
+  const MAX_LINES = 12
+  const reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
+  const reduced = () => !!(reduceMQ && reduceMQ.matches) || Q.get('motion') === 'reduce'
+  if (EMBED) root.setAttribute('data-embed', '')
+  if (Q.get('motion') === 'reduce') root.setAttribute('data-reduced', '')
+
+  /* Vigia de quadros: só anima entradas quando o navegador está mesmo desenhando quadros.
+     Em miniaturas paradas e no Edge headless o rAF não dispara e uma entrada a partir de
+     opacity 0 ficaria invisível; aí tudo aparece pronto, sem animação. */
+  let lastFrame = -1
+  let streak = 0
+  root.setAttribute('data-boot', '')
+  const pump = () => {
+    const now = performance.now()
+    streak = now - lastFrame < 120 ? streak + 1 : 0
+    lastFrame = now
+    if (streak >= 8 && !root.hasAttribute('data-live')) onFramesLive()
+    requestAnimationFrame(pump)
+  }
+  requestAnimationFrame(pump)
+  const live = () => root.hasAttribute('data-live') && performance.now() - lastFrame < 300 && !reduced()
+  // quadros pararam (aba oculta, miniatura, headless): conclui o que estava entrando e desliga transições
+  setInterval(() => {
+    if (performance.now() - lastFrame < 500) return
+    if (root.hasAttribute('data-live')) root.removeAttribute('data-live')
+    if (!document.getAnimations) return
+    for (const an of document.getAnimations()) {
+      try {
+        if (an.playState === 'running' && an.effect && an.effect.getComputedTiming().endTime !== Infinity) an.finish()
+      } catch (e) { /* animação infinita ou já encerrada */ }
+    }
+  }, 400)
+
+  /* ---------- armazenamento local só para conveniências ---------- */
+  const store = {
+    get(k) { try { return window.localStorage.getItem(k) } catch (e) { return null } },
+    set(k, v) { try { window.localStorage.setItem(k, v) } catch (e) { /* sem armazenamento */ } },
+  }
+
+  /* ---------- tema ---------- */
+  const qTheme = Q.get('theme')
+  let theme = qTheme === 'light' || qTheme === 'dark' ? qTheme : store.get('mca-theme') === 'light' ? 'light' : 'dark'
+  function applyTheme(next) {
+    theme = next
+    root.setAttribute('data-theme', next)
+    $('#themeG').textContent = next === 'dark' ? '☀' : '☾'
+    $('#ringVal').setAttribute('stroke', next === 'dark' ? 'url(#ringGrad)' : 'url(#ringGradL)')
+  }
+  applyTheme(theme)
+
+  /* ---------- simulação ---------- */
+  const qSpeed = parseFloat(Q.get('speed'))
+  const sim = AletheSim.create({ speed: qSpeed > 0 ? Math.min(8, Math.max(0.25, qSpeed)) : 1, seed: 7, loop: true })
+  const qAt = parseFloat(Q.get('at')) // atalho de revisão: ?at=40 adianta a sessão
+  if (qAt > 0) for (let i = 0, n = Math.min(3000, Math.round(qAt * 10)); i < n; i += 1) sim.step(0.1)
+  sim.on('tick', () => { document.documentElement.dataset.simT = String(Math.round(sim.t)) })
+
+  /* ---------- utilidades ---------- */
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+  const clock = AletheSim.clock
+  const tok = AletheSim.tokens
+  const info = (s) => STATES[s] || STATES.idle
+  const icon = (s) => { const i = info(s).icon; return i === '⏸' ? '⏸︎' : i }
+  const isWorker = (a) => a && (a.role === 'worker' || a.role === 'creative')
+  const nameOf = (id) => (id === 'orchestrator' ? 'orquestrador' : id === 'obsidian' ? 'escriba' : id === sim.scribe.note ? 'nota' : id)
+  const base = (f) => f.split('/').pop()
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
+  function colorVars(a) {
+    if (!a) return { c: 'var(--fg-2)', cb: 'var(--fg-3)' }
+    if (a.role === 'orchestrator') return { c: 'var(--orch)', cb: 'var(--neon-purple)' }
+    if (a.role === 'scribe') return { c: 'var(--obs-txt)', cb: 'var(--obs)' }
+    if (a.role === 'creative') return { c: 'var(--hc)', cb: 'var(--bc)' }
+    const h = ((Math.max(1, a.hue) - 1) % 7) + 1
+    return { c: `var(--h${h})`, cb: `var(--b${h})` }
+  }
+  function partyVars(id) {
+    if (id === 'você') return { c: 'var(--you)', cb: 'var(--neon-pink)' }
+    if (id === sim.scribe.note) return { c: 'var(--obs-txt)', cb: 'var(--obs)' }
+    return colorVars(sim.agent(id))
+  }
+  const replacementOf = (a) => sim.workers.find((w) => w.id !== a.id && w.area !== a.area && w.area.startsWith(a.area)) || null
+  const replacedBy = (a) => sim.workers.find((w) => w.id !== a.id && a.area !== w.area && a.area.startsWith(w.area)) || null
+
+  /* ---------- linhas da transcrição ---------- */
+  const RX_TOOL = /^⏺ ([A-Za-z]+)(\(.*)$/
+  const RX_DIFF = /with (\d+) additions and (\d+) removals/
+  const RX_IDEA = /^💡 proposta (\d+): (.+)$/u
+  function lineHTML(l) {
+    const text = l.text.replace(/⏸(?!︎)/g, '⏸︎')
+    const tool = RX_TOOL.exec(text)
+    if (tool) return `<span class="bul">●</span> <b class="tn">${esc(tool[1])}</b><span class="ta">${esc(tool[2])}</span>`
+    if (text.startsWith('⏺')) return `<span class="bul">●</span>${esc(text.slice(1))}`
+    if (l.kind === 'prompt' && text.startsWith('>')) return `<span class="bul">❯</span>${esc(text.slice(1))}`
+    return esc(text)
+  }
+  const diffs = new Map()
+  function trackDiff(id, l) {
+    const m = RX_DIFF.exec(l.text)
+    if (!m) return
+    const d = diffs.get(id) || { p: 0, m: 0 }
+    d.p += +m[1]
+    d.m += +m[2]
+    diffs.set(id, d)
+  }
+
+  /* ---------- toast e anúncios ---------- */
+  const toastEl = $('#toast')
+  let toastTimer = 0
+  function toast(msg) {
+    toastEl.textContent = msg
+    toastEl.classList.add('on')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2400)
+  }
+  const liveEl = $('#live')
+  function announce(msg) { liveEl.textContent = msg }
+
+  /* ---------- cards ---------- */
+  const grid = $('#grid')
+  const wall = $('#wall')
+  const cards = new Map()
+  const expanded = new Set()
+  let selected = null
+  let layoutReady = false
+
+  function setChip(chip, s) {
+    if (chip.dataset.state === s && chip.dataset.ready) return
+    chip.dataset.ready = '1'
+    chip.dataset.state = s
+    chip.dataset.motion = info(s).motion
+    chip.querySelector('.ico').textContent = icon(s)
+    chip.querySelector('.lbl').textContent = info(s).label
+  }
+  const chipHTML = '<span class="st"><i class="ico" aria-hidden="true"></i><span class="lbl"></span></span>'
+  const termHTML = '<div class="term"><div class="vp"><div class="lines"><div class="ln cur" aria-hidden="true">❯<i></i></div></div></div></div>'
+
+  function makeCard(a, index) {
+    const el = document.createElement('article')
+    const orch = a.role === 'orchestrator'
+    el.className = 'card' + (orch ? ' orch' : '')
+    el.dataset.id = a.id
+    el.dataset.role = a.role
+    el.tabIndex = 0
+    el.setAttribute('role', 'button')
+    const cv = colorVars(a)
+    el.style.setProperty('--c', cv.c)
+    el.style.setProperty('--cb', cv.cb)
+    el.style.setProperty('--i', String(index || 0))
+    el._born = performance.now()
+    if (orch) {
+      el.innerHTML = `<span class="glow" aria-hidden="true"></span>
+        <header class="c-head"><span class="c-id">orquestrador</span><span class="c-area">${esc(a.task)}</span><span class="sp"></span>${chipHTML}</header>
+        <div class="orch-body">${termHTML}<div class="fronts"><h3><span>Frentes</span><span class="fr-n"></span></h3><div class="fr-list"></div></div></div>`
+    } else {
+      const retry = replacedBy(a)
+      const badge = a.role === 'creative' ? '<span class="c-badge">✦ criativo</span>' : retry ? '<span class="c-badge">↻ retomada</span>' : ''
+      el.innerHTML = `<span class="glow" aria-hidden="true"></span>
+        <header class="c-head"><span class="c-id">${esc(a.id)}</span>${badge}<span class="c-area">${esc(a.area)}</span><span class="sp"></span>${chipHTML}
+          <button class="c-fold" type="button" aria-label="Recolher o card de ${esc(a.id)}"><span aria-hidden="true">⌃</span></button></header>
+        <p class="c-task" title="${esc(a.task)}">${esc(a.task)}</p>
+        <div class="c-prog"><span class="bar"><i></i></span><b class="pct">0%</b></div>
+        <div class="c-slot"></div>
+        ${a.role === 'creative' ? '<ol class="c-ideas" aria-label="Ideias propostas"></ol>' : ''}
+        ${termHTML}
+        <footer class="c-foot"><span class="f-files"><span class="g" aria-hidden="true">▤</span><span class="fl">nenhum arquivo ainda</span></span><span class="sp"></span><span class="diff"><b class="plus">+0</b><b class="minus">−0</b></span><span class="tok">0 tok</span><span class="time">00:00</span></footer>
+        <div class="c-compact"><span class="ck" aria-hidden="true">✓</span><span class="done-l">concluído</span><span class="cs"></span><span class="more"><span class="g" aria-hidden="true">⌄</span> expandir</span></div>`
+    }
+    const card = {
+      a,
+      el,
+      last: {},
+      refs: {
+        chip: el.querySelector('.st'),
+        lines: el.querySelector('.lines'),
+        cur: el.querySelector('.ln.cur'),
+        bar: el.querySelector('.bar i'),
+        pct: el.querySelector('.pct'),
+        slot: el.querySelector('.c-slot'),
+        ideas: el.querySelector('.c-ideas'),
+        files: el.querySelector('.fl'),
+        plus: el.querySelector('.plus'),
+        minus: el.querySelector('.minus'),
+        tok: el.querySelector('.tok'),
+        time: el.querySelector('.time'),
+        cs: el.querySelector('.cs'),
+        frList: el.querySelector('.fr-list'),
+        frN: el.querySelector('.fr-n'),
+      },
+    }
+    for (const l of a.lines.slice(-MAX_LINES)) pushLine(card, l, false)
+    if (card.refs.ideas) {
+      let n = 0
+      for (const l of a.lines) if (RX_IDEA.test(l.text)) addIdea(card, l, n++ * 80)
+    }
+    return card
+  }
+
+  function pushLine(card, l, animate) {
+    const el = document.createElement('div')
+    el.className = 'ln k-' + l.kind + (animate && live() ? ' new' : '')
+    el.innerHTML = lineHTML(l)
+    card.refs.lines.insertBefore(el, card.refs.cur)
+    while (card.refs.lines.childElementCount - 1 > MAX_LINES) card.refs.lines.firstElementChild.remove()
+  }
+
+  const ROTS = [-1.6, 1.3, -0.9, 1.8, -1.2, 0.8]
+  function addIdea(card, l, delay) {
+    const m = RX_IDEA.exec(l.text)
+    if (!m || !card.refs.ideas) return
+    const n = +m[1]
+    const li = document.createElement('li')
+    li.className = 'idea' + (live() ? ' enter' : '')
+    li.style.setProperty('--rot', ROTS[(n - 1) % ROTS.length] + 'deg')
+    li.style.setProperty('--d', (delay || 0) + 'ms')
+    li.innerHTML = `<b>${n}</b>${esc(m[2])}`
+    card.refs.ideas.appendChild(li)
+    queueFit(card.el)
+  }
+
+  function addCard(a, animate) {
+    if (cards.has(a.id) || a.role === 'scribe') return null
+    const card = makeCard(a, animate ? 0 : cards.size)
+    cards.set(a.id, card)
+    if (animate && live()) enter(card.el)
+    grid.appendChild(card.el)
+    syncState(card)
+    syncNumbers(card)
+    fitEl(card.el)
+    ro.observe(card.el)
+    return card
+  }
+  function enter(el) {
+    el.classList.add('enter')
+    el.addEventListener('animationend', function done(ev) {
+      if (ev.target !== el) return
+      el.classList.remove('enter')
+      el.removeEventListener('animationend', done)
+    })
+  }
+  /* primeira vez que os quadros rodam: entrada em cascata da parede */
+  function onFramesLive() {
+    root.setAttribute('data-live', '')
+    if (!root.hasAttribute('data-boot')) return
+    if (!reduced()) {
+      let i = 0
+      for (const c of cards.values()) {
+        c.el.style.setProperty('--i', String(i++))
+        enter(c.el)
+      }
+    }
+    root.removeAttribute('data-boot')
+  }
+
+  /* faixa do card conforme o estado: bloqueado, aguardando, falhou, retomada */
+  function slotKey(a) {
+    const repl = a.state === 'exited' ? replacementOf(a) : null
+    const retry = a.state !== 'done' ? replacedBy(a) : null
+    return [a.state, a.permission ? a.permission.detail : '', a.after || '', repl ? repl.id : '', retry ? retry.id : ''].join('|')
+  }
+  function depChip(id, prefix, arrow) {
+    const d = sim.agent(id)
+    const cv = colorVars(d)
+    return `<button class="dep" type="button" data-goto="${esc(id)}" style="--dc:${cv.c};--dcb:${cv.cb}" aria-label="${esc(prefix)} ${esc(id)}: ir para o card">${esc(prefix)} <b>${esc(id)}</b>${d && d.state !== 'done' && arrow !== false ? ` <span class="pc" data-dep-pct="${esc(id)}">${Math.floor(d.progress)}%</span>` : ''} <span class="ar" aria-hidden="true">→</span></button>`
+  }
+  function permParts(p) {
+    const i = p.detail.indexOf(': ')
+    return i > 0 ? { what: `${p.tool} ${p.detail.slice(0, i)}`, why: p.detail.slice(i + 2) } : { what: `${p.tool} ${p.detail}`, why: '' }
+  }
+  function slotHTML(a) {
+    if (a.state === 'blocked' && a.permission) {
+      const p = permParts(a.permission)
+      return `<div class="perm" role="group" aria-label="Pedido de permissão de ${esc(a.id)}">
+        <div class="perm-t"><span class="g" aria-hidden="true">⏸&#xFE0E;</span>precisa da sua permissão: <code>${esc(p.what)}</code></div>
+        ${p.why ? `<div class="perm-d">${esc(p.why)}</div>` : ''}
+        <div class="perm-a"><button class="btn ok" type="button" data-act="approve"><span class="g" aria-hidden="true">✓</span>Aprovar <kbd>A</kbd></button><button class="btn no" type="button" data-act="deny"><span class="g" aria-hidden="true">✕</span>Negar <kbd>N</kbd></button><span class="perm-auto" data-auto>aprovação automática em ${AUTO_APPROVE} s</span></div>
+        <i class="perm-timer" aria-hidden="true"></i></div>`
+    }
+    if (a.state === 'waiting' && a.after) {
+      return `<div class="wait"><span class="hg" aria-hidden="true">⧗</span>aguardando a dependência ${depChip(a.after, 'depois de')}</div>`
+    }
+    if (a.state === 'exited') {
+      const r = replacementOf(a)
+      return `<div class="fail"><span class="x" aria-hidden="true">✕</span><span>falhou · processo encerrado com código 1</span>${r ? depChip(r.id, 'substituído por', false) : '<span>substituto a caminho…</span>'}</div>`
+    }
+    const retry = replacedBy(a)
+    if (retry && a.state !== 'done') return `<div class="wait"><span class="hg" aria-hidden="true">↻</span>continua o trabalho de ${depChip(retry.id, 'retoma', false)}</div>`
+    return ''
+  }
+
+  function syncState(card) {
+    const a = card.a
+    const el = card.el
+    const s = a.state
+    el.dataset.state = s
+    el.toggleAttribute('data-busy', !!info(s).busy)
+    setChip(card.refs.chip, s)
+    const compact = s === 'done' && a.role !== 'orchestrator' && !expanded.has(a.id)
+    el.classList.toggle('is-compact', compact)
+    if (card.refs.slot) {
+      const key = slotKey(a)
+      if (card.last.slot !== key) {
+        card.last.slot = key
+        card.refs.slot.innerHTML = slotHTML(a)
+        card.refs.slot.style.display = card.refs.slot.innerHTML ? '' : 'none'
+      }
+    }
+    const what = a.role === 'orchestrator' ? 'orquestrador' : `${a.id}, ${a.area}`
+    el.setAttribute('aria-label', `${what}: ${info(s).label}, ${Math.floor(a.progress)}%. ${compact ? 'Expandir o resumo' : 'Abrir o terminal grande'}`)
+    el.title = `${a.role === 'orchestrator' ? 'orquestrador' : a.id} · ${info(s).label}\n${a.task}\n${compact ? 'clique para expandir' : 'clique para ampliar o terminal'}`
+    if (card.last.compact !== compact) {
+      card.last.compact = compact
+      card.last.cs = null
+      if (compact && live()) {
+        el.classList.add('enter-c')
+        setTimeout(() => el.classList.remove('enter-c'), 900)
+      }
+    }
+    queueFit(el)
+  }
+
+  function syncNumbers(card) {
+    const a = card.a
+    const R = card.refs
+    const L = card.last
+    if (R.bar) {
+      const p = Math.floor(a.progress)
+      if (L.p !== p) {
+        L.p = p
+        R.bar.style.setProperty('--p', (a.progress / 100).toFixed(3))
+        R.pct.textContent = p + '%'
+      }
+    }
+    if (R.tok) {
+      const t = tok(a.tokens) + ' tok'
+      if (L.t !== t) { L.t = t; R.tok.textContent = t }
+      const secs = Math.max(0, Math.floor((a.endedAt != null ? a.endedAt : sim.t) - a.startedAt))
+      if (L.s !== secs) { L.s = secs; R.time.textContent = clock(secs) }
+      const files = a.touched.length ? a.touched.map(base).join(', ') : 'nenhum arquivo ainda'
+      if (L.f !== files) { L.f = files; R.files.textContent = files; R.files.title = a.touched.join('\n') }
+      const d = diffs.get(a.id) || { p: 0, m: 0 }
+      const dk = d.p + '/' + d.m
+      if (L.d !== dk) { L.d = dk; R.plus.textContent = '+' + d.p; R.minus.textContent = '−' + d.m }
+      if (L.compact) {
+        const cs = `· ${plural(a.touched.length || a.files.length, 'arquivo', 'arquivos')} · +${d.p} −${d.m} · ${tok(a.tokens)} tok · ${clock(secs)}`
+        if (L.cs !== cs) { L.cs = cs; R.cs.textContent = cs }
+      }
+    }
+    if (a.state === 'blocked' && a.blockedAt != null && R.slot) {
+      const left = Math.max(0, AUTO_APPROVE - (sim.t - a.blockedAt))
+      const auto = R.slot.querySelector('[data-auto]')
+      const timer = R.slot.querySelector('.perm-timer')
+      const txt = `aprovação automática em ${Math.ceil(left)} s`
+      if (auto && auto.textContent !== txt) auto.textContent = txt
+      if (timer) timer.style.setProperty('--left', (left / AUTO_APPROVE).toFixed(3))
+    }
+    if (R.slot) {
+      for (const pc of R.slot.querySelectorAll('[data-dep-pct]')) {
+        const d = sim.agent(pc.dataset.depPct)
+        const txt = d ? Math.floor(d.progress) + '%' : ''
+        if (pc.textContent !== txt) pc.textContent = txt
+      }
+    }
+  }
+
+  /* ---------- grade "masonry": cada card ocupa linhas de 4px conforme a altura; FLIP nas mudanças ---------- */
+  function measure() {
+    const m = new Map()
+    for (const c of cards.values()) m.set(c.el, c.el.getBoundingClientRect())
+    return m
+  }
+  function playFlip(first) {
+    const now = performance.now()
+    for (const [el, r0] of first) {
+      if (!el.isConnected || now - (el._born || 0) < 900 || el.classList.contains('enter')) continue
+      const r1 = el.getBoundingClientRect()
+      const dx = r0.left - r1.left
+      const dy = r0.top - r1.top
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue
+      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }], { duration: 650, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' })
+    }
+  }
+  function fitEl(el) {
+    const rows = Math.max(1, Math.ceil((el.offsetHeight + GAP) / ROW))
+    if (el._rows === rows) return false
+    el._rows = rows
+    el.style.gridRowEnd = 'span ' + rows
+    return true
+  }
+  /* ajuste síncrono (microtarefa): não depende de quadro nem de ResizeObserver */
+  const fitQueue = new Set()
+  let fitScheduled = false
+  function queueFit(el) {
+    fitQueue.add(el)
+    if (fitScheduled) return
+    fitScheduled = true
+    Promise.resolve().then(flushFits)
+  }
+  function flushFits() {
+    fitScheduled = false
+    const els = [...fitQueue].filter((el) => el.isConnected)
+    fitQueue.clear()
+    if (!els.length) return
+    const first = layoutReady && live() ? measure() : null
+    let changed = false
+    for (const el of els) changed = fitEl(el) || changed
+    if (changed && first) playFlip(first)
+  }
+  function fitAll() { for (const c of cards.values()) queueFit(c.el) }
+  const ro = new ResizeObserver((entries) => {
+    for (const e of entries) if (e.target.isConnected) queueFit(e.target)
+  })
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll)
+  const roWall = new ResizeObserver(() => {
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter((v) => v && v !== '0px').length || 1
+    if (grid.dataset.cols !== String(cols)) grid.dataset.cols = String(cols)
+  })
+  roWall.observe(wall)
+
+  /* ---------- frentes no card do orquestrador (árvore com --after e retomadas) ---------- */
+  function frontOrder() {
+    const ws = sim.workers
+    const used = new Set()
+    const out = []
+    const parentOf = (w) => (w.after && ws.some((o) => o.id === w.after) ? w.after : (replacedBy(w) || {}).id || null)
+    const walk = (w, depth) => {
+      used.add(w.id)
+      out.push({ w, depth, mark: depth ? (w.after ? '↳' : '↻') : '' })
+      for (const k of ws) if (!used.has(k.id) && parentOf(k) === w.id) walk(k, depth + 1)
+    }
+    for (const w of ws) if (!used.has(w.id) && !parentOf(w)) walk(w, 0)
+    for (const w of ws) if (!used.has(w.id)) walk(w, 0)
+    return out
+  }
+  const frRefs = new Map()
+  function renderFronts() {
+    const oc = cards.get('orchestrator')
+    if (!oc) return
+    const list = oc.refs.frList
+    const seen = new Set()
+    let prev = null
+    for (const { w, depth, mark } of frontOrder()) {
+      seen.add(w.id)
+      let r = frRefs.get(w.id)
+      if (!r || r.a !== w || !list.contains(r.b)) {
+        if (r) r.b.remove()
+        const cv = colorVars(w)
+        const b = document.createElement('button')
+        b.type = 'button'
+        b.className = 'fr'
+        b.dataset.goto = w.id
+        b.style.setProperty('--c', cv.c)
+        b.style.setProperty('--cb', cv.cb)
+        b.innerHTML = '<i class="dot" aria-hidden="true"></i><span class="fid"></span><span class="far"></span><span class="fst" aria-hidden="true"></span><span class="fbar"><i></i></span><span class="fpct">0%</span>'
+        r = { a: w, b, fid: b.querySelector('.fid'), far: b.querySelector('.far'), st: b.querySelector('.fst'), bar: b.querySelector('.fbar i'), pct: b.querySelector('.fpct'), p: -1, key: '' }
+        frRefs.set(w.id, r)
+      }
+      const key = `${w.state}|${depth}|${mark}`
+      if (r.key !== key) {
+        r.key = key
+        r.b.dataset.state = w.state
+        r.fid.style.paddingLeft = depth * 9 + 'px'
+        r.fid.innerHTML = `${mark ? `<span class="tree" aria-hidden="true">${mark}</span>` : ''}${esc(w.id)}`
+        r.far.innerHTML = w.state === 'waiting' && w.after ? `<em>depois de</em> ${esc(w.after)}` : esc(w.area)
+        r.st.textContent = icon(w.state)
+        r.b.setAttribute('aria-label', `${w.id}, ${w.area}: ${info(w.state).label}. Ir para o card`)
+      }
+      const want = prev ? prev.nextSibling : list.firstChild
+      if (want !== r.b) list.insertBefore(r.b, want)
+      prev = r.b
+    }
+    for (const [id, r] of frRefs) if (!seen.has(id)) { r.b.remove(); frRefs.delete(id) }
+    tickFronts()
+    queueFit(oc.el)
+  }
+  function tickFronts() {
+    const oc = cards.get('orchestrator')
+    if (!oc) return
+    let active = 0
+    for (const w of sim.workers) {
+      if (info(w.state).busy) active += 1
+      const r = frRefs.get(w.id)
+      if (!r) continue
+      const p = Math.floor(w.progress)
+      if (r.p !== p) {
+        r.p = p
+        r.bar.style.setProperty('--p', (w.progress / 100).toFixed(3))
+        r.pct.textContent = p + '%'
+      }
+    }
+    const txt = `${active} ativas · ${sim.workers.length} no total`
+    if (oc.refs.frN.textContent !== txt) oc.refs.frN.textContent = txt
+  }
+
+  /* ---------- cabeçalho ---------- */
+  const countsEl = $('#counts')
+  const countEls = {}
+  for (const s of ORDER) {
+    const c = document.createElement('span')
+    c.className = 'cnt'
+    c.dataset.state = s
+    c.innerHTML = `<i aria-hidden="true">${icon(s)}</i><b>0</b>${info(s).label}`
+    countsEl.appendChild(c)
+    countEls[s] = c
+  }
+  function renderCounts() {
+    const c = sim.counts()
+    for (const s of ORDER) {
+      const el = countEls[s]
+      const n = c[s] || 0
+      if (el._n === n) continue
+      el._n = n
+      el.querySelector('b').textContent = n
+      el.classList.toggle('on', n > 0)
+    }
+  }
+  const head = {
+    ring: $('#ring'), ringVal: $('#ringVal'), ringPct: $('#ringPct'), sess: $('#sess'),
+    elapsed: $('#sElapsed'), tokens: $('#sTokens'), cost: $('#sCost'), fronts: $('#sFronts'), last: {},
+  }
+  function syncHeader() {
+    const L = head.last
+    const ov = sim.overall()
+    const pct = Math.round(ov)
+    if (L.pct !== pct) {
+      L.pct = pct
+      head.ringVal.style.strokeDashoffset = (213.63 * (1 - ov / 100)).toFixed(2)
+      head.ringPct.textContent = pct + '%'
+      head.ring.setAttribute('aria-label', `Progresso geral ${pct}%`)
+    }
+    const el = clock(sim.t)
+    if (L.el !== el) { L.el = el; head.elapsed.textContent = el }
+    const total = sim.agents.reduce((s, a) => s + a.tokens, 0)
+    const t = tok(total)
+    if (L.t !== t) {
+      L.t = t
+      head.tokens.textContent = t
+      head.cost.textContent = 'US$ ' + ((total / 1e6) * 9).toFixed(2).replace('.', ',')
+    }
+    const ws = sim.workers
+    const fr = `${ws.filter((w) => info(w.state).busy).length}/${ws.length}`
+    if (L.fr !== fr) { L.fr = fr; head.fronts.textContent = fr }
+    const sess = `sessão ${sim.session} · ${sim.project}`
+    if (L.sess !== sess) { L.sess = sess; head.sess.textContent = sess }
+  }
+
+  /* ---------- bus ---------- */
+  const feed = $('#feed')
+  const filtersEl = $('#filters')
+  const busNewer = $('#busNewer')
+  const KIND = {
+    task: ['➜', 'delegação'], report: ['▤', 'report'], block: ['⏸︎', 'permissão'], answer: ['↩', 'resposta'],
+    fail: ['✕', 'falha'], idea: ['✦', 'ideia'], scribe: ['◆', 'gravação'], chat: ['⇄', 'conversa'], user: ['›', 'você'],
+  }
+  let busFilter = null
+  let busPinned = true
+  let busUnread = 0
+  function stickBottom(el) { el.scrollTop = el.scrollHeight; el._auto = el.scrollTop }
+  const matches = (m) => !busFilter || m.from === busFilter || m.to === busFilter
+  function msgEl(m, animate) {
+    const k = KIND[m.kind] || KIND.chat
+    const f = partyVars(m.from)
+    const t = partyVars(m.to)
+    const d = document.createElement('div')
+    d.className = 'msg k-' + m.kind + (animate && live() ? ' new' : '')
+    d.innerHTML = `<span class="m-ico" aria-hidden="true">${k[0]}</span><div><div class="m-head"><time>${clock(m.at)}</time><span class="who" style="--c:${f.c}">${esc(nameOf(m.from))}</span><span aria-hidden="true">→</span><span class="who" style="--c:${t.c}">${esc(nameOf(m.to))}</span><span class="m-kind">${k[1]}</span></div><p class="m-text">${esc(m.text)}</p></div>`
+    return d
+  }
+  function emptyFeed() {
+    feed.innerHTML = `<p class="feed-empty">${busFilter ? `Nenhuma mensagem de ${esc(nameOf(busFilter))} ainda` : 'O bus ainda está quieto…'}</p>`
+  }
+  function rebuildBus() {
+    feed.textContent = ''
+    const list = sim.bus.filter(matches).slice(-60)
+    if (!list.length) emptyFeed()
+    for (const m of list) feed.appendChild(msgEl(m, false))
+    stickBottom(feed)
+    busPinned = true
+    busUnread = 0
+    busNewer.hidden = true
+    renderFilters()
+    $('#busN').textContent = plural(sim.bus.length, 'mensagem', 'mensagens')
+  }
+  function onMessage(m) {
+    if (matches(m)) {
+      const empty = feed.querySelector('.feed-empty')
+      if (empty) empty.remove()
+      feed.appendChild(msgEl(m, true))
+      while (feed.childElementCount > 60) feed.firstElementChild.remove()
+      if (busPinned) stickBottom(feed)
+      else {
+        busUnread += 1
+        busNewer.hidden = false
+        busNewer.textContent = `↓ ${plural(busUnread, 'nova mensagem', 'novas mensagens')}`
+      }
+    }
+    $('#busN').textContent = plural(sim.bus.length, 'mensagem', 'mensagens')
+    renderFilters()
+  }
+  // só solta do fim quando a pessoa rola para cima (scrollTop diminui); crescimento de layout não conta
+  feed.addEventListener('scroll', () => {
+    if (feed.scrollHeight - feed.scrollTop - feed.clientHeight < 28) { busPinned = true; busUnread = 0; busNewer.hidden = true }
+    else if (feed.scrollTop < (feed._auto || 0) - 4) busPinned = false
+    feed._auto = Math.min(feed._auto || 0, feed.scrollTop)
+  })
+  busNewer.addEventListener('click', () => { stickBottom(feed); busPinned = true; busNewer.hidden = true; busUnread = 0 })
+  const chipEls = new Map()
+  function renderFilters() {
+    const ids = ['__all', 'orchestrator', ...sim.workers.map((w) => w.id)]
+    if (sim.bus.some((m) => m.from === 'você' || m.to === 'você')) ids.push('você')
+    if (sim.bus.some((m) => m.from === 'obsidian')) ids.push('obsidian')
+    const count = (id) => (id === '__all' ? sim.bus.length : sim.bus.reduce((n, m) => n + (m.from === id || m.to === id ? 1 : 0), 0))
+    let prev = null
+    for (const id of ids) {
+      let el = chipEls.get(id)
+      if (!el) {
+        el = document.createElement('button')
+        el.type = 'button'
+        el.className = 'fchip'
+        el.dataset.filter = id
+        const cv = id === '__all' ? null : partyVars(id)
+        if (cv) el.style.setProperty('--cb', cv.cb)
+        el.innerHTML = `<i class="d" aria-hidden="true"></i><span class="nm">${id === '__all' ? 'todos' : esc(nameOf(id))}</span><span class="n">0</span>`
+        chipEls.set(id, el)
+      }
+      if (prev ? prev.nextSibling !== el : filtersEl.firstChild !== el) filtersEl.insertBefore(el, prev ? prev.nextSibling : filtersEl.firstChild)
+      prev = el
+      const n = String(count(id))
+      const nEl = el.querySelector('.n')
+      if (nEl.textContent !== n) nEl.textContent = n
+      const pressed = String(id === '__all' ? busFilter === null : busFilter === id)
+      if (el.getAttribute('aria-pressed') !== pressed) el.setAttribute('aria-pressed', pressed)
+      el.setAttribute('aria-label', `${id === '__all' ? 'Todas as mensagens' : 'Só mensagens de ' + nameOf(id)} (${n})`)
+    }
+    for (const [id, el] of chipEls) if (!ids.includes(id)) { el.remove(); chipEls.delete(id) }
+  }
+  filtersEl.addEventListener('click', (e) => {
+    const b = e.target.closest('.fchip')
+    if (!b) return
+    const id = b.dataset.filter
+    busFilter = id === '__all' || busFilter === id ? null : id
+    rebuildBus()
+  })
+  $('#busForm').addEventListener('submit', (e) => {
+    e.preventDefault()
+    const input = $('#busInput')
+    const text = input.value.trim()
+    if (!text) return
+    sim.send('orchestrator', text)
+    input.value = ''
+    toast('Mensagem enviada ao orquestrador')
+  })
+
+  /* ---------- escriba Obsidian ---------- */
+  const scribeBtn = $('#scribe')
+  function syncScribe(pulse) {
+    const s = sim.scribe
+    const a = sim.agent('obsidian')
+    $('#scN').textContent = String(s.writes)
+    setChip($('#scSt'), a ? a.state : 'idle')
+    $('#scNote').textContent = s.note
+    $('#scLast').innerHTML = s.last ? `<time>${clock(s.last.at)}</time>${esc(s.last.text)}` : 'ainda sem gravações'
+    const ticks = $('#scTicks')
+    const want = Math.min(s.writes, 16)
+    while (ticks.childElementCount > want) ticks.firstElementChild.remove()
+    while (ticks.childElementCount < want) {
+      const i = document.createElement('i')
+      if (pulse && live()) i.className = 'enter'
+      ticks.appendChild(i)
+    }
+    if (pulse && live()) {
+      scribeBtn.classList.remove('writing')
+      void scribeBtn.offsetWidth
+      scribeBtn.classList.add('writing')
+    }
+  }
+  scribeBtn.addEventListener('click', () => openFocus('obsidian'))
+
+  /* ---------- seleção ---------- */
+  function select(id, opts) {
+    const o = Object.assign({ open: false, scroll: true }, opts)
+    if (!sim.agent(id)) return
+    const prev = selected && cards.get(selected)
+    if (prev) prev.el.removeAttribute('aria-current')
+    selected = id
+    const c = cards.get(id)
+    if (c) {
+      c.el.setAttribute('aria-current', 'true')
+      if (o.scroll) c.el.scrollIntoView({ block: 'nearest', behavior: live() ? 'smooth' : 'auto' })
+      const ae = document.activeElement
+      if (ae && ae.classList && ae.classList.contains('card') && ae !== c.el) c.el.focus({ preventScroll: true })
+    }
+    if (o.open || focusId) openFocus(id)
+  }
+  function clearSelection() {
+    const prev = selected && cards.get(selected)
+    if (prev) prev.el.removeAttribute('aria-current')
+    selected = null
+  }
+  function flash(id) {
+    const c = cards.get(id)
+    if (!c) return
+    c.el.classList.remove('is-target')
+    void c.el.offsetWidth
+    c.el.classList.add('is-target')
+    setTimeout(() => c.el.classList.remove('is-target'), 2700)
+  }
+  function goTo(id) {
+    if (focusId) closeFocus()
+    const c = cards.get(id)
+    if (c && c.el.classList.contains('is-compact')) { expanded.add(id); syncState(c) }
+    select(id)
+    flash(id)
+  }
+  function moveSel(dir) {
+    if (!selected || !cards.has(selected)) { select('orchestrator'); return }
+    const cur = cards.get(selected).el.getBoundingClientRect()
+    const cx = cur.left + cur.width / 2
+    const cy = cur.top + cur.height / 2
+    let best = null
+    let bestScore = Infinity
+    for (const c of cards.values()) {
+      if (c.a.id === selected) continue
+      const r = c.el.getBoundingClientRect()
+      const dx = r.left + r.width / 2 - cx
+      const dy = r.top + r.height / 2 - cy
+      let main
+      let side
+      if (dir === 'right') { if (r.left < cur.right - 8) continue; main = dx; side = Math.abs(dy) }
+      else if (dir === 'left') { if (r.right > cur.left + 8) continue; main = -dx; side = Math.abs(dy) }
+      else if (dir === 'down') { if (r.top < cur.bottom - 8) continue; main = dy; side = Math.abs(dx) }
+      else { if (r.bottom > cur.top + 8) continue; main = -dy; side = Math.abs(dx) }
+      const score = main + side * 1.6
+      if (score < bestScore) { bestScore = score; best = c.a.id }
+    }
+    if (best) select(best)
+  }
+  const linear = () => [...cards.values()].map((c) => c.a.id)
+  function cycle(step) {
+    const ids = linear()
+    const i = ids.indexOf(focusId || selected)
+    const next = ids[(i + step + ids.length) % ids.length]
+    if (next) select(next, { open: !!focusId })
+  }
+
+  /* ---------- aprovar, negar, copiar ---------- */
+  function decide(id, ok) {
+    const a = sim.agent(id)
+    if (!a || a.state !== 'blocked') return false
+    if (ok) sim.approve(id)
+    else sim.deny(id)
+    toast(ok ? `✓ ${id} aprovado: segue editando` : `✕ ${id} negado: segue por outro caminho`)
+    return true
+  }
+  function copyOf(id) {
+    const a = sim.agent(id)
+    if (!a) return
+    toast('⧉ Copiando a transcrição…')
+    AletheSim.copyText(sim.transcript(id))
+      .then((ok) => toast(ok === false ? 'Não deu para copiar aqui' : `⧉ Transcrição de ${nameOf(id)} copiada (${plural(a.lines.length, 'linha', 'linhas')})`))
+      .catch(() => toast('Não deu para copiar aqui'))
+  }
+
+  /* ---------- terminal em foco ---------- */
+  const focusEl = $('#focus')
+  const fz = {
+    win: $('#fzWin'), id: $('#fzId'), area: $('#fzArea'), st: $('#fzSt'), task: $('#fzTask'), tok: $('#fzTok'),
+    time: $('#fzTime'), diff: $('#fzDiff'), bar: $('#fzBar'), pct: $('#fzPct'), files: $('#fzFiles'), slot: $('#fzSlot'),
+    term: $('#fzTerm'), newer: $('#fzNewer'), input: $('#fzInput'), last: {},
+  }
+  let focusId = null
+  let focusPinned = true
+  let focusUnread = 0
+  let returnTo = null
+  function focusLine(l) {
+    const el = document.createElement('div')
+    el.className = 'ln k-' + l.kind
+    el.innerHTML = `<time>${clock(l.at)}</time><span>${lineHTML(l)}</span>`
+    return el
+  }
+  function paintFocus(full) {
+    const a = sim.agent(focusId)
+    if (!a) return
+    const cv = colorVars(a)
+    fz.win.style.setProperty('--c', cv.c)
+    fz.win.style.setProperty('--cb', cv.cb)
+    fz.id.textContent = nameOf(a.id)
+    fz.area.textContent = a.area
+    setChip(fz.st, a.state)
+    fz.task.innerHTML = `<b>tarefa</b>${esc(a.task)}${a.after ? ` · <b>depois de</b>${esc(a.after)}` : ''}`
+    const planned = a.files || []
+    fz.files.innerHTML = planned.length
+      ? planned.map((f) => `<span class="${a.touched.includes(f) ? 't' : ''}" title="${esc(f)}">${esc(base(f))}</span>`).join('')
+      : '<span>sem arquivos</span>'
+    fz.slot.innerHTML = a.state === 'blocked' || a.state === 'exited' || a.state === 'waiting' ? slotHTML(a) : ''
+    fz.input.placeholder = `Mensagem para ${nameOf(a.id)}…`
+    if (full) {
+      fz.term.textContent = ''
+      const frag = document.createDocumentFragment()
+      for (const l of a.lines) frag.appendChild(focusLine(l))
+      fz.term.appendChild(frag)
+      stickBottom(fz.term)
+      focusPinned = true
+      focusUnread = 0
+      fz.newer.hidden = true
+      fz.last = {}
+    }
+    focusNumbers()
+  }
+  function focusNumbers() {
+    const a = focusId && sim.agent(focusId)
+    if (!a) return
+    const L = fz.last
+    const p = Math.floor(a.progress)
+    if (L.p !== p) { L.p = p; fz.bar.style.setProperty('--p', (a.progress / 100).toFixed(3)); fz.pct.textContent = p + '%' }
+    const t = tok(a.tokens)
+    if (L.t !== t) { L.t = t; fz.tok.textContent = t }
+    const secs = clock((a.endedAt != null ? a.endedAt : sim.t) - a.startedAt)
+    if (L.s !== secs) { L.s = secs; fz.time.textContent = secs }
+    const d = diffs.get(a.id) || { p: 0, m: 0 }
+    const dk = `+${d.p} −${d.m}`
+    if (L.d !== dk) { L.d = dk; fz.diff.textContent = dk }
+    if (a.state === 'blocked' && a.blockedAt != null) {
+      const left = Math.max(0, AUTO_APPROVE - (sim.t - a.blockedAt))
+      const auto = fz.slot.querySelector('[data-auto]')
+      const timer = fz.slot.querySelector('.perm-timer')
+      if (auto) auto.textContent = `aprovação automática em ${Math.ceil(left)} s`
+      if (timer) timer.style.setProperty('--left', (left / AUTO_APPROVE).toFixed(3))
+    }
+  }
+  function openFocus(id) {
+    const a = sim.agent(id)
+    if (!a) return
+    const wasOpen = !focusEl.hidden
+    focusId = id
+    if (!wasOpen) {
+      returnTo = document.activeElement
+      focusEl.hidden = false
+    }
+    paintFocus(true)
+    if (!wasOpen) {
+      const c = cards.get(id)
+      if (c && live()) {
+        const r0 = c.el.getBoundingClientRect()
+        const r1 = fz.win.getBoundingClientRect()
+        fz.win.animate(
+          [
+            { transform: `translate(${r0.left - r1.left}px, ${r0.top - r1.top}px) scale(${r0.width / r1.width}, ${r0.height / r1.height})`, opacity: 0.35 },
+            { transform: 'none', opacity: 1 },
+          ],
+          { duration: 560, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+        )
+      }
+      fz.term.focus({ preventScroll: true })
+    }
+  }
+  function closeFocus() {
+    if (focusEl.hidden) return
+    focusEl.hidden = true
+    const id = focusId
+    focusId = null
+    const c = id && cards.get(id)
+    const back = c ? c.el : returnTo
+    if (back && back.focus) back.focus({ preventScroll: true })
+  }
+  fz.term.addEventListener('scroll', () => {
+    const t = fz.term
+    if (t.scrollHeight - t.scrollTop - t.clientHeight < 24) { focusPinned = true; focusUnread = 0; fz.newer.hidden = true }
+    else if (t.scrollTop < (t._auto || 0) - 4) focusPinned = false
+    t._auto = Math.min(t._auto || 0, t.scrollTop)
+  })
+  fz.newer.addEventListener('click', () => { stickBottom(fz.term); focusPinned = true; fz.newer.hidden = true; focusUnread = 0; fz.term.focus() })
+  function appendFocusLine(l) {
+    fz.term.appendChild(focusLine(l))
+    if (focusPinned) stickBottom(fz.term)
+    else {
+      focusUnread += 1
+      fz.newer.hidden = false
+      fz.newer.textContent = `↓ ${plural(focusUnread, 'nova linha', 'novas linhas')}`
+    }
+  }
+  focusEl.addEventListener('click', (e) => {
+    const t = e.target
+    if (t.closest('[data-close]')) { closeFocus(); return }
+    const act = t.closest('[data-act]')
+    if (act && focusId) { decide(focusId, act.dataset.act === 'approve'); return }
+    const go = t.closest('[data-goto]')
+    if (go) goTo(go.dataset.goto)
+  })
+  $('#fzMax').addEventListener('click', () => fz.win.classList.toggle('max'))
+  $('#fzPrev').addEventListener('click', () => cycle(-1))
+  $('#fzNext').addEventListener('click', () => cycle(1))
+  $('#fzCopy').addEventListener('click', () => focusId && copyOf(focusId))
+  $('#fzForm').addEventListener('submit', (e) => {
+    e.preventDefault()
+    const text = fz.input.value.trim()
+    if (!text || !focusId) return
+    sim.send(focusId, text)
+    fz.input.value = ''
+    toast(`Mensagem enviada a ${nameOf(focusId)}`)
+  })
+  function trap(e, box) {
+    if (e.key !== 'Tab') return
+    const f = [...box.querySelectorAll('button, input, [tabindex="0"]')].filter((x) => !x.disabled && x.offsetParent !== null)
+    if (!f.length) return
+    const first = f[0]
+    const last = f[f.length - 1]
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+  }
+  focusEl.addEventListener('keydown', (e) => trap(e, fz.win))
+
+  /* ---------- ajuda ---------- */
+  const helpEl = $('#help')
+  let helpReturn = null
+  function toggleHelp(force) {
+    const open = force !== undefined ? force : helpEl.hidden
+    if (open) {
+      helpReturn = document.activeElement
+      helpEl.hidden = false
+      helpEl.querySelector('.close').focus()
+    } else if (!helpEl.hidden) {
+      helpEl.hidden = true
+      if (helpReturn && helpReturn.focus) helpReturn.focus()
+    }
+  }
+  helpEl.addEventListener('click', (e) => { if (e.target.closest('[data-close-help]')) toggleHelp(false) })
+  helpEl.addEventListener('keydown', (e) => trap(e, helpEl))
+  $('#helpBtn').addEventListener('click', () => toggleHelp())
+
+  /* ---------- controles: pausa, velocidade, tema, notas ---------- */
+  const pauseBtn = $('#pauseBtn')
+  function syncPause() {
+    const p = sim.paused
+    root.toggleAttribute('data-paused', p)
+    pauseBtn.setAttribute('aria-pressed', String(p))
+    $('#pauseG').textContent = p ? '▶︎' : '⏸︎'
+    $('#pauseT').textContent = p ? 'Continuar' : 'Pausar'
+  }
+  pauseBtn.addEventListener('click', () => sim.toggle())
+  const fmtSpeed = (v) => String(v).replace('.', ',') + '×'
+  function syncSpeed() {
+    for (const b of document.querySelectorAll('#speedSeg button')) b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.speed - sim.speed) < 1e-6))
+  }
+  $('#speedSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-speed]')
+    if (b) sim.setSpeed(+b.dataset.speed)
+  })
+  function stepSpeed(d) {
+    const cur = sim.speed
+    let i = 0
+    for (let j = 1; j < SPEEDS.length; j += 1) if (Math.abs(SPEEDS[j] - cur) < Math.abs(SPEEDS[i] - cur)) i = j
+    i = Math.max(0, Math.min(SPEEDS.length - 1, i + d))
+    sim.setSpeed(SPEEDS[i])
+    toast(`velocidade ${fmtSpeed(SPEEDS[i])}`)
+  }
+  function toggleTheme() {
+    applyTheme(theme === 'dark' ? 'light' : 'dark')
+    store.set('mca-theme', theme)
+  }
+  $('#themeBtn').addEventListener('click', toggleTheme)
+  const notesEl = $('#notes')
+  const notesBtn = $('#notesBtn')
+  let notesOpen = store.get('mca-notes') !== 'closed'
+  function syncNotes() {
+    notesEl.dataset.open = String(notesOpen)
+    notesBtn.setAttribute('aria-expanded', String(notesOpen))
+    notesBtn.textContent = notesOpen ? 'Recolher ▾' : 'Mostrar notas ▴'
+  }
+  notesBtn.addEventListener('click', () => { notesOpen = !notesOpen; store.set('mca-notes', notesOpen ? 'open' : 'closed'); syncNotes() })
+  syncNotes()
+
+  /* ---------- cliques na parede ---------- */
+  grid.addEventListener('click', (e) => {
+    const cardEl = e.target.closest('.card')
+    if (!cardEl) return
+    const id = cardEl.dataset.id
+    const btn = e.target.closest('button')
+    if (btn) {
+      e.stopPropagation()
+      if (btn.dataset.act) decide(id, btn.dataset.act === 'approve')
+      else if (btn.dataset.goto) goTo(btn.dataset.goto)
+      else if (btn.classList.contains('c-fold')) { expanded.delete(id); const c = cards.get(id); syncState(c); syncNumbers(c) }
+      return
+    }
+    const c = cards.get(id)
+    if (!c) return
+    if (c.el.classList.contains('is-compact')) {
+      expanded.add(id)
+      syncState(c)
+      syncNumbers(c)
+      select(id, { scroll: false })
+      return
+    }
+    select(id, { open: true, scroll: false })
+  })
+  grid.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('card')) {
+      e.preventDefault()
+      e.target.click()
+    }
+  })
+
+  /* ---------- teclado (desligado no embed) ---------- */
+  if (!EMBED) {
+    document.addEventListener('keydown', (e) => {
+      const t = e.target
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+        if (e.key === 'Escape') t.blur()
+        return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const k = e.key
+      if (k === ' ' || k === 'Spacebar') { e.preventDefault(); sim.toggle(); return }
+      if (k === '?') { e.preventDefault(); toggleHelp(); return }
+      if (k === 'Escape') {
+        if (!helpEl.hidden) toggleHelp(false)
+        else if (focusId) closeFocus()
+        else if (selected) clearSelection()
+        return
+      }
+      if (!helpEl.hidden) return
+      if (k === '+' || k === '=') { stepSpeed(1); return }
+      if (k === '-' || k === '_') { stepSpeed(-1); return }
+      if (/^[0-9]$/.test(k)) {
+        const id = k === '0' ? 'orchestrator' : 'claude-' + k
+        if (sim.agent(id)) select(id)
+        else toast(`claude-${k} ainda não nasceu nesta sessão`)
+        return
+      }
+      if (k.startsWith('Arrow')) {
+        if (focusId) {
+          if (k === 'ArrowLeft' || k === 'ArrowRight') { e.preventDefault(); cycle(k === 'ArrowRight' ? 1 : -1) }
+          return
+        }
+        e.preventDefault()
+        moveSel(k.slice(5).toLowerCase())
+        return
+      }
+      if (k === 'Enter') {
+        if (selected && !focusId && (t === document.body || t === document.documentElement)) openFocus(selected)
+        return
+      }
+      const low = k.toLowerCase()
+      if (low === 'a' || low === 'n') {
+        const id = focusId || selected
+        const a = id && sim.agent(id)
+        if (a && a.state === 'blocked') decide(id, low === 'a')
+        else {
+          const b = sim.workers.find((w) => w.state === 'blocked')
+          toast(b ? `Selecione ${b.id} (tecla ${b.id.replace('claude-', '')}) para ${low === 'a' ? 'aprovar' : 'negar'}` : 'Nenhum agente bloqueado agora')
+        }
+        return
+      }
+      if (low === 'c') {
+        const id = focusId || selected
+        if (id) copyOf(id)
+        else toast('Selecione um agente (1–9 ou 0) para copiar')
+        return
+      }
+      if (low === 't') toggleTheme()
+    })
+  }
+
+  /* ---------- eventos da simulação ---------- */
+  function resyncSlots() { for (const c of cards.values()) syncState(c) }
+  sim.on('spawn', (e) => {
+    addCard(e.agent, true)
+    resyncSlots()
+    renderFronts()
+    renderCounts()
+  })
+  sim.on('state', (e) => {
+    const a = e.agent
+    if (a.role === 'scribe') { syncScribe(false); return }
+    const c = cards.get(a.id)
+    if (c) { syncState(c); syncNumbers(c) }
+    for (const o of cards.values()) if (o.a.after === a.id || replacedBy(o.a) === a) syncState(o)
+    renderFronts()
+    renderCounts()
+    syncHeader()
+    if (focusId === a.id) paintFocus(false)
+    if (e.to === 'exited') announce(`${a.id} falhou: ${a.area}. Um substituto vai continuar.`)
+    else if (e.to === 'done') announce(a.role === 'orchestrator' ? 'Sessão concluída: verificação final ok.' : `${a.id} concluiu ${a.area}.`)
+  })
+  sim.on('line', (e) => {
+    const a = e.agent
+    trackDiff(a.id, e.line)
+    const c = cards.get(a.id)
+    if (c) {
+      pushLine(c, e.line, true)
+      if (a.role === 'creative') addIdea(c, e.line, 0)
+    }
+    if (focusId === a.id) appendFocusLine(e.line)
+  })
+  sim.on('message', (e) => onMessage(e.message))
+  sim.on('scribe', () => syncScribe(true))
+  sim.on('permission', (e) => {
+    const p = permParts(e.request)
+    announce(`${e.agent.id} bloqueado: precisa da sua permissão para ${p.what}. A aprova, N nega.`)
+  })
+  sim.on('resolved', (e) => {
+    const c = cards.get(e.agent.id)
+    if (c) syncState(c)
+    if (focusId === e.agent.id) paintFocus(false)
+  })
+  sim.on('reset', () => {
+    closeFocus()
+    busFilter = null
+    buildAll(true)
+    announce(`Sessão ${sim.session} começou.`)
+  })
+  sim.on('pause', syncPause)
+  sim.on('speed', syncSpeed)
+  let lastPaint = 0
+  sim.on('tick', () => {
+    const now = performance.now()
+    if (now - lastPaint < 110) return
+    lastPaint = now
+    paintNumbers()
+  })
+  function paintNumbers() {
+    for (const c of cards.values()) syncNumbers(c)
+    tickFronts()
+    syncHeader()
+    if (focusId) focusNumbers()
+  }
+
+  /* ---------- montagem ---------- */
+  function buildAll(fresh) {
+    layoutReady = false
+    for (const c of cards.values()) ro.unobserve(c.el)
+    grid.textContent = ''
+    cards.clear()
+    expanded.clear()
+    diffs.clear()
+    selected = null
+    for (const a of sim.agents) for (const l of a.lines) trackDiff(a.id, l)
+    frRefs.clear()
+    for (const a of sim.agents) if (a.role !== 'scribe') addCard(a, false)
+    renderFronts()
+    for (const c of cards.values()) fitEl(c.el)
+    renderCounts()
+    rebuildBus()
+    syncScribe(false)
+    syncHeader()
+    $('#goalText').textContent = sim.goal
+    if (fresh && live()) {
+      let i = 0
+      for (const c of cards.values()) {
+        c.el.style.setProperty('--i', String(i++))
+        enter(c.el)
+      }
+    }
+    setTimeout(() => { layoutReady = true }, 900)
+  }
+  buildAll()
+  syncPause()
+  syncSpeed()
+  const qSel = Q.get('select')
+  if (qSel && sim.agent(qSel)) select(qSel)
+  const qFocus = Q.get('focus')
+  if (qFocus && sim.agent(qFocus)) openFocus(qFocus)
+  if (Q.get('help') === '1') toggleHelp(true)
+  setTimeout(() => root.removeAttribute('data-boot'), 450)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (busPinned) stickBottom(feed)
+      if (focusId && focusPinned) stickBottom(fz.term)
+    })
+  }
+  sim.start()
+})()
+</script>
+</body>
+</html>

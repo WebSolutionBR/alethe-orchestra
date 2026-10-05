@@ -15,6 +15,8 @@ export default tseslint.config(
       'graphify-out',
       'scripts',
       'tests',
+      // Standalone design prototypes (self-contained HTML and their simulator source).
+      'docs/prototypes',
       '*.config.js',
       '*.config.ts',
       'vite.config.ts',

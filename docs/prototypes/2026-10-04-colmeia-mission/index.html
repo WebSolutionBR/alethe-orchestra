@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Protótipos · Colmeia e Mission Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Readex+Pro:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #121212;
+        --bg-2: #17151d;
+        --card: rgba(255, 255, 255, 0.05);
+        --card-strong: rgba(255, 255, 255, 0.09);
+        --border: rgba(255, 255, 255, 0.12);
+        --border-strong: rgba(255, 255, 255, 0.22);
+        --fg: #f4f2fa;
+        --muted: #b9b4c8;
+        --faint: #8c879c;
+        --accent: #a78bfa;
+        --cyan: #00ffff;
+        --pink: #ff6aff;
+        --lime: #8fff00;
+        --violet: #5600ff;
+        --blob-a: rgba(86, 0, 255, 0.55);
+        --blob-b: rgba(0, 255, 255, 0.28);
+        --blob-c: rgba(255, 106, 255, 0.32);
+        --blob-d: rgba(143, 255, 0, 0.16);
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        --focus: #00ffff;
+        --tag-colmeia: #00ffff;
+        --tag-mission: #ff6aff;
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        --font-ui: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+        --font-title: 'Readex Pro', 'Segoe UI', system-ui, sans-serif;
+        --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+        color-scheme: dark;
+      }
+
+      [data-theme='light'] {
+        --bg: #f4f3f8;
+        --bg-2: #ebe8f3;
+        --card: rgba(255, 255, 255, 0.62);
+        --card-strong: rgba(255, 255, 255, 0.82);
+        --border: rgba(18, 18, 18, 0.1);
+        --border-strong: rgba(18, 18, 18, 0.2);
+        --fg: #121212;
+        --muted: #45405a;
+        --faint: #5f5a73;
+        --accent: #4b00db;
+        --blob-a: rgba(86, 0, 255, 0.22);
+        --blob-b: rgba(0, 200, 210, 0.2);
+        --blob-c: rgba(255, 106, 255, 0.24);
+        --blob-d: rgba(110, 200, 0, 0.14);
+        --shadow: 0 18px 40px rgba(40, 20, 90, 0.14);
+        --focus: #4b00db;
+        --tag-colmeia: #006b70;
+        --tag-mission: #a3009f;
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-ui);
+        font-size: 15px;
+        line-height: 1.5;
+        overflow-x: hidden;
+      }
+
+      /* Manchas neon que derivam + granulado (identidade Web Solution). */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .blob {
+        position: absolute;
+        width: 46vmax;
+        height: 46vmax;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.9;
+        animation: drift 28s var(--ease) infinite alternate;
+      }
+
+      .blob.a {
+        background: var(--blob-a);
+        top: -18vmax;
+        left: -12vmax;
+      }
+
+      .blob.b {
+        background: var(--blob-b);
+        top: 10vmax;
+        right: -16vmax;
+        animation-duration: 34s;
+      }
+
+      .blob.c {
+        background: var(--blob-c);
+        bottom: -22vmax;
+        left: 22vw;
+        animation-duration: 40s;
+      }
+
+      .blob.d {
+        background: var(--blob-d);
+        bottom: -10vmax;
+        right: 8vw;
+        width: 30vmax;
+        height: 30vmax;
+        animation-duration: 31s;
+      }
+
+      @keyframes drift {
+        from {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+        to {
+          transform: translate3d(6vmax, 4vmax, 0) scale(1.12);
+        }
+      }
+
+      .grain {
+        position: absolute;
+        inset: -50%;
+        opacity: 0.09;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 28px 28px 60px;
+      }
+
+      header.top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 26px;
+      }
+
+      .brand {
+        font-family: var(--font-title);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        font-size: 15px;
+        color: var(--muted);
+      }
+
+      .brand b {
+        color: var(--fg);
+      }
+
+      .brand i {
+        font-style: normal;
+        color: var(--lime);
+      }
+
+      [data-theme='light'] .brand i {
+        color: #3f7500;
+      }
+
+      h1 {
+        margin: 6px 0 8px;
+        font-family: var(--font-title);
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+      }
+
+      h1 span {
+        color: var(--accent);
+      }
+
+      .lead {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 8px 15px;
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: var(--card);
+        color: var(--fg);
+        font: 500 14px var(--font-ui);
+        cursor: pointer;
+        text-decoration: none;
+        backdrop-filter: blur(20px) saturate(1.2);
+        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        transition:
+          transform 220ms var(--ease),
+          background 220ms var(--ease),
+          border-color 220ms var(--ease);
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        background: var(--card-strong);
+        border-color: var(--accent);
+      }
+
+      .btn.primary {
+        border-color: transparent;
+        background: var(--violet);
+        color: #ffffff;
+      }
+
+      .btn.primary:hover {
+        background: #6a1bff;
+      }
+
+      .btn[aria-pressed='true'] {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+      }
+
+      section.group {
+        margin-top: 30px;
+      }
+
+      .group-head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+
+      .group-head h2 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 24px;
+        letter-spacing: -0.02em;
+      }
+
+      .group-head p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--card);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(20px) saturate(1.2);
+        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        animation: rise 700ms var(--ease) both;
+      }
+
+      .card:nth-child(2) {
+        animation-delay: 70ms;
+      }
+
+      .card:nth-child(3) {
+        animation-delay: 140ms;
+      }
+
+      .card:nth-child(4) {
+        animation-delay: 210ms;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+          filter: blur(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
+        }
+      }
+
+      .thumb {
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 0;
+        background: var(--bg-2);
+        cursor: zoom-in;
+      }
+
+      .thumb iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1440px;
+        height: 900px;
+        border: 0;
+        transform-origin: 0 0;
+        pointer-events: none;
+      }
+
+      .thumb .placeholder {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--faint);
+        font-size: 13px;
+      }
+
+      .thumb::after {
+        content: 'ver em tela grande';
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(18, 18, 18, 0.72);
+        color: #ffffff;
+        font: 500 12px var(--font-ui);
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 220ms var(--ease),
+          transform 220ms var(--ease);
+      }
+
+      .thumb:hover::after,
+      .thumb:focus-visible::after {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px 18px 18px;
+      }
+
+      .meta-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .tag {
+        padding: 2px 9px;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        font: 500 11px var(--font-mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .tag.colmeia {
+        color: var(--tag-colmeia);
+      }
+
+      .tag.mission {
+        color: var(--tag-mission);
+      }
+
+      .meta h3 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 20px;
+        letter-spacing: -0.01em;
+      }
+
+      .meta p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .meta .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .path {
+        font: 12px var(--font-mono);
+        color: var(--faint);
+        word-break: break-all;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-top: 18px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .legend b {
+        color: var(--fg);
+        font-weight: 500;
+      }
+
+      .legend span {
+        font-family: var(--font-mono);
+        color: var(--fg);
+      }
+
+      footer.notes {
+        margin-top: 36px;
+        padding: 18px 20px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      footer.notes h2 {
+        margin: 0 0 8px;
+        font-family: var(--font-title);
+        font-size: 17px;
+        color: var(--fg);
+      }
+
+      footer.notes ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      footer.notes code {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: var(--fg);
+      }
+
+      /* Visualizador grande para comparar (setas trocam de variante). */
+      .viewer {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        flex-direction: column;
+        background: rgba(10, 8, 16, 0.86);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .viewer.open {
+        display: flex;
+        animation: fadeIn 260ms var(--ease);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .viewer-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        color: #f4f2fa;
+      }
+
+      .viewer-bar h2 {
+        flex: 1;
+        margin: 0;
+        font: 600 16px var(--font-title);
+      }
+
+      .viewer-bar .btn {
+        color: #f4f2fa;
+        border-color: rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .viewer-frame {
+        flex: 1;
+        margin: 0 16px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #121212;
+      }
+
+      .viewer-frame iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .blob,
+        .card,
+        .viewer.open {
+          animation: none;
+        }
+
+        .btn,
+        .thumb::after {
+          transition: none;
+        }
+      }
+
+      @media print {
+        .backdrop,
+        .controls,
+        .thumb,
+        .viewer {
+          display: none !important;
+        }
+
+        body {
+          background: #ffffff;
+          color: #121212;
+        }
+
+        .card {
+          break-inside: avoid;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true">
+      <div class="blob a"></div>
+      <div class="blob b"></div>
+      <div class="blob c"></div>
+      <div class="blob d"></div>
+      <div class="grain"></div>
+    </div>
+
+    <div class="page">
+      <header class="top">
+        <div>
+          <div class="brand"><b>alethe</b> orchestra<i>.</i> · protótipos</div>
+          <h1>Colmeia e Mission Control, <span>vivas</span></h1>
+          <p class="lead">
+            Quatro direções para a Colmeia e duas para o Mission Control, todas rodando a mesma orquestração
+            simulada (a sessão real de 04/10/2026): workers nascendo com <code>--after</code>, bloqueio pedindo
+            permissão, falha com substituto, ideias do criativo e o escriba gravando no Obsidian.
+          </p>
+        </div>
+        <div class="controls">
+          <button class="btn" id="themeBtn" type="button" aria-pressed="false">Tema claro</button>
+          <button class="btn" id="liveBtn" type="button" aria-pressed="true">Miniaturas ao vivo</button>
+        </div>
+      </header>
+
+      <section class="group" aria-labelledby="g-colmeia">
+        <div class="group-head">
+          <h2 id="g-colmeia">Colmeia</h2>
+          <p>4 variantes · o foco do pedido</p>
+        </div>
+        <div class="grid" id="grid-colmeia"></div>
+      </section>
+
+      <section class="group" aria-labelledby="g-mission">
+        <div class="group-head">
+          <h2 id="g-mission">Mission Control</h2>
+          <p>2 variantes</p>
+        </div>
+        <div class="grid" id="grid-mission"></div>
+      </section>
+
+      <div class="legend" aria-label="Legenda dos estados">
+        <b>Estados (iguais em todas):</b>
+        <span>◌ iniciando</span><span>✻ pensando</span><span>◎ lendo</span><span>✎ editando</span>
+        <span>▶ testando</span><span>⏸ bloqueado</span><span>⧗ aguardando</span><span>✓ concluído</span>
+        <span>✕ falhou</span>
+      </div>
+
+      <footer class="notes">
+        <h2>Como usar</h2>
+        <ul>
+          <li>
+            Clique numa miniatura para ver em tela grande; <b>← →</b> trocam de variante e <b>Esc</b> fecha. Ou
+            use “Abrir” para abrir o arquivo sozinho.
+          </li>
+          <li>
+            Em todas: <b>Espaço</b> pausa, <b>+ / −</b> mudam a velocidade, <b>1–9</b> selecionam agentes, <b>A</b>/<b>N</b>
+            aprovam ou negam um bloqueio, <b>C</b> copia a transcrição, <b>T</b> troca o tema e <b>?</b> mostra a ajuda.
+          </li>
+          <li>
+            Cada variante tem no rodapé o que daria para levar ao app e o que conflita com a regra atual do
+            design system (sem gradiente, cores só por tokens). A decisão é sua.
+          </li>
+          <li>
+            Os arquivos são autocontidos (só as fontes vêm do Google Fonts). O motor da simulação fica em
+            <code>_fonte\sim-engine.js</code>; <code>node _fonte\sync-engine.mjs</code> atualiza todas as variantes e
+            <code>node _fonte\check.mjs &lt;arquivo&gt;</code> confere uma no Edge.
+          </li>
+        </ul>
+      </footer>
+    </div>
+
+    <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
+      <div class="viewer-bar">
+        <button class="btn" id="prevBtn" type="button" aria-label="Variante anterior">←</button>
+        <h2 id="viewerTitle">Variante</h2>
+        <a class="btn" id="viewerOpen" href="#" target="_blank" rel="noopener">Abrir sozinho</a>
+        <button class="btn" id="nextBtn" type="button" aria-label="Próxima variante">→</button>
+        <button class="btn" id="closeBtn" type="button" aria-label="Fechar">Fechar (Esc)</button>
+      </div>
+      <div class="viewer-frame"><iframe id="viewerFrame" title="Variante em tela grande"></iframe></div>
+    </div>
+
+    <div class="sr-only" aria-live="polite" id="live"></div>
+
+    <script>
+      const VARIANTS = [
+        {
+          group: 'colmeia',
+          file: 'colmeia-a-vidro-neon.html',
+          title: 'Colmeia A · Vidro neon',
+          text: 'Identidade da Web Solution: preto profundo, manchas neon e granulado; hexágonos de vidro com o progresso subindo como líquido neon, bloqueio em zigue-zague com Aprovar/Negar no próprio hexágono, falha em vidro rachado e mensagens como cometas.',
+        },
+        {
+          group: 'colmeia',
+          file: 'colmeia-b-bioluminescente.html',
+          title: 'Colmeia B · Bioluminescente',
+          text: 'Fundo do mar: o orquestrador é uma água-viva, os workers são células que respiram com um núcleo luminoso do tamanho do progresso; casulo no --after, espinhos no bloqueio, cristal ao concluir, cacos na falha e esporos levando as mensagens.',
+        },
+        {
+          group: 'colmeia',
+          file: 'colmeia-c-holografica.html',
+          title: 'Colmeia C · Holográfica',
+          text: 'Cyber HUD: favo inclinado em 3D com parallax, prismas iridescentes, medidor de 10 segmentos (lê em cinza), radar no orquestrador, lasers entre os agentes, listras de perigo no bloqueio e glitch “SINAL PERDIDO” na falha.',
+        },
+        {
+          group: 'colmeia',
+          file: 'colmeia-d-vidro-macos.html',
+          title: 'Colmeia D · Vidro macOS',
+          text: 'Área de trabalho macOS/Hyprland: janela de vidro com traffic lights, ilhas no topo, dock que quica no bloqueio, notificações e Spotlight (Ctrl+K); progresso no contorno do hexágono e um selo com forma própria por estado.',
+        },
+        {
+          group: 'mission',
+          file: 'mission-a-parede-neon.html',
+          title: 'Mission Control A · Parede de terminais neon',
+          text: 'Parede de terminais de vidro com a transcrição ao vivo de cada agente; bloqueio com Aprovar/Negar e contagem da aprovação automática no card, concluído que recolhe, falha com “substituído por claude-7” e foco que amplia o card num terminal grande.',
+        },
+        {
+          group: 'mission',
+          file: 'mission-b-bento-aurora.html',
+          title: 'Mission Control B · Bento aurora',
+          text: 'Bento grid sobre aurora: progresso gigante, bloco “Precisa de você”, linha do tempo com um padrão por estado, blocos do criativo e do escriba e uma folha lateral por agente com transcrição, Copiar e mensagem.',
+        },
+      ]
+
+      const root = document.documentElement
+      const themeBtn = document.getElementById('themeBtn')
+      const liveBtn = document.getElementById('liveBtn')
+      const live = document.getElementById('live')
+      const viewer = document.getElementById('viewer')
+      const viewerFrame = document.getElementById('viewerFrame')
+      const viewerTitle = document.getElementById('viewerTitle')
+      const viewerOpen = document.getElementById('viewerOpen')
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      let theme = 'dark'
+      let liveThumbs = !reduced
+      let current = -1
+      let lastFocus = null
+
+      try {
+        const saved = localStorage.getItem('prototipos-theme')
+        if (saved === 'light' || saved === 'dark') theme = saved
+      } catch (error) {
+        /* sem armazenamento: segue no padrão */
+      }
+
+      const src = (variant, extra) => `${variant.file}?theme=${theme}${extra || ''}`
+
+      function applyTheme() {
+        root.dataset.theme = theme
+        themeBtn.textContent = theme === 'dark' ? 'Tema claro' : 'Tema escuro'
+        themeBtn.setAttribute('aria-pressed', String(theme === 'light'))
+        try {
+          localStorage.setItem('prototipos-theme', theme)
+        } catch (error) {
+          /* ignora */
+        }
+      }
+
+      function buildCards() {
+        VARIANTS.forEach((variant, index) => {
+          const grid = document.getElementById(`grid-${variant.group}`)
+          const card = document.createElement('article')
+          card.className = 'card'
+          card.innerHTML = `
+            <button class="thumb" type="button" aria-label="Ver ${variant.title} em tela grande">
+              <span class="placeholder">miniatura pausada</span>
+            </button>
+            <div class="meta">
+              <div class="meta-top">
+                <span class="tag ${variant.group}">${variant.group === 'colmeia' ? 'Colmeia' : 'Mission Control'}</span>
+                <h3>${variant.title}</h3>
+              </div>
+              <p>${variant.text}</p>
+              <div class="actions">
+                <a class="btn primary" href="${variant.file}" target="_blank" rel="noopener">Abrir</a>
+                <button class="btn compare" type="button">Ver em tela grande</button>
+              </div>
+              <div class="path">C:\\Users\\Profile\\Documents\\Alethe\\Sistemas_e_autromacoes\\prototipos\\${variant.file}</div>
+            </div>`
+          card.querySelector('.thumb').addEventListener('click', () => openViewer(index))
+          card.querySelector('.compare').addEventListener('click', () => openViewer(index))
+          variant.card = card
+          grid.appendChild(card)
+        })
+      }
+
+      function scaleThumbs() {
+        for (const variant of VARIANTS) {
+          const thumb = variant.card.querySelector('.thumb')
+          const frame = thumb.querySelector('iframe')
+          if (frame) frame.style.transform = `scale(${thumb.clientWidth / 1440})`
+        }
+      }
+
+      function loadThumb(variant) {
+        const thumb = variant.card.querySelector('.thumb')
+        let frame = thumb.querySelector('iframe')
+        if (!liveThumbs) {
+          if (frame) frame.remove()
+          thumb.querySelector('.placeholder').hidden = false
+          return
+        }
+        if (!variant.visible) return
+        const wanted = src(variant, '&embed=1&speed=2')
+        if (!frame) {
+          frame = document.createElement('iframe')
+          frame.setAttribute('title', `Miniatura: ${variant.title}`)
+          frame.setAttribute('tabindex', '-1')
+          frame.setAttribute('loading', 'lazy')
+          thumb.appendChild(frame)
+        }
+        if (frame.getAttribute('src') !== wanted) frame.setAttribute('src', wanted)
+        thumb.querySelector('.placeholder').hidden = true
+        scaleThumbs()
+      }
+
+      function refreshThumbs() {
+        for (const variant of VARIANTS) loadThumb(variant)
+      }
+
+      function openViewer(index) {
+        current = (index + VARIANTS.length) % VARIANTS.length
+        const variant = VARIANTS[current]
+        if (!viewer.classList.contains('open')) lastFocus = document.activeElement
+        viewer.classList.add('open')
+        viewerTitle.textContent = variant.title
+        viewerOpen.href = src(variant)
+        viewerFrame.src = src(variant)
+        viewerFrame.title = variant.title
+        live.textContent = `${variant.title} em tela grande`
+        document.getElementById('closeBtn').focus()
+      }
+
+      function closeViewer() {
+        viewer.classList.remove('open')
+        viewerFrame.removeAttribute('src')
+        current = -1
+        if (lastFocus) lastFocus.focus()
+      }
+
+      themeBtn.addEventListener('click', () => {
+        theme = theme === 'dark' ? 'light' : 'dark'
+        applyTheme()
+        refreshThumbs()
+        if (current >= 0) openViewer(current)
+      })
+
+      liveBtn.addEventListener('click', () => {
+        liveThumbs = !liveThumbs
+        liveBtn.setAttribute('aria-pressed', String(liveThumbs))
+        liveBtn.textContent = liveThumbs ? 'Miniaturas ao vivo' : 'Miniaturas pausadas'
+        refreshThumbs()
+      })
+
+      document.getElementById('prevBtn').addEventListener('click', () => openViewer(current - 1))
+      document.getElementById('nextBtn').addEventListener('click', () => openViewer(current + 1))
+      document.getElementById('closeBtn').addEventListener('click', closeViewer)
+
+      document.addEventListener('keydown', (event) => {
+        if (!viewer.classList.contains('open')) return
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          closeViewer()
+        } else if (event.key === 'ArrowLeft') {
+          event.preventDefault()
+          openViewer(current - 1)
+        } else if (event.key === 'ArrowRight') {
+          event.preventDefault()
+          openViewer(current + 1)
+        }
+      })
+
+      applyTheme()
+      buildCards()
+      liveBtn.setAttribute('aria-pressed', String(liveThumbs))
+      liveBtn.textContent = liveThumbs ? 'Miniaturas ao vivo' : 'Miniaturas pausadas'
+
+      // Só carrega a miniatura que está na tela (6 cenas vivas ao mesmo tempo pesam).
+      const observer =
+        'IntersectionObserver' in window
+          ? new IntersectionObserver(
+              (entries) => {
+                for (const entry of entries) {
+                  const variant = VARIANTS.find((item) => item.card === entry.target)
+                  if (!variant) continue
+                  variant.visible = entry.isIntersecting
+                  if (entry.isIntersecting) loadThumb(variant)
+                }
+              },
+              { rootMargin: '200px' },
+            )
+          : null
+      for (const variant of VARIANTS) {
+        if (observer) observer.observe(variant.card)
+        else {
+          variant.visible = true
+          loadThumb(variant)
+        }
+      }
+      window.addEventListener('resize', scaleThumbs)
+      if ('ResizeObserver' in window) new ResizeObserver(scaleThumbs).observe(document.body)
+    </script>
+  </body>
+</html>

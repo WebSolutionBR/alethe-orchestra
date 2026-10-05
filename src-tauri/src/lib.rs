@@ -1,3 +1,4 @@
+mod account_mcp;
 mod activity_stats;
 mod agent_cost;
 mod agent_events;
@@ -29,6 +30,7 @@ mod github_sync;
 mod graphify;
 mod handoff;
 mod health_probe;
+mod legacy_import;
 mod logging;
 mod mcp_agents;
 mod mcp_catalog;
@@ -247,6 +249,10 @@ pub fn run() {
             agent_events::agent_hooks_settings_path,
             agent_events::agent_hooks_endpoint,
             agent_events::agent_hooks_token,
+            legacy_import::legacy_alethe_status,
+            legacy_import::legacy_alethe_read_projects,
+            legacy_import::legacy_alethe_copy_accounts,
+            legacy_import::legacy_alethe_mark,
             codex_app_server::codex_app_server_start,
             codex_app_server::codex_app_server_send,
             codex_app_server::codex_app_server_stop,
@@ -376,6 +382,7 @@ pub fn run() {
             claude_usage::get_claude_usage,
             claude_usage::get_claude_usage_for,
             claude_usage::get_all_accounts_usage,
+            account_mcp::sync_account_mcp_servers,
             codex_usage::get_codex_usage,
             antigravity_usage::get_antigravity_usage,
             agent_cost::get_session_cost,

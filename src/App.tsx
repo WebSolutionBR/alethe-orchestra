@@ -32,6 +32,7 @@ import { PreferencesModal } from './components/modals/PreferencesModal'
 import { ClaudeAccountsModal } from './components/modals/ClaudeAccountsModal'
 import { ProfilesModal } from './components/modals/ProfilesModal'
 import { primeAccountBase } from './lib/claudeAccounts'
+import { runLegacyImport, toastLegacyImport, toastLegacyImportError } from './lib/legacyImport'
 import { RecentChatsModal } from './components/modals/RecentChatsModal'
 import { RemoteControlModal } from './components/modals/RemoteControlModal'
 import { SuspendGroupModal } from './components/modals/SuspendGroupModal'
@@ -250,6 +251,17 @@ export default function App() {
   useEffect(() => {
     void primeAccountBase()
   }, [])
+
+  // First run of Alethe Orchestra: bring projects and Claude accounts over from the
+  // original Alethe install (read only). Later runs are a no-op; re-sync is manual.
+  useEffect(() => {
+    if (!hydrated) return
+    runLegacyImport()
+      .then((summary) => {
+        if (summary) toastLegacyImport(summary, false)
+      })
+      .catch(toastLegacyImportError)
+  }, [hydrated])
 
   // The monitor window (separate webview) asks, via a Tauri event, to switch
   // every Claude terminal to the account marked as current there. We apply it

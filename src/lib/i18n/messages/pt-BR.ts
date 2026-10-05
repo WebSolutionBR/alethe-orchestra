@@ -12,6 +12,7 @@ import { missionPtBR } from '../../../components/Orchestra/i18n/mission'
 import { terminalsPtBR } from '../../../components/Orchestra/i18n/terminals'
 import { timelinePtBR } from '../../../components/Orchestra/i18n/timeline'
 import { liveTerminalPtBR } from '../../../components/LiveTerminal/i18n'
+import { a11yPtBR } from '../../../components/Orchestra/a11y/i18n'
 import { resumePtBR } from '../../../components/Orchestra/resume/i18n'
 import type { MessageKey } from './en'
 
@@ -2232,5 +2233,6 @@ export const ptBR: Record<MessageKey, string> = {
   ...attentionPtBR,
   ...liveTerminalPtBR,
   ...agentsPtBR,
+  ...a11yPtBR,
   ...resumePtBR,
 }

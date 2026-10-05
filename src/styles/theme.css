@@ -83,8 +83,12 @@
   --status-stopped: #8b8b95;
   --status-stopped-soft: rgba(139, 139, 149, 0.14);
   --status-disabled: #4b5563;
-  --status-offline: #ef4444;
+  --status-offline: #f64b49;
   --status-offline-soft: rgba(239, 68, 68, 0.16);
+  /* Filled danger buttons: a deeper red than the status text, so light text keeps 4.5:1 and the
+     hover (mixed toward black) only gains contrast. */
+  --danger: #dd3134;
+  --danger-on: #ffffff;
   --status-active: var(--status-working);
   --status-idle: var(--status-stopped);
 
@@ -103,6 +107,10 @@
   --agent-freebuff-soft: rgba(124, 92, 255, 0.15);
   --agent-mimo-soft: rgba(255, 122, 26, 0.15);
   --agent-antigravity-soft: rgba(66, 133, 244, 0.15);
+  --agent-obsidian: #9173f7;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   /* foco dotted (Alethe focus mode) */
   --focus-ring: #38bdf8;
@@ -158,16 +166,33 @@
   --border-subtle: #e6eaf0;
   --border-accent: rgba(24, 24, 27, 0.22);
 
-  --status-working: #10b981;
+  /* Own agent and status colors: the dark ones fall to ~2:1 here. Each keeps 4.5:1 on every
+     light surface (Orchestra/a11y/themeContrast.test.ts); the working orange, the blocked amber
+     and the failed red (darker) stay clearly apart. */
+  --status-working: #017c55;
   --status-working-soft: rgba(16, 185, 129, 0.16);
-  --status-waiting: #d97706;
+  --status-waiting: #875d01;
   --status-waiting-soft: rgba(217, 119, 6, 0.16);
-  --status-stopped: #71717a;
+  --status-stopped: #6c6c75;
   --status-stopped-soft: rgba(113, 113, 122, 0.14);
   --status-disabled: #a1a1aa;
-  --status-offline: #dc2626;
+  --status-offline: #9f001e;
   --status-offline-soft: rgba(220, 38, 38, 0.16);
+  --danger: #c30213;
 
+  --agent-shell: #017c55;
+  --agent-claude: #c2410c;
+  --agent-codex: #06778c;
+  --agent-opencode: #6c6c76;
+  --agent-freebuff: #714ef0;
+  --agent-mimo: #b25001;
+  --agent-antigravity: #2668d5;
+  --agent-obsidian: #6c4ee0;
+  --agent-obsidian-soft: rgba(108, 78, 224, 0.14);
+  --agent-creative: #be185d;
+  --agent-creative-soft: rgba(190, 24, 93, 0.12);
+
+  --focus-ring: #0369a1;
   --shape-tabs-lane-bg: #ececef;
   --shape-tabs-lane-border: #dcdfe5;
 
@@ -214,11 +239,12 @@
   --status-working-soft: rgba(80, 250, 123, 0.16);
   --status-waiting: #f1fa8c;
   --status-waiting-soft: rgba(241, 250, 140, 0.14);
-  --status-stopped: #8f92ac;
+  --status-stopped: #9ea1bb;
   --status-stopped-soft: rgba(143, 146, 172, 0.14);
   --status-disabled: #6272a4;
-  --status-offline: #ff5555;
+  --status-offline: #ff7b75;
   --status-offline-soft: rgba(255, 85, 85, 0.16);
+  --danger: #c94a48;
 
   --agent-shell: #50fa7b;
   --agent-claude: #ffb86c;
@@ -228,6 +254,10 @@
   --agent-claude-soft: rgba(255, 184, 108, 0.15);
   --agent-codex-soft: rgba(139, 233, 253, 0.15);
   --agent-opencode-soft: rgba(189, 147, 249, 0.15);
+  --agent-obsidian: #a792ff;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #ff79c6;
+  --agent-creative-soft: rgba(255, 121, 198, 0.15);
 
   --focus-ring: #8be9fd;
   --shape-tabs-lane-bg: #21222c;
@@ -275,12 +305,18 @@
   --status-stopped: #aeb8c8;
   --status-stopped-soft: rgba(174, 184, 200, 0.14);
   --status-disabled: #4c566a;
-  --status-offline: #bf616a;
+  --status-offline: #f6949b;
   --status-offline-soft: rgba(191, 97, 106, 0.16);
+  --danger: #b45961;
   --agent-shell: #a3be8c;
-  --agent-claude: #d08770;
+  --agent-claude: #e4a07b;
   --agent-codex: #88c0d0;
   --agent-opencode: #b48ead;
+  --agent-freebuff: #8065ff;
+  --agent-obsidian: #b3a4fe;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #ff89c4;
+  --agent-creative-soft: rgba(255, 137, 196, 0.15);
   --focus-ring: #88c0d0;
   --shape-tabs-lane-bg: #242933;
   --shape-tabs-lane-border: rgba(236, 239, 244, 0.08);
@@ -323,15 +359,20 @@
   --status-working-soft: rgba(184, 187, 38, 0.16);
   --status-waiting: #fabd2f;
   --status-waiting-soft: rgba(250, 189, 47, 0.16);
-  --status-stopped: #a89984;
+  --status-stopped: #b1a28c;
   --status-stopped-soft: rgba(168, 153, 132, 0.14);
   --status-disabled: #665c54;
-  --status-offline: #fb4934;
+  --status-offline: #ff7c68;
   --status-offline-soft: rgba(251, 73, 52, 0.16);
+  --danger: #ce4534;
   --agent-shell: #b8bb26;
   --agent-claude: #fe8019;
-  --agent-codex: #83a598;
+  --agent-codex: #88ab9e;
   --agent-opencode: #d3869b;
+  --agent-obsidian: #a894fe;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f977bb;
+  --agent-creative-soft: rgba(249, 119, 187, 0.15);
   --focus-ring: #83a598;
   --shape-tabs-lane-bg: #1d2021;
   --shape-tabs-lane-border: rgba(251, 241, 199, 0.08);
@@ -370,19 +411,24 @@
   --surface-card-selected: rgba(38, 139, 210, 0.16);
   --border-subtle: #164b59;
   --border-accent: rgba(38, 139, 210, 0.44);
-  --status-working: #859900;
+  --status-working: #8fa41c;
   --status-working-soft: rgba(133, 153, 0, 0.16);
-  --status-waiting: #b58900;
+  --status-waiting: #cfa333;
   --status-waiting-soft: rgba(181, 137, 0, 0.16);
   --status-stopped: #93a1a1;
   --status-stopped-soft: rgba(147, 161, 161, 0.14);
   --status-disabled: #657b83;
-  --status-offline: #dc322f;
+  --status-offline: #ff695e;
   --status-offline-soft: rgba(220, 50, 47, 0.16);
+  --danger: #da3531;
   --agent-shell: #859900;
-  --agent-claude: #cb4b16;
-  --agent-codex: #2aa198;
+  --agent-claude: #f3772f;
+  --agent-codex: #38aba2;
   --agent-opencode: #6c71c4;
+  --agent-obsidian: #a088fe;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
   --focus-ring: #2aa198;
   --shape-tabs-lane-bg: #00212a;
   --shape-tabs-lane-border: rgba(253, 246, 227, 0.08);
@@ -425,15 +471,20 @@
   --status-working-soft: rgba(158, 206, 106, 0.16);
   --status-waiting: #e0af68;
   --status-waiting-soft: rgba(224, 175, 104, 0.16);
-  --status-stopped: #787c99;
+  --status-stopped: #8c90ad;
   --status-stopped-soft: rgba(120, 124, 153, 0.14);
   --status-disabled: #565f89;
   --status-offline: #f7768e;
   --status-offline-soft: rgba(247, 118, 142, 0.16);
+  --danger: #c64965;
   --agent-shell: #9ece6a;
   --agent-claude: #ff9e64;
   --agent-codex: #7dcfff;
   --agent-opencode: #bb9af7;
+  --agent-obsidian: #987cfe;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
   --focus-ring: #7dcfff;
   --shape-tabs-lane-bg: #16161e;
   --shape-tabs-lane-border: rgba(192, 202, 245, 0.08);
@@ -480,11 +531,12 @@
   --status-working-soft: rgba(13, 188, 121, 0.16);
   --status-waiting: #e5e510;
   --status-waiting-soft: rgba(229, 229, 16, 0.14);
-  --status-stopped: #858585;
+  --status-stopped: #8d8d8d;
   --status-stopped-soft: rgba(133, 133, 133, 0.14);
   --status-disabled: #4d4d4d;
-  --status-offline: #f14c4c;
+  --status-offline: #ff5d5a;
   --status-offline-soft: rgba(241, 76, 76, 0.16);
+  --danger: #d9373b;
 
   --agent-shell: #0dbc79;
   --agent-claude: #ce9178;
@@ -494,6 +546,10 @@
   --agent-claude-soft: rgba(206, 145, 120, 0.15);
   --agent-codex-soft: rgba(79, 193, 255, 0.15);
   --agent-opencode-soft: rgba(133, 133, 133, 0.15);
+  --agent-obsidian: #9577fb;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   --focus-ring: #3794ff;
   --shape-tabs-lane-bg: #181818;
@@ -515,10 +571,10 @@
 
   --fg: #fafafa;
   --fg-muted: #888888;
-  --fg-faint: #727272;
+  --fg-faint: #747474;
   --text-primary: #fafafa;
   --text-secondary: #888888;
-  --text-tertiary: #727272;
+  --text-tertiary: #747474;
   --text-quaternary: #6b737c;
 
   --accent: #fafafa;
@@ -542,11 +598,12 @@
   --status-working-soft: rgba(250, 250, 250, 0.14);
   --status-waiting: #ff9800;
   --status-waiting-soft: rgba(255, 152, 0, 0.16);
-  --status-stopped: #727272;
+  --status-stopped: #929292;
   --status-stopped-soft: rgba(114, 114, 114, 0.14);
   --status-disabled: #383838;
   --status-offline: #ff7a84;
   --status-offline-soft: rgba(255, 122, 132, 0.16);
+  --danger: #c84957;
 
   --agent-shell: #fafafa;
   --agent-claude: #ffab70;
@@ -556,6 +613,10 @@
   --agent-claude-soft: rgba(255, 171, 112, 0.15);
   --agent-codex-soft: rgba(208, 208, 208, 0.13);
   --agent-opencode-soft: rgba(157, 177, 197, 0.15);
+  --agent-obsidian: #9a7dff;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   --focus-ring: #38bdf8;
   --shape-tabs-lane-bg: #1a1a1a;
@@ -577,10 +638,11 @@
 
   --fg: #212121;
   --fg-muted: #757575;
-  --fg-faint: #bdbdbd;
+  /* Faint text keeps 3:1 on the panels and stays lighter than muted; quaternary is the palest. */
+  --fg-faint: #8d8d8d;
   --text-primary: #212121;
   --text-secondary: #757575;
-  --text-tertiary: #9e9e9e;
+  --text-tertiary: #8d8d8d;
   --text-quaternary: #bdbdbd;
 
   --accent: #1976d2;
@@ -600,24 +662,33 @@
   --border-subtle: #e0e0e0;
   --border-accent: rgba(25, 118, 210, 0.34);
 
-  --status-working: #22863a;
+  /* 4.5:1 on every surface, as in light; the worker orange and the blocked amber were identical. */
+  --status-working: #107b30;
   --status-working-soft: rgba(34, 134, 58, 0.13);
-  --status-waiting: #ff9800;
+  --status-waiting: #8e6201;
   --status-waiting-soft: rgba(255, 152, 0, 0.14);
-  --status-stopped: #bdbdbd;
+  --status-stopped: #6a6a6a;
   --status-stopped-soft: rgba(189, 189, 189, 0.18);
   --status-disabled: #e0e0e0;
-  --status-offline: #d32f2f;
+  --status-offline: #9c0329;
   --status-offline-soft: rgba(211, 47, 47, 0.14);
+  --danger: #c72025;
 
-  --agent-shell: #22863a;
-  --agent-claude: #ff9800;
-  --agent-codex: #1976d2;
+  --agent-shell: #107b30;
+  --agent-claude: #bf3e06;
+  --agent-codex: #046bc7;
   --agent-opencode: #6f42c1;
+  --agent-freebuff: #6f4bee;
+  --agent-mimo: #af4e01;
+  --agent-antigravity: #2466d3;
   --agent-shell-soft: rgba(34, 134, 58, 0.12);
   --agent-claude-soft: rgba(255, 152, 0, 0.14);
   --agent-codex-soft: rgba(25, 118, 210, 0.12);
   --agent-opencode-soft: rgba(111, 66, 193, 0.12);
+  --agent-obsidian: #6c4ee0;
+  --agent-obsidian-soft: rgba(108, 78, 224, 0.14);
+  --agent-creative: #be185d;
+  --agent-creative-soft: rgba(190, 24, 93, 0.12);
 
   --focus-ring: #1976d2;
   --shape-tabs-lane-bg: #f6f6f6;
@@ -674,6 +745,7 @@
   --status-disabled: #4a4a4a;
   --status-offline: #ff5370;
   --status-offline-soft: rgba(255, 83, 112, 0.16);
+  --danger: #dc2e54;
 
   --agent-shell: #c3e88d;
   --agent-claude: #f78c6c;
@@ -683,6 +755,10 @@
   --agent-claude-soft: rgba(247, 140, 108, 0.15);
   --agent-codex-soft: rgba(137, 221, 255, 0.15);
   --agent-opencode-soft: rgba(199, 146, 234, 0.15);
+  --agent-obsidian: #8f71f4;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   --focus-ring: #ffff50;
   --shape-tabs-lane-bg: #0f0f0f;
@@ -733,11 +809,12 @@
   --status-working-soft: rgba(34, 197, 94, 0.16);
   --status-waiting: #fbbf24;
   --status-waiting-soft: rgba(251, 191, 36, 0.16);
-  --status-stopped: #767676;
+  --status-stopped: #828282;
   --status-stopped-soft: rgba(118, 118, 118, 0.14);
   --status-disabled: #3f3f3f;
   --status-offline: #ff5a5f;
   --status-offline-soft: rgba(255, 90, 95, 0.16);
+  --danger: #d93440;
 
   --agent-shell: #22c55e;
   --agent-claude: #f97316;
@@ -751,6 +828,10 @@
   --agent-opencode-soft: rgba(161, 161, 170, 0.15);
   --agent-freebuff-soft: rgba(139, 92, 246, 0.15);
   --agent-mimo-soft: rgba(245, 158, 11, 0.15);
+  --agent-obsidian: #8b6cef;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   --focus-ring: #e8e8e8;
   --shape-tabs-lane-bg: #101010;
@@ -801,11 +882,12 @@
   --status-working-soft: rgba(224, 135, 63, 0.16);
   --status-waiting: #d9b44a;
   --status-waiting-soft: rgba(217, 180, 74, 0.16);
-  --status-stopped: #6d767c;
+  --status-stopped: #7e878d;
   --status-stopped-soft: rgba(109, 118, 124, 0.14);
   --status-disabled: #343c42;
   --status-offline: #e0605c;
   --status-offline-soft: rgba(224, 96, 92, 0.16);
+  --danger: #c84a48;
 
   --focus-ring: #e0873f;
   --shape-tabs-lane-bg: #101417;
@@ -859,6 +941,7 @@
   --status-disabled: #544a3e;
   --status-offline: #f87171;
   --status-offline-soft: rgba(248, 113, 113, 0.16);
+  --danger: #ca484b;
 
   --agent-shell: #4ade80;
   --agent-claude: #f97316;
@@ -868,6 +951,10 @@
   --agent-claude-soft: rgba(249, 115, 22, 0.15);
   --agent-codex-soft: rgba(56, 189, 248, 0.15);
   --agent-opencode-soft: rgba(192, 132, 252, 0.15);
+  --agent-obsidian: #9374f8;
+  --agent-obsidian-soft: rgba(139, 108, 239, 0.15);
+  --agent-creative: #f472b6;
+  --agent-creative-soft: rgba(244, 114, 182, 0.15);
 
   --focus-ring: #d4af37;
   --shape-tabs-lane-bg: #14110e;
@@ -876,4 +963,22 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+/* Reduced motion: the global transitions keep their color fades but drop movement, and every
+   duration token turns instant (1ms, not 0, so end events still fire). Last in the file so it
+   wins over the theme blocks above. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --anim-instant: 1ms;
+    --anim-fast: 1ms;
+    --anim-normal: 1ms;
+    --anim-slow: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, color, border-color, fill, stroke, box-shadow, opacity;
+  }
 }

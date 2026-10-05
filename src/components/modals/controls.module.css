@@ -186,13 +186,13 @@ select.input {
 }
 
 .btnDanger {
-  background: var(--status-offline);
-  border-color: var(--status-offline);
-  color: var(--accent-on);
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--danger-on);
 }
 .btnDanger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--status-offline) 85%, #000);
-  border-color: color-mix(in srgb, var(--status-offline) 85%, #000);
+  background: color-mix(in srgb, var(--danger) 85%, #000);
+  border-color: color-mix(in srgb, var(--danger) 85%, #000);
 }
 
 .btnSm {

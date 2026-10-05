@@ -12,6 +12,7 @@ import { missionEn } from '../../../components/Orchestra/i18n/mission'
 import { terminalsEn } from '../../../components/Orchestra/i18n/terminals'
 import { timelineEn } from '../../../components/Orchestra/i18n/timeline'
 import { liveTerminalEn } from '../../../components/LiveTerminal/i18n'
+import { a11yEn } from '../../../components/Orchestra/a11y/i18n'
 import { resumeEn } from '../../../components/Orchestra/resume/i18n'
 
 export const en = {
@@ -2217,6 +2218,7 @@ export const en = {
   ...attentionEn,
   ...liveTerminalEn,
   ...agentsEn,
+  ...a11yEn,
   ...resumeEn,
 } as const
 

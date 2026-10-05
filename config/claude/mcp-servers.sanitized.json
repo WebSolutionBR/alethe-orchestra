@@ -1,0 +1,66 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "type": "stdio",
+      "command": "C:\\Program Files\\Python314\\Scripts\\mcp-obsidian.exe",
+      "args": [],
+      "env": {
+        "OBSIDIAN_API_KEY": "<masked>",
+        "OBSIDIAN_HOST": "<masked>"
+      }
+    },
+    "speak-ai": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@speakai/mcp-server"
+      ],
+      "env": {
+        "SPEAK_API_KEY": "<masked>"
+      }
+    },
+    "hostinger-hosting": {
+      "command": "npx.cmd",
+      "args": [
+        "--package=hostinger-api-mcp@latest",
+        "hostinger-hosting-mcp"
+      ],
+      "env": {
+        "HOSTINGER_API_TOKEN": "<masked>"
+      }
+    },
+    "hostinger-domains": {
+      "command": "npx.cmd",
+      "args": [
+        "--package=hostinger-api-mcp@latest",
+        "hostinger-domains-mcp"
+      ],
+      "env": {
+        "HOSTINGER_API_TOKEN": "<masked>"
+      }
+    },
+    "hostinger-dns": {
+      "command": "npx.cmd",
+      "args": [
+        "--package=hostinger-api-mcp@latest",
+        "hostinger-dns-mcp"
+      ],
+      "env": {
+        "HOSTINGER_API_TOKEN": "<masked>"
+      }
+    },
+    "hostinger-reach": {
+      "command": "npx.cmd",
+      "args": [
+        "--package=hostinger-api-mcp@latest",
+        "hostinger-reach-mcp"
+      ],
+      "env": {
+        "HOSTINGER_API_TOKEN": "<masked>"
+      }
+    }
+  }
+}

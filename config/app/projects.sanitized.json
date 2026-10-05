@@ -1,0 +1,825 @@
+{
+  "version": 7,
+  "groups": [
+    {
+      "id": "GBM7oHs7xQo57Rcc9r9Ix",
+      "name": "Pessoal",
+      "color": "#6ea8ff",
+      "collapsed": false,
+      "projectIds": [
+        "zcnn16sz9SohR_B3mDIGr",
+        "BxYNv8aQEe3cyXwcEmJdz",
+        "shnsxOZn5z2yo9Mqm1vCi"
+      ],
+      "parentGroupId": null,
+      "createdAt": 1786896046056,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "3szOjz8ZDXOmddvyNkZpj",
+      "name": "Estudos",
+      "color": "#6ea8ff",
+      "collapsed": false,
+      "projectIds": [],
+      "parentGroupId": null,
+      "createdAt": 1788722314479,
+      "gridLayoutHistory": []
+    }
+  ],
+  "ungroupedOrder": [
+    "kbqfIByhKcTawseEddeVB",
+    "PrYnX1pycpo96FOyqbzHC",
+    "5SWcDlQ_ge_9AQfeJJ86y"
+  ],
+  "projects": [
+    {
+      "id": "kbqfIByhKcTawseEddeVB",
+      "name": "IA",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": null,
+      "terminals": [
+        {
+          "id": "zxsXzOsH8EmAgDFKuzpkA",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "Di41POyFwjRzdz90UT13i",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1791145092352,
+          "tabs": [
+            {
+              "id": "Di41POyFwjRzdz90UT13i",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1791145092352,
+              "ptyId": "Di41POyFwjRzdz90UT13i",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": true
+            }
+          ]
+        },
+        {
+          "id": "ok6FoVP6zCt4IuwANWJFe",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "vcklhlKfUdWoVsSLRleWJ",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1791147095469,
+          "tabs": [
+            {
+              "id": "vcklhlKfUdWoVsSLRleWJ",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1791147095469,
+              "ptyId": "vcklhlKfUdWoVsSLRleWJ",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>"
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1791144920750,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "PrYnX1pycpo96FOyqbzHC",
+      "name": "S-FORM",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": null,
+      "terminals": [
+        {
+          "id": "pPQUvOnotMPG3887dLX5u",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "A1KOoqFjGretj3Nu5fUll",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1791149856182,
+          "tabs": [
+            {
+              "id": "A1KOoqFjGretj3Nu5fUll",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1791149856182,
+              "ptyId": "A1KOoqFjGretj3Nu5fUll",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": false,
+              "claudeAccountId": "Ci8cd-pn"
+            }
+          ]
+        },
+        {
+          "id": "CbnZE8UA0uDUyYHqjXl6X",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "fQ09uplxhXFpcjCS1D80K",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1791147841790,
+          "tabs": [
+            {
+              "id": "fQ09uplxhXFpcjCS1D80K",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1791147841790,
+              "ptyId": "fQ09uplxhXFpcjCS1D80K",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": true
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1786588189229,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "zcnn16sz9SohR_B3mDIGr",
+      "name": "Mine",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": "GBM7oHs7xQo57Rcc9r9Ix",
+      "terminals": [
+        {
+          "id": "CHk_gs-isZoCn1VMPsVRy",
+          "name": "Claude",
+          "cwd": "",
+          "activeTabId": "N5W96XTPCE9s75dWCIk1O",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1789909529863,
+          "tabs": [
+            {
+              "id": "N5W96XTPCE9s75dWCIk1O",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1789909529863,
+              "ptyId": "N5W96XTPCE9s75dWCIk1O",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "completionUnread": true,
+              "claudeAccountId": "IL_OHd6l"
+            }
+          ]
+        },
+        {
+          "id": "3lumAkANJuE6n7hWZ7E22",
+          "name": "Codex",
+          "cwd": "",
+          "activeTabId": "EdhI_0Ic2s1gKMpDRAsrE",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1790522348613,
+          "tabs": [
+            {
+              "id": "EdhI_0Ic2s1gKMpDRAsrE",
+              "type": "codex",
+              "name": "codex",
+              "cwd": "",
+              "lastUsedAt": 1790522348613,
+              "ptyId": "EdhI_0Ic2s1gKMpDRAsrE",
+              "extraArgs": [
+                "--dangerously-bypass-approvals-and-sandbox"
+              ],
+              "runtimeProfile": "lean"
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1786896051465,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "BxYNv8aQEe3cyXwcEmJdz",
+      "name": "Sistemas e automações",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": "GBM7oHs7xQo57Rcc9r9Ix",
+      "terminals": [
+        {
+          "id": "xJb_QdtfUVKE1uDBs_j1p",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "BA0kRzfse5nZ7jqWM8Yit",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1790524601984,
+          "tabs": [
+            {
+              "id": "BA0kRzfse5nZ7jqWM8Yit",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1790524601984,
+              "ptyId": "BA0kRzfse5nZ7jqWM8Yit",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "claudeAccountId": "IL_OHd6l",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": false
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1788817995915,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "5SWcDlQ_ge_9AQfeJJ86y",
+      "name": "Livros",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": null,
+      "terminals": [
+        {
+          "id": "zzJdFgP6_kFG5zyyPXQuL",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "XQfIBKSggGU72RmjGooWG",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1790525044519,
+          "tabs": [
+            {
+              "id": "XQfIBKSggGU72RmjGooWG",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1790525044519,
+              "ptyId": "XQfIBKSggGU72RmjGooWG",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": true
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1790524497520,
+      "gridLayoutHistory": []
+    },
+    {
+      "id": "shnsxOZn5z2yo9Mqm1vCi",
+      "name": "Opala",
+      "mode": "standard",
+      "color": "#6ea8ff",
+      "groupId": "GBM7oHs7xQo57Rcc9r9Ix",
+      "terminals": [
+        {
+          "id": "_I9AylykiDFaBRO-skeR5",
+          "name": "Claude Code",
+          "cwd": "",
+          "activeTabId": "xyzDyvYkFSBWaa_vfUc5l",
+          "disabled": false,
+          "laneVisible": null,
+          "lastUsedAt": 1791158926597,
+          "tabs": [
+            {
+              "id": "xyzDyvYkFSBWaa_vfUc5l",
+              "type": "claude",
+              "name": "claude",
+              "cwd": "",
+              "lastUsedAt": 1791158926597,
+              "ptyId": "xyzDyvYkFSBWaa_vfUc5l",
+              "extraArgs": [
+                "--dangerously-skip-permissions"
+              ],
+              "runtimeProfile": "lean",
+              "sessionId": "<masked: claude session id>",
+              "completionUnread": false
+            }
+          ]
+        }
+      ],
+      "layoutMode": "auto",
+      "collapsed": false,
+      "createdAt": 1791153451334,
+      "gridLayoutHistory": []
+    }
+  ],
+  "todos": [],
+  "activeProjectId": "BxYNv8aQEe3cyXwcEmJdz",
+  "workspace": {
+    "containers": [
+      {
+        "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+        "paneIds": [
+          "_I9AylykiDFaBRO-skeR5"
+        ],
+        "lastUsedAt": 1791153452806,
+        "size": 0,
+        "internalLayout": "auto",
+        "collapsed": false
+      }
+    ],
+    "recentProjectIds": [
+      "kbqfIByhKcTawseEddeVB",
+      "PrYnX1pycpo96FOyqbzHC",
+      "shnsxOZn5z2yo9Mqm1vCi",
+      "BxYNv8aQEe3cyXwcEmJdz"
+    ],
+    "recentTabs": [
+      {
+        "kind": "project",
+        "id": "kbqfIByhKcTawseEddeVB"
+      },
+      {
+        "kind": "project",
+        "id": "PrYnX1pycpo96FOyqbzHC"
+      },
+      {
+        "kind": "project",
+        "id": "shnsxOZn5z2yo9Mqm1vCi"
+      },
+      {
+        "kind": "project",
+        "id": "BxYNv8aQEe3cyXwcEmJdz"
+      }
+    ],
+    "tabs": [
+      {
+        "id": "WdE1-veYfZE39MEabgknN",
+        "kind": "composition",
+        "label": "IA + 1",
+        "color": "#6ea8ff",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "kbqfIByhKcTawseEddeVB",
+              "paneIds": [
+                "zxsXzOsH8EmAgDFKuzpkA",
+                "ok6FoVP6zCt4IuwANWJFe"
+              ],
+              "lastUsedAt": 1791147093833,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "shnsxOZn5z2yo9Mqm1vCi",
+          "activeGroupId": null,
+          "focusedTerminalId": "ok6FoVP6zCt4IuwANWJFe",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "createdAt": 1791144964241,
+        "updatedAt": 1791153452806
+      },
+      {
+        "id": "drVOzGYUszV8KZQEalHHY",
+        "kind": "composition",
+        "label": "Opala",
+        "color": "#6ea8ff",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "BxYNv8aQEe3cyXwcEmJdz",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "createdAt": 1791153452806,
+        "updatedAt": 1791168083054
+      }
+    ],
+    "closedTabs": [
+      {
+        "id": "QwFA4VdVAB2ggO_wTA_RW",
+        "kind": "project",
+        "sourceId": "BxYNv8aQEe3cyXwcEmJdz",
+        "label": "Sistemas e automações",
+        "color": "#6ea8ff",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "BxYNv8aQEe3cyXwcEmJdz",
+              "paneIds": [
+                "xJb_QdtfUVKE1uDBs_j1p"
+              ],
+              "lastUsedAt": 1791158911132,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "BxYNv8aQEe3cyXwcEmJdz",
+          "activeGroupId": null,
+          "focusedTerminalId": "xJb_QdtfUVKE1uDBs_j1p",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "createdAt": 1791158911132,
+        "updatedAt": 1791158911132
+      },
+      {
+        "id": "MUqAhyVBZAHU8ZJncBYK6",
+        "kind": "composition",
+        "label": "Workspace",
+        "color": "#6ea8ff",
+        "snapshot": {
+          "containers": [],
+          "activeProjectId": "kbqfIByhKcTawseEddeVB",
+          "activeGroupId": null,
+          "focusedTerminalId": null,
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "createdAt": 1791144922734,
+        "updatedAt": 1791144964241
+      }
+    ],
+    "activeTabId": "drVOzGYUszV8KZQEalHHY",
+    "activeGroupId": null,
+    "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+    "history": [
+      {
+        "id": "-HZbgnTFAwmajxTwzUK9c",
+        "tabId": "WdE1-veYfZE39MEabgknN",
+        "label": "IA",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "kbqfIByhKcTawseEddeVB",
+              "paneIds": [
+                "zxsXzOsH8EmAgDFKuzpkA"
+              ],
+              "lastUsedAt": 1791144964241,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "kbqfIByhKcTawseEddeVB",
+          "activeGroupId": null,
+          "focusedTerminalId": "zxsXzOsH8EmAgDFKuzpkA",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791144964241
+      },
+      {
+        "id": "St1RU5iwdFe7xVx6jtZct",
+        "tabId": "WdE1-veYfZE39MEabgknN",
+        "label": "IA",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "kbqfIByhKcTawseEddeVB",
+              "paneIds": [
+                "zxsXzOsH8EmAgDFKuzpkA"
+              ],
+              "lastUsedAt": 1791144964241,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "kbqfIByhKcTawseEddeVB",
+          "activeGroupId": null,
+          "focusedTerminalId": "zxsXzOsH8EmAgDFKuzpkA",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791145055703
+      },
+      {
+        "id": "cAGMXLVLMdP1CbpZrL5ou",
+        "tabId": "WdE1-veYfZE39MEabgknN",
+        "label": "IA + 1",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "kbqfIByhKcTawseEddeVB",
+              "paneIds": [
+                "zxsXzOsH8EmAgDFKuzpkA",
+                "ok6FoVP6zCt4IuwANWJFe"
+              ],
+              "lastUsedAt": 1791147093833,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "shnsxOZn5z2yo9Mqm1vCi",
+          "activeGroupId": null,
+          "focusedTerminalId": "ok6FoVP6zCt4IuwANWJFe",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791145058087
+      },
+      {
+        "id": "BSFsLVh0wssXWBnMzGq58",
+        "tabId": "drVOzGYUszV8KZQEalHHY",
+        "label": "Opala",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "shnsxOZn5z2yo9Mqm1vCi",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791153452806
+      },
+      {
+        "id": "nkfm9jKxR2C-f5HWo3NfH",
+        "tabId": "drVOzGYUszV8KZQEalHHY",
+        "label": "Opala",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "PrYnX1pycpo96FOyqbzHC",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791153497826
+      },
+      {
+        "id": "MdpfKqVdOw3FJRwXdn3Hy",
+        "tabId": "drVOzGYUszV8KZQEalHHY",
+        "label": "Opala",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "shnsxOZn5z2yo9Mqm1vCi",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791157256821
+      },
+      {
+        "id": "YOe-Pt2DFreu0rGshr_f_",
+        "tabId": "drVOzGYUszV8KZQEalHHY",
+        "label": "Opala",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "shnsxOZn5z2yo9Mqm1vCi",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791158919120
+      },
+      {
+        "id": "RBZf1rTTvTHiuQlWWBked",
+        "tabId": "WdE1-veYfZE39MEabgknN",
+        "label": "IA + 1",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "kbqfIByhKcTawseEddeVB",
+              "paneIds": [
+                "zxsXzOsH8EmAgDFKuzpkA",
+                "ok6FoVP6zCt4IuwANWJFe"
+              ],
+              "lastUsedAt": 1791147093833,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "kbqfIByhKcTawseEddeVB",
+          "activeGroupId": null,
+          "focusedTerminalId": "ok6FoVP6zCt4IuwANWJFe",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791158923906
+      },
+      {
+        "id": "vIoHZtVjb1qlohAraC8ZL",
+        "tabId": "drVOzGYUszV8KZQEalHHY",
+        "label": "Opala",
+        "snapshot": {
+          "containers": [
+            {
+              "projectId": "shnsxOZn5z2yo9Mqm1vCi",
+              "paneIds": [
+                "_I9AylykiDFaBRO-skeR5"
+              ],
+              "lastUsedAt": 1791153452806,
+              "size": 0,
+              "internalLayout": "auto",
+              "collapsed": false
+            }
+          ],
+          "activeProjectId": "BxYNv8aQEe3cyXwcEmJdz",
+          "activeGroupId": null,
+          "focusedTerminalId": "_I9AylykiDFaBRO-skeR5",
+          "workspaceFlat": false,
+          "fullscreenContainerId": null
+        },
+        "visitedAt": 1791158925092
+      }
+    ],
+    "historyIndex": 8
+  },
+  "preferences": {
+    "language": "pt-BR",
+    "uiTheme": "orca",
+    "visualStyle": "clean",
+    "appIconTheme": "dark",
+    "uiZoom": 0.8,
+    "windowOpacity": 1,
+    "terminalTheme": null,
+    "enabledAgents": {
+      "shell": true,
+      "claude": true,
+      "codex": true,
+      "copilot": true,
+      "antigravity": true,
+      "opencode": true,
+      "freebuff": true,
+      "mimo": true
+    },
+    "onboardingDone": true,
+    "workspaceFlat": false,
+    "fullscreenContainerId": null,
+    "isolatedPaneId": null,
+    "firstLaunchAt": 1791144886511,
+    "displayName": "Raul",
+    "profileImageUrl": "<removed: base64 profile picture>",
+    "accountCreated": true,
+    "alwaysStartOnHome": false,
+    "alwaysStartUnrestricted": true,
+    "lastTerminalCreation": {
+      "name": "Claude Code",
+      "cwd": "",
+      "firstTab": {
+        "type": "claude",
+        "cwd": "",
+        "extraArgs": [
+          "--dangerously-skip-permissions"
+        ],
+        "runtimeProfile": "lean"
+      }
+    },
+    "topbarStyle": "classic",
+    "gitControlPlacement": "left",
+    "spotifyClientId": "",
+    "spotifyClientSecret": "",
+    "discordRichPresenceEnabled": true,
+    "topbarShowClaudeUsage": true,
+    "topbarShowClaudeWeeklyReset": true,
+    "topbarShowCodexUsage": true,
+    "topbarShowAntigravityUsage": true,
+    "topbarShowSync": true,
+    "topbarShowProfile": true,
+    "topbarShowMemory": true,
+    "remoteEnabled": false,
+    "remoteMaxDevices": 1,
+    "remoteSessionExpirySecs": 3600,
+    "remoteReadOnly": true,
+    "remoteAllowShellInput": false,
+    "enabledFeatures": {
+      "todos": false,
+      "git": false,
+      "browser": false,
+      "graphify": false,
+      "mcp": false,
+      "aiMemory": false
+    },
+    "todoStoragePath": "",
+    "mcpDefaultScope": "global",
+    "mcpOnboardingSeen": false,
+    "leftSidebarVisible": true,
+    "rightSidebarVisible": true,
+    "leftSidebarWidth": 286,
+    "rightSidebarWidth": 300,
+    "notifyOnLimitReset": true,
+    "dictationEnabled": false,
+    "spawnConcurrency": 3,
+    "claudeAccounts": [
+      {
+        "id": "Ci8cd-pn",
+        "name": "Claude Contábil",
+        "createdAt": 1790521721113
+      },
+      {
+        "id": "N6RoHIF9",
+        "name": "Claude Compras",
+        "createdAt": 1790521914768
+      },
+      {
+        "id": "tcS8mrD3",
+        "name": "Claude Estatística",
+        "createdAt": 1790522050087
+      },
+      {
+        "id": "IL_OHd6l",
+        "name": "Claude Pricing",
+        "createdAt": 1790522245882
+      }
+    ],
+    "resourcePolicy": {
+      "mode": "manual",
+      "automaticParkingOptIn": false,
+      "memoryBudgetMb": 1536,
+      "warningThresholdMb": 1229,
+      "recoveryTargetMb": 1152,
+      "hiddenAgentIdleMinutes": 15,
+      "hiddenShellIdleMinutes": 30,
+      "spawnGraceSeconds": 120
+    },
+    "nodeHeapProfile": "balanced",
+    "workspaceGridLayoutHistory": []
+  },
+  "cliPaths": {}
+}

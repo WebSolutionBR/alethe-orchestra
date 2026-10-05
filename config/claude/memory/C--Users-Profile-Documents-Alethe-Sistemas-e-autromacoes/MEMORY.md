@@ -1,0 +1,8 @@
+- [Consultar o Obsidian antes](consultar-obsidian-antes.md) — first step of every task: read the session note + search related notes in the vault
+- [Pedidos viram recursos do Orchestra](pedidos-viram-recursos-do-orchestra.md) — workflow rules the user gives must also be built into the Alethe Orchestra app
+- [Histórico do terminal embaralhado](alethe-terminal-embaralhado-historico.md) — 7 old causes, no `tui: fullscreen`; Orchestra PTYs spawn 120x32 and views replay at another width
+- [Padrão de notas do Obsidian](padrao-de-notas-obsidian.md) — knowledge notes via `Diário/_Template - Sessão diária.md`, linked reasoning, never raw logs
+- [Regras gerais do Raul](regras-gerais-do-raul.md) — report table, Explorer paths, local HTML (never Artifact), every prompt becomes a diary note + topic note
+- [Delegar cedo e em paralelo](delegar-cedo-em-paralelo.md) — spawn workers early; default account Claude Contábil (account choice is the user's)
+- [NBSP em código: use \xa0](escape-nbsp-xa0.md) — `\u00a0` typed in tool input lands as a literal NBSP; eslint fails
+- [Patch do Obsidian por título aninhado](obsidian-patch-titulo-aninhado.md) — patch_content works on any heading via the "H1::H2" path; replace drops the `---` before Notas relacionadas

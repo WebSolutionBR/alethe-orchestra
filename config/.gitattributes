@@ -1,0 +1,3 @@
+# orch.cmd is a batch file (CRLF); the sh shim must stay LF.
+*.cmd text eol=crlf
+orchestra/orch/orch text eol=lf

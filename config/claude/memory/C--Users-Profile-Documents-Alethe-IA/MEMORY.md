@@ -1,0 +1,3 @@
+- [Orchestra Obsidian note rule](orchestra-obsidian-note-rule.md) — workers log changes in PT-BR in the day's Obsidian note before reporting done
+- [Alethe Orchestra source](alethe-orchestra-source.md) — repo path vs installed build, Orchestra code map, repo rules
+- [orch spawn prompt cut](orch-spawn-prompt-cut.md) — spawn task text is lost in the installed build; resend with orch send

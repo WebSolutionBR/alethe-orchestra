@@ -1,0 +1,1 @@
+- [Account choice is the user's](orchestra-account-choice-is-users.md) — never spread Orchestra workers across Claude accounts on my own; use the one the user designates (2026-10-04: Contábil) or ask

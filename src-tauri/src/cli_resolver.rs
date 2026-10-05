@@ -2,7 +2,7 @@ use portable_pty::CommandBuilder;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::SystemTime;
 
@@ -46,21 +46,21 @@ pub fn command_builder_for_terminal(
 
             #[cfg(windows)]
             {
-                let escaped = arg.replace('\'', "''");
-                let extras_pwsh = extra_args
-                    .iter()
-                    .map(|a| format!(" '{}'", a.replace('\'', "''")))
-                    .collect::<String>();
+                let host = if shell.eq_ignore_ascii_case("pwsh.exe") {
+                    PsHost::Core
+                } else {
+                    PsHost::Desktop
+                };
                 let mut builder = CommandBuilder::new(&shell);
                 builder.arg("-NoLogo");
                 builder.arg("-NoProfile");
                 builder.arg("-Command");
-                builder.arg(format!("& '{escaped}'{extras_pwsh}; exit $LASTEXITCODE"));
+                builder.arg(powershell_launch_script(&arg, extra_args, host));
                 builder
             }
             #[cfg(not(windows))]
             {
-                // POSIX shell: exec do launcher + args, com aspas simples escapadas.
+                // POSIX shell: exec the launcher + args, with escaped single quotes.
                 let esc = |s: &str| s.replace('\'', "'\\''");
                 let mut line = format!("exec '{}'", esc(&arg));
                 for a in extra_args {
@@ -108,11 +108,11 @@ pub fn command_builder_for_terminal(
     builder.env("TERM", "xterm-256color");
     builder.env("COLORTERM", "truecolor");
 
-    // terminal vai renderizar. Confirmado com um teste isolado rodando o
+    // terminal will render. Confirmed with an isolated test running the
 
-    // — nem DECRQSS/XTGETTCAP, embora responda OSC 10/11/DSR/DA
+    // — not DECRQSS/XTGETTCAP either, although it answers OSC 10/11/DSR/DA
 
-    // causa conhecida de "artefatos estranhos contendo '66'" em terminais
+    // known cause of "strange artifacts containing '66'" in terminals
 
     if trimmed == Some("opencode") {
         builder.env("OPENTUI_FORCE_EXPLICIT_WIDTH", "false");
@@ -124,6 +124,168 @@ pub fn command_builder_for_terminal(
     builder.env_remove("CLAUDE_CODE_ENTRYPOINT");
     builder.env_remove("CLAUDECODE_PARENT_PID");
     builder
+}
+
+/// The PowerShell that runs an agent launch script. Both rebuild the native command line with the
+/// legacy algorithm (wrap a value in `"` when it has whitespace outside a `"` pair, escape nothing,
+/// drop empty values) but differ in two details, so the escaping has to know which one runs.
+/// Observed on 5.1; for 6+ see `NativeCommandParameterBinder` in the PowerShell repo.
+#[cfg_attr(not(windows), allow(dead_code))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PsHost {
+    /// Windows PowerShell 5.1: every `"` counts when pairing, even `\"`, and a trailing backslash
+    /// escapes the quote it adds.
+    Desktop,
+    /// PowerShell 6+ (`pwsh`): `\"` does not count, and trailing backslashes are doubled when it
+    /// wraps.
+    Core,
+}
+
+/// `-Command` script that runs `launcher` with `args` and exits with its code, escaped so the
+/// child's argv is exactly `args`. Without the first statement pwsh 7.3+ would use its newer
+/// argument passing for `.exe` files.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn powershell_launch_script(launcher: &str, args: &[String], host: PsHost) -> String {
+    let via_cmd = launcher_may_use_cmd(launcher);
+    let mut script = format!(
+        "$PSNativeCommandArgumentPassing = 'Legacy'; & {}",
+        ps_single_quoted(launcher)
+    );
+    for arg in args {
+        for value in escape_for_ps_native_legacy(arg, host, via_cmd) {
+            script.push(' ');
+            script.push_str(&ps_single_quoted(&value));
+        }
+    }
+    script.push_str("; exit $LASTEXITCODE");
+    script
+}
+
+/// `.cmd`/`.bat` launchers, and bare names PowerShell may resolve to one, run through cmd.exe.
+fn launcher_may_use_cmd(launcher: &str) -> bool {
+    let extension = Path::new(launcher)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(str::to_ascii_lowercase);
+    !matches!(extension.as_deref(), Some("exe" | "com" | "ps1"))
+}
+
+/// PowerShell values that make the child, splitting its command line with the usual
+/// CommandLineToArgvW / C runtime rules, read back exactly `arg` after PowerShell's legacy
+/// native-argument passing. Usually one value; see `split_for_desktop` for the exception.
+///
+/// cmd.exe toggles its quoting on every `"` and ignores `\"`, so `&`, `|`, `<`, `>` between inner
+/// quotes reach it unprotected. Fixing that needs another launch path, so with `via_cmd` cmd keeps
+/// seeing the `"` where it did before: only backslashes are added, and arguments that would need
+/// more are passed unchanged.
+fn escape_for_ps_native_legacy(arg: &str, host: PsHost, via_cmd: bool) -> Vec<String> {
+    // PowerShell drops empty values; `""` reaches the child as an empty argument.
+    if arg.is_empty() {
+        return vec!["\"\"".to_string()];
+    }
+    let escaped = escape_inner_quotes(arg);
+    let values = match host {
+        // pwsh wraps whenever there is whitespace (it skips `\"`) and doubles trailing backslashes.
+        PsHost::Core if via_cmd && ps_wraps(&escaped, host) != ps_wraps(arg, host) => {
+            vec![arg.to_string()]
+        }
+        PsHost::Core => vec![escaped],
+        PsHost::Desktop if ps_wraps(&escaped, host) => vec![double_trailing_backslashes(&escaped)],
+        // Not wrapped, which is fine while there is nothing to split on.
+        PsHost::Desktop if !arg.contains([' ', '\t']) => vec![escaped],
+        // Every space/tab sits inside a `"` pair as 5.1 counts them, so it will not wrap.
+        PsHost::Desktop if !via_cmd => {
+            split_for_desktop(&escaped).unwrap_or_else(|| vec![arg.to_string()])
+        }
+        PsHost::Desktop => vec![arg.to_string()],
+    };
+    // A value of exactly `--%` is taken as the stop-parsing marker: dropped, and the following
+    // values passed raw with %VAR% expanded. Quoted, the child still reads `--%`.
+    values
+        .into_iter()
+        .map(|value| {
+            if value == "--%" {
+                "\"--%\"".to_string()
+            } else {
+                value
+            }
+        })
+        .collect()
+}
+
+/// 5.1 cannot wrap an argument whose spaces all sit inside `"` pairs, so build the fully quoted
+/// form (`"…"`, which any argv parser reads back exactly) and pass its space-separated pieces as
+/// separate values: none needs wrapping, and PowerShell joins them back with single spaces. `None`
+/// when a piece would be empty (doubled spaces) or still wrapped (a tab or line break in it).
+fn split_for_desktop(escaped: &str) -> Option<Vec<String>> {
+    let quoted = format!("\"{}\"", double_trailing_backslashes(escaped));
+    let pieces: Vec<String> = quoted.split(' ').map(str::to_string).collect();
+    pieces
+        .iter()
+        .all(|piece| !piece.is_empty() && !ps_wraps(piece, PsHost::Desktop))
+        .then_some(pieces)
+}
+
+/// Whether PowerShell wraps a native argument in `"`: when it has whitespace outside a `"` pair.
+/// 5.1 counts every `"`; pwsh skips one right after a backslash. `char::is_whitespace` is the same
+/// set as .NET's `char.IsWhiteSpace`.
+fn ps_wraps(value: &str, host: PsHost) -> bool {
+    let mut quotes = 0;
+    let mut after_backslash = false;
+    for c in value.chars() {
+        if c == '"' && (host == PsHost::Desktop || !after_backslash) {
+            quotes += 1;
+        } else if c.is_whitespace() && quotes % 2 == 0 {
+            return true;
+        }
+        after_backslash = c == '\\';
+    }
+    false
+}
+
+/// CommandLineToArgvW escaping of the `"` inside a value: n backslashes followed by `"` become 2n
+/// backslashes and `\"`. Other backslashes are literal and stay as they are.
+fn escape_inner_quotes(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 8);
+    let mut backslashes = 0;
+    for c in value.chars() {
+        match c {
+            '\\' => backslashes += 1,
+            '"' => {
+                out.push_str(&"\\".repeat(backslashes * 2 + 1));
+                out.push('"');
+                backslashes = 0;
+            }
+            _ => {
+                out.push_str(&"\\".repeat(backslashes));
+                out.push(c);
+                backslashes = 0;
+            }
+        }
+    }
+    out.push_str(&"\\".repeat(backslashes));
+    out
+}
+
+/// Doubles the trailing backslashes so a `"` placed after them still closes the quote.
+fn double_trailing_backslashes(value: &str) -> String {
+    let trailing = value.len() - value.trim_end_matches('\\').len();
+    format!("{value}{}", "\\".repeat(trailing))
+}
+
+/// PowerShell single-quoted literal. The typographic quotes ‘ ’ ‚ ‛ also end such a string, so they
+/// are doubled like `'`.
+fn ps_single_quoted(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('\'');
+    for c in value.chars() {
+        if matches!(c, '\'' | '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}') {
+            out.push(c);
+        }
+        out.push(c);
+    }
+    out.push('\'');
+    out
 }
 
 ///
@@ -172,11 +334,11 @@ fn resolve_cli_launcher(command: &str) -> Option<PathBuf> {
             dirs.push(home.join(".local").join("bin"));
             dirs.push(home.join(".cargo").join("bin"));
         }
-        // App .app lançado via Finder/DMG não roda como login shell: herda o
-        // PATH mínimo do Launch Services (sem .zshrc/.zprofile), então CLIs
-        // instaladas via `brew install` ficam invisíveis pro `which` acima
-        // mesmo estando no disco. Cobrir os prefixos padrão do Homebrew
-        // (Apple Silicon e Intel) como fallback fixo.
+        // A .app launched from Finder/DMG does not run as a login shell: it
+        // inherits the minimal Launch Services PATH (no .zshrc/.zprofile), so
+        // CLIs installed with `brew install` are invisible to the `which` above
+        // even though they are on disk. Cover the default Homebrew prefixes
+        // (Apple Silicon and Intel) as a fixed fallback.
         dirs.extend(homebrew_dirs());
         for dir in dirs {
             let candidate = dir.join(command);
@@ -193,7 +355,7 @@ fn resolve_cli_launcher(command: &str) -> Option<PathBuf> {
         dirs.extend(split_windows_path_expanded(&rebuilt_path()));
         dirs.extend(agent_search_dirs());
 
-        // exclusivamente `agy`. Nunca use o desktop como fallback para o CLI.
+        // only `agy`. Never fall back to the desktop app for the CLI.
         let candidates_to_try = match command {
             "antigravity" | "agy" => vec!["agy"],
             other => vec![other],
@@ -855,9 +1017,9 @@ fn discover_provider_models_inner(provider: String) -> Result<Vec<ModelOption>, 
     Ok(models)
 }
 
-/// `discover_provider_models_inner` roda `std::process::Command::output()`
+/// `discover_provider_models_inner` runs `std::process::Command::output()`
 
-/// `find_cli_launcher` acima.
+/// `find_cli_launcher` above.
 #[tauri::command]
 pub async fn discover_provider_models(provider: String) -> Result<Vec<ModelOption>, String> {
     tokio::task::spawn_blocking(move || discover_provider_models_inner(provider))
@@ -939,5 +1101,304 @@ mod tests {
     fn resolves_cli_launcher_on_unix() {
         assert!(find_windows_cli_launcher("sh").is_some());
         assert!(find_windows_cli_launcher("non_existent_binary_xyz_123").is_none());
+    }
+
+    #[test]
+    fn plain_arguments_keep_the_previous_launch_script() {
+        let args: Vec<String> = [
+            "--resume",
+            "0f8fad5b-d9cb-469f-a165-70867728950e",
+            "--model",
+            "opus",
+            r"C:\Program Files\agent\settings.json",
+            "fix the login bug",
+            "it's <done> | a & b",
+            "ação 日本語",
+        ]
+        .map(String::from)
+        .to_vec();
+        for launcher in [r"C:\Users\me\.local\bin\claude.exe", r"C:\npm\codex.cmd"] {
+            let previous: String = args
+                .iter()
+                .map(|arg| format!(" '{}'", arg.replace('\'', "''")))
+                .collect();
+            let previous = format!("& '{launcher}'{previous}; exit $LASTEXITCODE");
+            for host in [PsHost::Desktop, PsHost::Core] {
+                assert_eq!(
+                    powershell_launch_script(launcher, &args, host),
+                    format!("$PSNativeCommandArgumentPassing = 'Legacy'; {previous}")
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn escapes_arguments_for_each_powershell() {
+        use PsHost::{Core, Desktop};
+        let cases: &[(&str, PsHost, &[&str])] = &[
+            ("plain", Desktop, &["plain"]),
+            ("two words", Core, &["two words"]),
+            (r#"say "hi" now"#, Desktop, &[r#"say \"hi\" now"#]),
+            (r#"say "hi" now"#, Core, &[r#"say \"hi\" now"#]),
+            (r#"a\"b"#, Desktop, &[r#"a\\\"b"#]),
+            (r#"a\\"b c"#, Core, &[r#"a\\\\\"b c"#]),
+            (r"C:\dir\", Desktop, &[r"C:\dir\"]),
+            (r"C:\my dir\", Desktop, &[r"C:\my dir\\"]),
+            (r"C:\my dir\", Core, &[r"C:\my dir\"]),
+            ("", Desktop, &[r#""""#]),
+            ("", Core, &[r#""""#]),
+            ("ação ü 日本語 🎉", Desktop, &["ação ü 日本語 🎉"]),
+            ("it's ’ok’", Desktop, &["it's ’ok’"]),
+            ("<a> | b & c > d", Desktop, &["<a> | b & c > d"]),
+            ("--%", Desktop, &[r#""--%""#]),
+            ("--%", Core, &[r#""--%""#]),
+            // 5.1 counts the escaped quotes, so it would not wrap: passed as space-free pieces.
+            (r#""hi there""#, Desktop, &[r#""\"hi"#, r#"there\"""#]),
+            (
+                r#"x="a --% b""#,
+                Desktop,
+                &[r#""x=\"a"#, r#""--%""#, r#"b\"""#],
+            ),
+            (r#""hi there""#, Core, &[r#"\"hi there\""#]),
+            // Shapes 5.1 cannot carry intact are passed unchanged, as before.
+            ("\"a\tb\"", Desktop, &["\"a\tb\""]),
+            ("\"a  b\"", Desktop, &["\"a  b\""]),
+        ];
+        for &(arg, host, expected) in cases {
+            assert_eq!(
+                escape_for_ps_native_legacy(arg, host, false),
+                expected,
+                "{host:?} {arg:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn cmd_launchers_only_gain_backslashes() {
+        use PsHost::{Core, Desktop};
+        let quoted = r#""hi there""#;
+        assert_eq!(
+            escape_for_ps_native_legacy(r#"say "hi" now"#, Desktop, true),
+            [r#"say \"hi\" now"#]
+        );
+        assert_eq!(escape_for_ps_native_legacy(quoted, Desktop, true), [quoted]);
+        assert_eq!(escape_for_ps_native_legacy(quoted, Core, true), [quoted]);
+
+        assert!(launcher_may_use_cmd(r"C:\npm\claude.cmd"));
+        assert!(launcher_may_use_cmd(r"C:\tools\agent.BAT"));
+        assert!(launcher_may_use_cmd("claude"));
+        assert!(!launcher_may_use_cmd(r"C:\Users\me\.local\bin\claude.exe"));
+        assert!(!launcher_may_use_cmd(r"C:\npm\claude.ps1"));
+    }
+
+    #[test]
+    fn single_quotes_every_powershell_quote_character() {
+        assert_eq!(ps_single_quoted("plain"), "'plain'");
+        assert_eq!(ps_single_quoted("it's ‘a’ ‚b‛"), "'it''s ‘‘a’’ ‚‚b‛‛'");
+        assert_eq!(
+            ps_single_quoted(r#"say "hi" $env:PATH"#),
+            r#"'say "hi" $env:PATH'"#
+        );
+    }
+
+    /// Independent model of PowerShell's legacy native-argument passing: drop empty values, wrap in
+    /// `"` when there is whitespace outside a `"` pair (pwsh skips `\"` and doubles the trailing
+    /// backslashes), join with single spaces.
+    fn ps_command_line(values: &[String], host: PsHost) -> String {
+        let mut parts = Vec::new();
+        for value in values.iter().filter(|value| !value.is_empty()) {
+            assert_ne!(
+                value, "--%",
+                "PowerShell would swallow the stop-parsing marker"
+            );
+            let (mut quotes, mut previous, mut wrap) = (0, '\0', false);
+            for c in value.chars() {
+                if c == '"' && !(host == PsHost::Core && previous == '\\') {
+                    quotes += 1;
+                } else if c.is_whitespace() && quotes % 2 == 0 {
+                    wrap = true;
+                }
+                previous = c;
+            }
+            let trailing = value.len() - value.trim_end_matches('\\').len();
+            parts.push(match (wrap, host) {
+                (false, _) => value.clone(),
+                (true, PsHost::Desktop) => format!("\"{value}\""),
+                (true, PsHost::Core) => format!("\"{value}{}\"", "\\".repeat(trailing)),
+            });
+        }
+        parts.join(" ")
+    }
+
+    /// Splits a command line tail into argv with the C runtime rules. `pre_2008` reads `""` inside
+    /// quotes as a quote that also closes them (CommandLineToArgvW, Go); later runtimes stay quoted.
+    fn argv(line: &str, pre_2008: bool) -> Vec<String> {
+        let chars: Vec<char> = line.chars().collect();
+        let (mut args, mut i) = (Vec::new(), 0);
+        while i < chars.len() {
+            if chars[i] == ' ' || chars[i] == '\t' {
+                i += 1;
+                continue;
+            }
+            let (mut arg, mut quoted) = (String::new(), false);
+            while i < chars.len() && (quoted || (chars[i] != ' ' && chars[i] != '\t')) {
+                let slashes = chars[i..].iter().take_while(|&&c| c == '\\').count();
+                if slashes > 0 {
+                    i += slashes;
+                    let before_quote = chars.get(i) == Some(&'"');
+                    arg.push_str(&"\\".repeat(if before_quote { slashes / 2 } else { slashes }));
+                    if before_quote && slashes % 2 == 1 {
+                        arg.push('"');
+                        i += 1;
+                    }
+                } else if chars[i] == '"' {
+                    if quoted && chars.get(i + 1) == Some(&'"') {
+                        arg.push('"');
+                        quoted = !pre_2008;
+                        i += 2;
+                    } else {
+                        quoted = !quoted;
+                        i += 1;
+                    }
+                } else {
+                    arg.push(chars[i]);
+                    i += 1;
+                }
+            }
+            args.push(arg);
+        }
+        args
+    }
+
+    #[test]
+    fn short_arguments_survive_both_powershells() {
+        let alphabet = ['a', ' ', '\t', '\n', '"', '\\'];
+        let mut args = vec![String::new()];
+        let mut longest = vec![String::new()];
+        for _ in 0..6 {
+            longest = longest
+                .iter()
+                .flat_map(|prefix| alphabet.iter().map(move |c| format!("{prefix}{c}")))
+                .collect();
+            args.extend(longest.iter().cloned());
+        }
+        for host in [PsHost::Desktop, PsHost::Core] {
+            for arg in &args {
+                let exact = vec![arg.clone()];
+                let intact = |values: &[String]| {
+                    let line = ps_command_line(values, host);
+                    argv(&line, false) == exact && argv(&line, true) == exact
+                };
+
+                let values = escape_for_ps_native_legacy(arg, host, false);
+                // The only shapes 5.1 cannot carry, kept unchanged as before.
+                let known_gap = host == PsHost::Desktop
+                    && values == exact
+                    && (arg.contains("  ") || arg.contains(['\t', '\n']));
+                assert!(
+                    intact(&values) || known_gap,
+                    "{host:?} {arg:?} -> {values:?}"
+                );
+
+                // Through cmd.exe: the same `"` as before, and intact whenever anything changed.
+                if !arg.is_empty() {
+                    let values = escape_for_ps_native_legacy(arg, host, true);
+                    assert_eq!(
+                        ps_command_line(&values, host).replace('\\', ""),
+                        ps_command_line(&exact, host).replace('\\', ""),
+                        "{host:?} {arg:?}"
+                    );
+                    assert!(values == exact || intact(&values), "{host:?} {arg:?}");
+                }
+            }
+        }
+    }
+
+    /// Prints argv as ASCII-only JSON, so no console code page can alter it on the way back.
+    #[cfg(windows)]
+    const ECHO_ARGV_JS: &str = r#"process.stdout.write(JSON.stringify(process.argv.slice(2)).replace(/[\u007f-\uffff]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')));"#;
+
+    /// Temp directory removed on drop, even when the test fails.
+    #[cfg(windows)]
+    struct TempDir(PathBuf);
+
+    #[cfg(windows)]
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// Runs real launch scripts through PowerShell against a node script that echoes its argv.
+    #[cfg(windows)]
+    #[test]
+    fn powershell_delivers_launch_arguments_intact() {
+        let Ok(node) = which::which("node.exe") else {
+            eprintln!("skipped: node.exe not found");
+            return;
+        };
+        let nanos = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let dir = TempDir(
+            std::env::temp_dir().join(format!("alethe-ps-quoting-{}-{nanos}", std::process::id())),
+        );
+        fs::create_dir_all(&dir.0).unwrap();
+        let echo = dir.0.join("echo.js");
+        fs::write(&echo, ECHO_ARGV_JS).unwrap();
+
+        let args: Vec<String> = [
+            "plain",
+            "two words",
+            r#"say "hi" now"#,
+            r#""a fully quoted sentence""#,
+            r#"--message="hello world""#,
+            r#"x="a --% b""#,
+            r#"back\"slash and \\"two" x"#,
+            r"C:\dir\",
+            r"C:\my dir\",
+            "",
+            "ação, ü, 日本語 and 🎉",
+            "it's ‘curly’ and ’odd‚ ‛quotes",
+            "--%",
+            "<0-100> | a & b > c ^ %PATH% !x!",
+            "cost $5 $(Get-Date) `n @(1)",
+            "line one\n\tline two",
+            "You are claude-6, a worker inside Alethe Orchestra focused on \"pty-quoting\". Report \
+             progress often with \"orch.cmd report <0-100> <thinking|editing|testing|blocked|done> \
+             <short note>\" (full path \"C:/x/orch.cmd\"): at start, at each milestone, and finish \
+             with \"orch.cmd report 100 done <one-line summary>\".",
+        ]
+        .map(String::from)
+        .to_vec();
+        let mut launch_args = vec![echo.to_string_lossy().to_string()];
+        launch_args.extend(args.iter().cloned());
+
+        let mut ran = false;
+        for (shell, host) in [
+            ("powershell.exe", PsHost::Desktop),
+            ("pwsh.exe", PsHost::Core),
+        ] {
+            if which::which(shell).is_err() {
+                continue;
+            }
+            ran = true;
+            let script = powershell_launch_script(&node.to_string_lossy(), &launch_args, host);
+            let output = std::process::Command::new(shell)
+                .args(["-NoLogo", "-NoProfile", "-Command", &script])
+                .output()
+                .expect("PowerShell runs");
+            let received: Vec<String> =
+                serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
+                    panic!(
+                        "{shell}: {error}\nstdout: {}\nstderr: {}",
+                        String::from_utf8_lossy(&output.stdout),
+                        String::from_utf8_lossy(&output.stderr)
+                    )
+                });
+            assert_eq!(received, args, "{shell}");
+        }
+        assert!(ran, "no PowerShell on PATH");
     }
 }

@@ -41,10 +41,13 @@ export function ReportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [busy, setBusy] = useState(false)
 
   // Built when the dialog opens (a snapshot while the session runs).
-  const report = useMemo(
-    () => (open ? buildReport(getSession(), { project }) : null),
-    [open, getSession, project],
-  )
+  const report = useMemo(() => {
+    if (!open) return null
+    const accounts = useProjectsStore.getState().preferences.claudeAccounts ?? []
+    const accountName = (id: string | null) =>
+      id ? (accounts.find((a) => a.id === id)?.name ?? id) : null
+    return buildReport(getSession(), { project, accountName })
+  }, [open, getSession, project])
 
   const markdown = useMemo(() => {
     if (!report) return ''
@@ -67,6 +70,10 @@ export function ReportDialog({ open, onClose }: { open: boolean; onClose: () => 
       failures: t('orchestra.report.failures'),
       filesByWorker: t('orchestra.report.filesByWorker'),
       noWorkers: t('orchestra.report.noWorkers'),
+      blocked: t('orchestra.report.blockedTime'),
+      accounts: t('orchestra.report.accounts'),
+      defaultAccount: t('orchestra.report.defaultAccount'),
+      accountSwitch: (from, to) => t('orchestra.report.accountSwitch', { from, to }),
       states: {
         done: t('orchestra.report.state.done'),
         failed: t('orchestra.report.state.failed'),

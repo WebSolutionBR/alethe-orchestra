@@ -77,6 +77,7 @@ vi.mock('../lib/terminalMirror', () => ({
   getMirror: mocks.getMirror,
 }))
 
+import { retiredPtys } from '../components/Orchestra/retiredTerminals'
 import {
   DEFAULT_SPAWN_SIZE,
   resetTerminalGeometryCache,
@@ -987,7 +988,7 @@ describe('an agent that goes down is never silent (A1)', () => {
     })
   })
 
-  it('cancels a held worker: it leaves the session and its own dependents are held', async () => {
+  it('cancels a held worker: it stays in the session as cancelled and its dependents are held', async () => {
     const sid = await startSession()
     wake(sid, 'orchestrator')
     await spawnWorker(sid, 'claude-1')
@@ -1020,7 +1021,14 @@ describe('an agent that goes down is never silent (A1)', () => {
     exitAgent(sid, 'claude-1')
 
     store().cancelWaiting(sid, 'claude-2', 'Cancelled claude-2.')
-    expect(session(sid).agents.map((a) => a.id)).not.toContain('claude-2')
+    // Kept, as cancelled: never launched, frozen where it was cancelled.
+    expect(agentIn(sid, 'claude-2')).toMatchObject({
+      state: 'idle',
+      exitReason: 'cancelled',
+      ptyId: null,
+      blocked: null,
+    })
+    expect(agentIn(sid, 'claude-2').finishedAt).not.toBeNull()
     expect(agentIn(sid, 'claude-3')).toMatchObject({
       state: 'blocked',
       blocked: { reason: 'dependency', text: 'claude-2' },
@@ -1029,6 +1037,9 @@ describe('an agent that goes down is never silent (A1)', () => {
       delivery: 'failed',
       failure: 'cancelled',
     })
+    // Stopping the session later does not turn it into "stopped".
+    await store().stopAgents(sid)
+    expect(agentIn(sid, 'claude-2').exitReason).toBe('cancelled')
   })
 
   it('releases a dependent normally once its dependency is done', async () => {
@@ -1379,7 +1390,9 @@ describe('stopping, closing and per-agent controls (B1, B2)', () => {
       exitCode: null,
       exitReason: null,
     })
-    expect(mocks.disposeMirror).toHaveBeenCalledWith(first)
+    // The earlier terminal stays readable (until Close), listed as retired.
+    expect(mocks.disposeMirror).not.toHaveBeenCalledWith(first)
+    expect(retiredPtys(sid, 'claude-1')).toEqual([first])
     // Its dependent waits for it again instead of being held.
     expect(agentIn(sid, 'claude-2')).toMatchObject({ state: 'waiting', blocked: null })
     expect(session(sid).messages.at(-1)).toMatchObject({
@@ -1932,5 +1945,62 @@ describe('confirmStop', () => {
       .mockReturnValue(Promise.reject(new Error('denied')) as unknown as boolean)
     await expect(confirmStop('stop?')).resolves.toBe(true)
     spy.mockRestore()
+  })
+})
+
+describe('notices to the orchestrator and the restart history cap', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  afterEach(async () => {
+    await store().stopAll()
+  })
+
+  it('pastes an [orchestra] line into the orchestrator when the session account changes', async () => {
+    const sid = await startSession()
+    wake(sid, 'orchestrator')
+    store().setSessionAccount(sid, 'acc-x')
+    const orchestratorPty = agentIn(sid, 'orchestrator').ptyId
+    await vi.waitFor(() =>
+      expect(writesTo(orchestratorPty)).toContain(
+        '[orchestra] session account is now acc-x (was default); workers spawned from now on start there',
+      ),
+    )
+  })
+
+  it('tellAgent records a bus line and pastes the notice; a wait of the old account is dropped', async () => {
+    const sid = await startSession()
+    wake(sid, 'orchestrator')
+    store().tellAgent(sid, 'orchestrator', 'quota at 90%')
+    expect(session(sid).messages.at(-1)).toMatchObject({
+      from: 'orchestra',
+      to: 'orchestrator',
+      text: 'quota at 90%',
+    })
+    const orchestratorPty = agentIn(sid, 'orchestrator').ptyId
+    await vi.waitFor(() => expect(writesTo(orchestratorPty)).toContain('[orchestra] quota at 90%'))
+
+    store().setLimitWait(sid, { account: null, resetsAt: 5000 })
+    expect(session(sid).limitWait).toEqual({ account: null, resetsAt: 5000 })
+    store().setSessionAccount(sid, 'acc-x')
+    expect(session(sid).limitWait).toBeNull()
+  })
+
+  it('keeps only the last 2 earlier terminals: 4 restarts free the 2 oldest mirrors', async () => {
+    const sid = await startSession()
+    await spawnWorker(sid, 'claude-1')
+    const ptys: string[] = []
+    for (let i = 0; i < 4; i++) {
+      ptys.push(agentIn(sid, 'claude-1').ptyId!)
+      await store().restartAgent(sid, 'claude-1')
+      await vi.waitFor(() => expect(agentIn(sid, 'claude-1').ptyId).not.toBeNull())
+    }
+    expect(new Set(ptys).size).toBe(4)
+    expect(retiredPtys(sid, 'claude-1')).toEqual(ptys.slice(2))
+    expect(mocks.disposeMirror.mock.calls.map(([id]) => id)).toEqual(ptys.slice(0, 2))
+    expect(
+      session(sid).messages.filter((m) => m.text.startsWith('older terminal discarded')),
+    ).toHaveLength(2)
   })
 })

@@ -38,6 +38,7 @@ import {
   areaOf,
   busClock,
   elapsed,
+  endedByUserKey,
   isBusy,
   isFailed,
   isOrchestrator,
@@ -66,6 +67,9 @@ function useTr(): Tr {
 }
 
 const stateKey = (state: AgentState) => `orchestra.terminals.state.${state}` as Key
+/** The view's word for a state; the shared one for an agent the user stopped or cancelled. */
+const stateText = (agent: OrchestraAgent, tr: Tr) =>
+  tr((endedByUserKey(agent) ?? stateKey(agent.state)) as Key)
 
 const SPLIT_KEY = 'orchestra.terminals.split'
 const MAIN_PAD = 8
@@ -380,6 +384,7 @@ export function TerminalsView() {
 function Summary({ agents, tr }: { agents: OrchestraAgent[]; tr: Tr }) {
   const goal = useSession((s) => s.goal)
   const startedAt = useSession((s) => s.startedAt)
+  const stoppedAt = useSession((s) => s.stoppedAt ?? null)
   const now = useNow(1000)
   const workers = workersOf(agents)
   const overall = overallProgress(agents)
@@ -395,7 +400,7 @@ function Summary({ agents, tr }: { agents: OrchestraAgent[]; tr: Tr }) {
         </span>
         {startedAt ? (
           <span className={styles.elapsed}>
-            {tr('orchestra.terminals.elapsed', { time: elapsed(startedAt, now) })}
+            {tr('orchestra.terminals.elapsed', { time: elapsed(startedAt, stoppedAt ?? now) })}
           </span>
         ) : null}
       </div>
@@ -630,7 +635,7 @@ function Pane({
           {subtitle}
         </span>
         <span className={styles.paneState} style={{ color }}>
-          {tr(stateKey(agent.state))}
+          {stateText(agent, tr)}
         </span>
         <span className={styles.paneBar}>
           <i style={{ width: `${agent.progress}%`, background: color }} />
@@ -692,6 +697,7 @@ function PaneBody({
   const hasTranscript = useHasTranscript(ptyId)
   // A stopped orchestration's terminals are gone; their transcripts stay readable.
   const stopped = useSession((s) => Boolean(s.stoppedAt))
+  const sessionId = useSessionId()
 
   if (!ptyId) {
     if (processEnded(agent) || stopped) return <EndedPlaceholder agent={agent} tr={tr} />
@@ -713,7 +719,15 @@ function PaneBody({
     return hasTranscript ? (
       <>
         <AgentAlert agent={agent} compact />
-        <AgentTerminal key={ptyId} ptyId={ptyId} role={role} alive={false} cwd={cwd} />
+        <AgentTerminal
+          key={ptyId}
+          sessionId={sessionId}
+          agentId={agent.id}
+          ptyId={ptyId}
+          role={role}
+          alive={false}
+          cwd={cwd}
+        />
       </>
     ) : (
       <EndedPlaceholder agent={agent} tr={tr} />
@@ -722,7 +736,16 @@ function PaneBody({
 
   // Memoized with primitive props: progress/state updates of the agent never re-render it.
   return (
-    <AgentTerminal key={ptyId} ptyId={ptyId} role={role} alive cwd={cwd} autoFocus={selected} />
+    <AgentTerminal
+      key={ptyId}
+      sessionId={sessionId}
+      agentId={agent.id}
+      ptyId={ptyId}
+      role={role}
+      alive
+      cwd={cwd}
+      autoFocus={selected}
+    />
   )
 }
 

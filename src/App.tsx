@@ -60,13 +60,19 @@ import { startActivityTracker } from './lib/activityTracker'
 import { APP_SHELL_ID } from './lib/appShell'
 import { AGENT_SANDBOX_ENABLED } from './lib/featureFlags'
 import { intlLocale, translate, useT } from './lib/i18n'
-import { visibilityFromPanelResize, widthFromPanelResize } from './lib/sidebarPanelState'
+import {
+  clampSidebarWidth,
+  sidebarGeometryProblem,
+  visibilityFromPanelResize,
+  widthFromPanelResize,
+} from './lib/sidebarPanelState'
 import { setMaxConcurrentSpawns } from './lib/spawnQueue'
 import { ghosttyKillAll, setWindowOpacity } from './lib/tauri'
 import { getLastCrashReport } from './lib/tauri'
 import { loadThemeIconBytes } from './lib/themeIcons'
 import { checkForUpdate } from './lib/updater'
 import { useProjectsStore } from './stores/projectsStore'
+import { traceRightSidebarGeometry } from './stores/projectsStore.rightSidebar'
 import { type InAppToast, useUiStore } from './stores/uiStore'
 
 const AgentCanvasPOC = lazy(() =>
@@ -207,12 +213,6 @@ export default function App() {
   const rightSidebarVisible = useProjectsStore((s) => s.preferences.rightSidebarVisible)
   const leftSidebarWidth = useProjectsStore((s) => s.preferences.leftSidebarWidth)
   const rightSidebarWidth = useProjectsStore((s) => s.preferences.rightSidebarWidth)
-  const todosEnabled = useProjectsStore((s) => s.preferences.enabledFeatures.todos)
-  const gitEnabled = useProjectsStore((s) => s.preferences.enabledFeatures.git)
-  const mcpEnabled = useProjectsStore((s) => s.preferences.enabledFeatures.mcp)
-  const gitControlPlacement = useProjectsStore((s) => s.preferences.gitControlPlacement)
-  const rightPanelEnabled =
-    todosEnabled || mcpEnabled || (gitEnabled && gitControlPlacement === 'right')
   const setPreferences = useProjectsStore((s) => s.setPreferences)
   // Keep panel defaults stable while dragging. Updating defaultSize on every
   // resize event can make react-resizable-panels rebuild the layout mid-drag.
@@ -400,15 +400,12 @@ export default function App() {
     const reconcile = () => {
       if (windowHiddenRef.current) return
       if (leftSidebarResizeActiveRef.current || rightSidebarResizeActiveRef.current) return
-      const wantLeft = leftSidebarVisible
-      const wantRight = rightPanelEnabled && rightSidebarVisible
+      // The right sidebar is not collapsible, so only the left one can need bringing back.
+      if (!leftSidebarVisible) return
       const required =
-        (wantLeft ? LEFT_SIDEBAR_MIN_PX : 0) +
-        (wantRight ? RIGHT_SIDEBAR_MIN_PX : 0) +
-        WORKSPACE_MIN_PX
+        LEFT_SIDEBAR_MIN_PX + (rightSidebarVisible ? RIGHT_SIDEBAR_MIN_PX : 0) + WORKSPACE_MIN_PX
       if (window.innerWidth < required) return
-      if (wantLeft && leftPanelRef.current?.isCollapsed()) leftPanelRef.current.expand()
-      if (wantRight && rightPanelRef.current?.isCollapsed()) rightPanelRef.current.expand()
+      if (leftPanelRef.current?.isCollapsed()) leftPanelRef.current.expand()
     }
     const schedule = () => {
       if (timer !== null) window.clearTimeout(timer)
@@ -422,14 +419,7 @@ export default function App() {
       window.removeEventListener('resize', schedule)
       document.removeEventListener('visibilitychange', schedule)
     }
-  }, [
-    hydrated,
-    leftPanelRef,
-    rightPanelRef,
-    leftSidebarVisible,
-    rightSidebarVisible,
-    rightPanelEnabled,
-  ])
+  }, [hydrated, leftPanelRef, leftSidebarVisible, rightSidebarVisible])
 
   useEffect(() => {
     if (!hydrated) return
@@ -451,25 +441,60 @@ export default function App() {
     }
   }, [hydrated, leftPanelRef, leftSidebarVisible])
 
+  // The right sidebar has a single source of truth: its panel is mounted exactly when
+  // `rightSidebarVisible` is true, and it is not collapsible, so no layout, view or pane
+  // count can shrink it to 0px behind the preference's back. Width saves wait until the
+  // freshly mounted panel has settled.
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated || !rightSidebarVisible) return
     rightSidebarLayoutReadyRef.current = false
-    const element = rightPanelElementRef.current
-    if (element) element.style.transition = 'flex-grow 180ms ease, flex-basis 180ms ease'
-    const frame = window.requestAnimationFrame(() => {
-      if (rightPanelEnabled && rightSidebarVisible) rightPanelRef.current?.expand()
-      else rightPanelRef.current?.collapse()
-    })
     const timer = window.setTimeout(() => {
-      if (element) element.style.transition = ''
       rightSidebarLayoutReadyRef.current = true
     }, 220)
-    return () => {
-      window.cancelAnimationFrame(frame)
-      window.clearTimeout(timer)
-      if (element) element.style.transition = ''
+    return () => window.clearTimeout(timer)
+  }, [hydrated, rightSidebarVisible])
+
+  // Watchdog: if the visible sidebar ever ends up at 0px, below its minimum or past the
+  // window edge, log it to app-events.log and push it back to a legal width.
+  useEffect(() => {
+    if (!hydrated || !rightSidebarVisible) return
+    const element = rightPanelElementRef.current
+    if (!element) return
+    let timer: number | null = null
+    let lastProblem: string | null = null
+    const check = () => {
+      timer = null
+      if (windowHiddenRef.current || rightSidebarResizeActiveRef.current) return
+      // A shell with no width (minimized window, no layout yet) has nothing to measure.
+      if ((element.parentElement?.getBoundingClientRect().width ?? 0) < 1) return
+      const rect = element.getBoundingClientRect()
+      const problem = sidebarGeometryProblem(rect, window.innerWidth, RIGHT_SIDEBAR_MIN_PX)
+      if (problem === lastProblem) return
+      lastProblem = problem
+      if (!problem) return
+      traceRightSidebarGeometry(
+        problem,
+        `width=${Math.round(rect.width)} right=${Math.round(rect.right)} viewport=${window.innerWidth} view=${useUiStore.getState().activeView}`,
+      )
+      const { rightSidebarWidth: width } = useProjectsStore.getState().preferences
+      rightPanelRef.current?.resize(
+        `${clampSidebarWidth(width, RIGHT_SIDEBAR_MIN_PX, RIGHT_SIDEBAR_MAX_PX)}px`,
+      )
     }
-  }, [hydrated, rightPanelRef, rightSidebarVisible, rightPanelEnabled])
+    const schedule = () => {
+      if (timer !== null) window.clearTimeout(timer)
+      timer = window.setTimeout(check, 240)
+    }
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    observer?.observe(element)
+    window.addEventListener('resize', schedule)
+    schedule()
+    return () => {
+      if (timer !== null) window.clearTimeout(timer)
+      observer?.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
+  }, [hydrated, rightPanelRef, rightSidebarVisible])
 
   useEffect(() => {
     if (!hydrated) return
@@ -618,7 +643,7 @@ export default function App() {
             }}
           />
 
-          <Panel id="alethe-main" minSize="360px">
+          <Panel id="alethe-main" minSize={`${WORKSPACE_MIN_PX}px`}>
             <main className={styles.mainView}>
               <ErrorBoundary label="view">
                 <Suspense fallback={<LoadingScreen />}>
@@ -638,10 +663,10 @@ export default function App() {
             </main>
           </Panel>
 
-          {rightPanelEnabled ? (
+          {rightSidebarVisible ? (
             <>
               <Separator
-                className={`${styles.shellSeparator} ${rightSidebarVisible ? '' : styles.shellSeparatorHidden}`}
+                className={styles.shellSeparator}
                 onPointerDown={() => {
                   rightSidebarResizeActiveRef.current = true
                 }}
@@ -668,23 +693,17 @@ export default function App() {
                 id="alethe-todo-sidebar"
                 panelRef={rightPanelRef}
                 elementRef={rightPanelElementRef}
-                defaultSize={rightSidebarVisible ? `${rightSidebarDefaultRef.current}px` : '0px'}
+                defaultSize={`${clampSidebarWidth(
+                  rightSidebarDefaultRef.current,
+                  RIGHT_SIDEBAR_MIN_PX,
+                  RIGHT_SIDEBAR_MAX_PX,
+                )}px`}
                 minSize={`${RIGHT_SIDEBAR_MIN_PX}px`}
                 maxSize={`${RIGHT_SIDEBAR_MAX_PX}px`}
-                collapsedSize="0px"
-                collapsible
                 groupResizeBehavior="preserve-pixel-size"
                 onResize={(size, _id, previous) => {
-                  const currentVisible = useProjectsStore.getState().preferences.rightSidebarVisible
-                  const nextVisible = visibilityFromPanelResize(
-                    rightSidebarLayoutReadyRef.current,
-                    rightSidebarResizeActiveRef.current,
-                    windowHiddenRef.current,
-                    size,
-                    previous,
-                    currentVisible,
-                  )
-                  if (nextVisible !== null) setPreferences({ rightSidebarVisible: nextVisible })
+                  // Not collapsible: a drag can only change the width, never hide the
+                  // sidebar. Closing it is the close button's job (hideRightSidebar).
                   const nextWidth = widthFromPanelResize(
                     rightSidebarLayoutReadyRef.current,
                     rightSidebarResizeActiveRef.current,
@@ -705,7 +724,7 @@ export default function App() {
                   }
                 }}
               >
-                <div className={styles.sidebarContent} data-hidden={!rightSidebarVisible}>
+                <div className={styles.sidebarContent}>
                   <RightSidebar />
                 </div>
               </Panel>

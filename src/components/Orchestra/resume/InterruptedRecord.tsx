@@ -1,23 +1,87 @@
 import { FolderSearch, Play, TriangleAlert } from 'lucide-react'
+import { useState } from 'react'
 
 import { type MessageKey, useT } from '../../../lib/i18n'
+import { attachPty } from '../../../lib/tauri/pty'
+import { transcriptOfRecording } from '../../../lib/terminalMirror'
+import type { TerminalSize } from '../../../lib/terminalSizes'
 import type { OrchestraAgent } from '../../../stores/orchestraStore'
 import { Modal } from '../../modals/Modal'
-import { stateColor } from '../shared'
+import { endedByUserKey, stateColor } from '../shared'
 import { type AgentFate, agentFate, type OrchestraManifest } from './manifest'
 import styles from './Resume.module.css'
 import { manifestName, useDateTime } from './useManifestInfo'
 
 const RECENT_LINES = 8
+/** Size agents are born at when nothing better is known (see terminalGeometry). */
+const FALLBACK_SIZE: TerminalSize = { cols: 100, rows: 30 }
+/** Recorded output read for the transcript: the backend keeps at most about this much. */
+const RECORDED_BYTES = 2 * 1024 * 1024
+
+type TranscriptState =
+  | { kind: 'idle' | 'loading' | 'empty' }
+  | { kind: 'ready'; text: string }
+  | { kind: 'failed'; message: string }
+
+/**
+ * The agent's saved terminal output, read when the user opens it and parsed at the size its PTY
+ * had (manifest `ptySizes`): replaying it at another width would scramble it.
+ */
+function RecordTranscript({ ptyId, size }: { ptyId: string; size: TerminalSize | undefined }) {
+  const t = useT()
+  const [state, setState] = useState<TranscriptState>({ kind: 'idle' })
+  const shown = size ?? FALLBACK_SIZE
+  const load = () => {
+    if (state.kind !== 'idle') return
+    setState({ kind: 'loading' })
+    attachPty(ptyId, RECORDED_BYTES)
+      .then((recorded) => {
+        const text = recorded ? transcriptOfRecording(recorded, shown) : ''
+        setState(text.trim() ? { kind: 'ready', text } : { kind: 'empty' })
+      })
+      .catch((error: unknown) => setState({ kind: 'failed', message: String(error) }))
+  }
+  return (
+    <details
+      className={styles.details}
+      onToggle={(event) => {
+        if (event.currentTarget.open) load()
+      }}
+    >
+      <summary>
+        {size
+          ? t('orchestra.resume.record.transcript', { cols: size.cols, rows: size.rows })
+          : t('orchestra.resume.record.transcriptGuessed', {
+              cols: shown.cols,
+              rows: shown.rows,
+            })}
+      </summary>
+      {state.kind === 'ready' ? (
+        <pre className={`${styles.pre} ${styles.transcript}`} tabIndex={0} data-cols={shown.cols}>
+          {state.text}
+        </pre>
+      ) : (
+        <p className={styles.empty} role="status">
+          {state.kind === 'failed'
+            ? t('orchestra.resume.record.transcriptFailed', { message: state.message })
+            : state.kind === 'empty'
+              ? t('orchestra.resume.record.transcriptEmpty')
+              : t('orchestra.resume.record.transcriptLoading')}
+        </p>
+      )}
+    </details>
+  )
+}
 
 const FATE_KEY: Record<Exclude<AgentFate, 'wait'>, MessageKey> = {
   resume: 'orchestra.resume.record.willResume',
   restart: 'orchestra.resume.record.willRestart',
   failed: 'orchestra.resume.record.willFail',
+  cancelled: 'orchestra.resume.record.cancelled',
   finished: 'orchestra.resume.record.finished',
 }
 
-function AgentRecord({ agent }: { agent: OrchestraAgent }) {
+function AgentRecord({ agent, size }: { agent: OrchestraAgent; size?: TerminalSize }) {
   const t = useT()
   const fate = agentFate(agent)
   const fateText =
@@ -35,8 +99,8 @@ function AgentRecord({ agent }: { agent: OrchestraAgent }) {
           <span className={styles.area}>{agent.area}</span>
         ) : null}
         <span className={styles.state}>
-          {t(`orchestra.state.${agent.state}` as MessageKey)} · {agent.progress}%
-          {settings ? ` · ${settings}` : ''}
+          {t(endedByUserKey(agent) ?? (`orchestra.state.${agent.state}` as MessageKey))} ·{' '}
+          {agent.progress}%{settings ? ` · ${settings}` : ''}
         </span>
         <span className={styles.fate}>{fateText}</span>
       </div>
@@ -70,6 +134,7 @@ function AgentRecord({ agent }: { agent: OrchestraAgent }) {
           </ul>
         </details>
       ) : null}
+      {agent.ptyId ? <RecordTranscript ptyId={agent.ptyId} size={size} /> : null}
       {agent.files.length > 0 ? (
         <details className={styles.details}>
           <summary>{t('orchestra.resume.record.files', { count: agent.files.length })}</summary>
@@ -171,7 +236,7 @@ export function InterruptedRecord({
           <h3 className={styles.sectionTitle}>{t('orchestra.resume.record.agents')}</h3>
           <ul className={styles.agents}>
             {manifest.agents.map((agent) => (
-              <AgentRecord key={agent.id} agent={agent} />
+              <AgentRecord key={agent.id} agent={agent} size={manifest.ptySizes?.[agent.id]} />
             ))}
           </ul>
         </section>

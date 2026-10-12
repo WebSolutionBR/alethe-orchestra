@@ -101,6 +101,8 @@ export type ScribeSession = {
   /** Its agents were stopped: the session stays readable but nothing more happens in it. */
   stoppedAt?: number | null
   agents: ScribeAgent[]
+  /** The session's own launch settings; the author runs on its account when it has one. */
+  launch?: { account: string | null; model: string | null; effort: string | null }
 }
 export type ScribeSource = { sessions: Record<string, ScribeSession> }
 export type ScribeStore = {
@@ -419,9 +421,10 @@ function snapshotOf(session: ScribeSession, endedAt: number | null): SessionSnap
     startedAt: session.startedAt ?? null,
     endedAt,
     agents,
-    account: orchestrator?.account ?? null,
-    model: orchestrator?.model ?? null,
-    effort: orchestrator?.effort ?? null,
+    // The session's account (switched from the accounts panel too), else the orchestrator's.
+    account: session.launch ? session.launch.account : (orchestrator?.account ?? null),
+    model: orchestrator?.model ?? session.launch?.model ?? null,
+    effort: orchestrator?.effort ?? session.launch?.effort ?? null,
   }
 }
 

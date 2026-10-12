@@ -19,6 +19,7 @@ import {
   areaOf,
   busClock,
   elapsed,
+  endedByUserKey,
   isBusy,
   isOrchestrator,
   overallProgress,
@@ -99,14 +100,15 @@ function curve(ax: number, ay: number, bx: number, by: number): string {
   return `M${ax},${ay} C${ax + dx},${ay} ${bx - dx},${by} ${bx},${by}`
 }
 
-function Clock({ from }: { from: number }) {
+/** Ticks every second until `to` (the session was stopped), where it stays. */
+function Clock({ from, to }: { from: number; to: number | null }) {
   const [, setTick] = useState(0)
   useEffect(() => {
-    if (!from) return
+    if (!from || to !== null) return
     const id = window.setInterval(() => setTick((n) => n + 1), 1000)
     return () => window.clearInterval(id)
-  }, [from])
-  return <>{from ? elapsed(from) : '0:00'}</>
+  }, [from, to])
+  return <>{from ? elapsed(from, to ?? Date.now()) : '0:00'}</>
 }
 
 function activate(event: KeyboardEvent, action: () => void) {
@@ -160,7 +162,7 @@ function WorkerNode({
         <CreativeMark area={agent.area} />
         <span className={styles.nodeState} id={stateId}>
           <span className={styles.glyph} aria-hidden="true" />
-          {t(`orchestra.flow.state.${agent.state}`)}
+          {t(endedByUserKey(agent) ?? `orchestra.flow.state.${agent.state}`)}
         </span>
       </div>
       <div className={styles.nodeTitle}>{agent.area}</div>
@@ -195,6 +197,7 @@ function OrchestratorNode({
   onSelect: (id: string) => void
 }) {
   const t = useT()
+  const stoppedAt = useSession((s) => s.stoppedAt ?? null)
   const open = () => onSelect(ORCHESTRATOR_ID)
   const statsId = useId()
   const workers = workersOf(agents)
@@ -236,7 +239,7 @@ function OrchestratorNode({
         <span>
           {t('orchestra.flow.elapsed')}{' '}
           <b>
-            <Clock from={startedAt} />
+            <Clock from={startedAt} to={stoppedAt} />
           </b>
         </span>
       </div>

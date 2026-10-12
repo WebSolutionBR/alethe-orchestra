@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { OrchestraEvent, OrchestraLaunch } from '../lib/tauri/orchestra'
+import { disposeMirror } from '../lib/terminalMirror'
 
 type SpawnArgs = { id: string; extraArgs?: string[]; env?: Record<string, string> }
 type ExitPayload = { code: number | null; reason: string }
@@ -459,6 +460,9 @@ describe('resume', () => {
     expect(agentIn('oresume1', 'claude-2').state).toBe('starting')
     const told = store().sessions['oresume1'].messages.find((m) => m.text.startsWith('not resumed'))
     expect(told).toMatchObject({ from: 'claude-2', to: 'orchestrator' })
+    // T6: the failed process's mirror is dropped at once, not kept until the session is closed.
+    expect(vi.mocked(disposeMirror)).toHaveBeenCalledWith(first.id)
+    expect(vi.mocked(disposeMirror)).not.toHaveBeenCalledWith(launchesOf('claude-2')[1].id)
 
     // That second launch has no --resume: if it dies too, it is an ordinary failure.
     mocks.exits.get(launchesOf('claude-2')[1].id)!({ code: 1, reason: 'exited' })

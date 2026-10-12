@@ -1,4 +1,4 @@
-import { CornerUpLeft, Download, OctagonX, RotateCcw } from 'lucide-react'
+import { CornerUpLeft, Download, History, OctagonX, RotateCcw } from 'lucide-react'
 import type { MouseEvent } from 'react'
 
 import { saveFile } from '../../lib/dialog'
@@ -7,6 +7,7 @@ import { saveTextFile } from '../../lib/tauri/export'
 import { getMirror } from '../../lib/terminalMirror'
 import { confirmStop, type OrchestraAgent, useOrchestraStore } from '../../stores/orchestraStore'
 import { useUiStore } from '../../stores/uiStore'
+import { useRetiredPtys, useViewedRetired, viewRetired } from './retiredTerminals'
 import { useSession, useSessionId } from './sessionContext'
 import { isBusy, isFailed, processEnded } from './shared'
 import { useHasTranscript } from './terminalHooks'
@@ -35,6 +36,9 @@ export function AgentControls({
   const sessionId = useSessionId()
   const stopped = useSession((s) => Boolean(s.stoppedAt))
   const hasTranscript = useHasTranscript(agent.ptyId)
+  // Terminals it had before a Restart: their transcripts stay until the session is closed.
+  const earlier = useRetiredPtys(sessionId, agent.id)
+  const viewed = useViewedRetired(sessionId, agent.id)
   const store = useOrchestraStore.getState
 
   // A running process: not failed, and not ended after reporting done.
@@ -58,8 +62,17 @@ export function AgentControls({
     void store().restartAgent(sessionId, agent.id, { resume, notice })
   }
 
+  // Steps back through the earlier terminals, newest first, then returns to the current one.
+  const showEarlier = () => {
+    const at = viewed ? earlier.indexOf(viewed) : earlier.length
+    viewRetired(sessionId, agent.id, at > 0 ? earlier[at - 1] : null)
+  }
+  const earlierIndex = viewed ? earlier.indexOf(viewed) + 1 : 0
+
   const exportTranscript = async () => {
-    const mirror = agent.ptyId ? getMirror(agent.ptyId) : null
+    // The transcript on screen: an earlier terminal while one is shown, else the current one.
+    const shown = viewed ?? agent.ptyId
+    const mirror = shown ? getMirror(shown) : null
     if (!mirror) return
     const toast = useUiStore.getState().pushToast
     const locale = getLocale()
@@ -134,7 +147,37 @@ export function AgentControls({
           <RotateCcw size={13} aria-hidden="true" />
         </button>
       ) : null}
-      {hasTranscript ? (
+      {earlier.length > 0 && agent.ptyId ? (
+        <button
+          type="button"
+          className={buttonClassName}
+          aria-pressed={viewed !== null}
+          aria-label={
+            viewed
+              ? t('orchestra.controls.earlierShown', {
+                  index: earlierIndex,
+                  total: earlier.length,
+                })
+              : t('orchestra.controls.earlier')
+          }
+          title={
+            viewed
+              ? earlierIndex > 1
+                ? t('orchestra.controls.earlierOlderTitle', { id: agent.id })
+                : t('orchestra.controls.earlierBackTitle', { id: agent.id })
+              : t('orchestra.controls.earlierTitle', { id: agent.id, count: earlier.length })
+          }
+          data-retired-index={viewed ? earlierIndex : undefined}
+          onClick={(event) => {
+            event.stopPropagation()
+            showEarlier()
+          }}
+          onDoubleClick={stop}
+        >
+          <History size={13} aria-hidden="true" />
+        </button>
+      ) : null}
+      {hasTranscript || viewed ? (
         <button
           type="button"
           className={buttonClassName}

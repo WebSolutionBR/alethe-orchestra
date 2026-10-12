@@ -59,7 +59,7 @@ export function creativeWorkerTask(goal: string): string {
     'design refinements, and the fundamentals that go unnoticed: empty and error states, undo,',
     'persistence, shortcuts and discoverability, accessibility, i18n, performance, progress',
     'feedback and data safety. Send the orchestrator a short list ranked by impact versus effort',
-    'with orch.cmd send orchestrator, at most 5 items per message, each with the problem, the',
+    'with orch send orchestrator, at most 5 items per message, each with the problem, the',
     'proposal, where in the code it goes and the risk. Implement only what the orchestrator',
     'approves, inside the files it assigns you, and report progress like any other worker.',
   ].join(' ')
@@ -76,11 +76,11 @@ export function creativePromptHint(options: { goal?: string; enabled?: boolean }
   return [
     'Creative agent, on for this session: besides the task workers, keep one extra worker in area',
     `${CREATIVE_AREA} for the whole session; it does not count toward the worker limit. Spawn it`,
-    `early with orch.cmd spawn ${CREATIVE_AREA} followed by its default task below`,
+    `early with orch spawn ${CREATIVE_AREA} followed by its default task below`,
     filled ? 'in one line.' : `in one line, with ${GOAL_PLACEHOLDER} replaced by the user goal.`,
     'It never edits files other workers own: it studies the goal and the product and sends you',
     'prioritized proposals. Review them, approve only what fits the goal and the file ownership',
-    'you planned, reply with orch.cmd send, and assign the files for each approved item; it',
+    'you planned, reply with orch send, and assign the files for each approved item; it',
     'implements only what you approve. Default task:',
     creativeWorkerTask(filled ? goal : GOAL_PLACEHOLDER),
   ].join(' ')

@@ -60,8 +60,15 @@ export const resumeEn = {
   'orchestra.resume.record.willRestart': 'No saved conversation: starts its task again',
   'orchestra.resume.record.willWait': 'Waits for {deps}',
   'orchestra.resume.record.finished': 'Finished',
+  'orchestra.resume.record.cancelled': 'Cancelled before it started: not launched',
   'orchestra.resume.record.willFail':
     'Failed before the close: not relaunched (restart it from its panel if still needed)',
+  'orchestra.resume.record.transcript': 'Terminal transcript ({cols}×{rows})',
+  'orchestra.resume.record.transcriptGuessed':
+    'Terminal transcript (size not recorded, shown at {cols}×{rows})',
+  'orchestra.resume.record.transcriptLoading': 'Reading the saved terminal…',
+  'orchestra.resume.record.transcriptEmpty': 'Nothing was saved from this terminal.',
+  'orchestra.resume.record.transcriptFailed': 'Could not read the saved terminal: {message}',
   'orchestra.resume.record.messages': 'Last messages',
   'orchestra.resume.record.noMessages': 'No messages were saved.',
   'orchestra.resume.record.close': 'Close',
@@ -128,8 +135,15 @@ export const resumePtBR: Record<keyof typeof resumeEn, string> = {
   'orchestra.resume.record.willRestart': 'Sem conversa salva: recomeça a tarefa',
   'orchestra.resume.record.willWait': 'Espera {deps}',
   'orchestra.resume.record.finished': 'Concluído',
+  'orchestra.resume.record.cancelled': 'Cancelado antes de começar: não é lançado',
   'orchestra.resume.record.willFail':
     'Falhou antes do fechamento: não é relançado (reinicie pelo painel dele, se ainda precisar)',
+  'orchestra.resume.record.transcript': 'Transcrição do terminal ({cols}×{rows})',
+  'orchestra.resume.record.transcriptGuessed':
+    'Transcrição do terminal (tamanho não gravado, exibida em {cols}×{rows})',
+  'orchestra.resume.record.transcriptLoading': 'Lendo o terminal guardado…',
+  'orchestra.resume.record.transcriptEmpty': 'Nada foi guardado deste terminal.',
+  'orchestra.resume.record.transcriptFailed': 'Não foi possível ler o terminal guardado: {message}',
   'orchestra.resume.record.messages': 'Últimas mensagens',
   'orchestra.resume.record.noMessages': 'Nenhuma mensagem foi salva.',
   'orchestra.resume.record.close': 'Fechar',

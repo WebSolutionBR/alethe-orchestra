@@ -1,0 +1,3 @@
+ Logged in as compras@example.com
+
+ Login successful. Press Enter to continue…

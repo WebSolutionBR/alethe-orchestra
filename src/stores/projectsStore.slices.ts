@@ -14,6 +14,7 @@ import {
 import type { Project, SubTab, Terminal, TodoItem, WorkspaceContainer } from '../lib/types'
 import type { ProjectsState } from './projectsStore'
 import { clampUiZoom } from './projectsStore.constants'
+import { type RightSidebarHideReason, traceRightSidebarHide } from './projectsStore.rightSidebar'
 
 /** Mutators do closure do store, injetados nas slices. */
 export type SliceCtx = {
@@ -230,6 +231,7 @@ type PreferencesSlice = Pick<
   | 'setAgentEnabled'
   | 'setOnboardingDone'
   | 'setPreferences'
+  | 'hideRightSidebar'
   | 'setCliPath'
 >
 
@@ -263,7 +265,20 @@ export function createPreferencesSlice({ update }: SliceCtx): PreferencesSlice {
       update((state) => ({ preferences: { ...state.preferences, onboardingDone: done } })),
 
     setPreferences: (patch) =>
-      update((state) => ({ preferences: { ...state.preferences, ...patch } })),
+      update((state) => {
+        traceRightSidebarHide(
+          state.preferences.rightSidebarVisible,
+          patch.rightSidebarVisible,
+          'preferences',
+        )
+        return { preferences: { ...state.preferences, ...patch } }
+      }),
+
+    hideRightSidebar: (reason: RightSidebarHideReason) =>
+      update((state) => {
+        traceRightSidebarHide(state.preferences.rightSidebarVisible, false, reason)
+        return { preferences: { ...state.preferences, rightSidebarVisible: false } }
+      }),
 
     setCliPath: (agent, path) =>
       update((state) => {

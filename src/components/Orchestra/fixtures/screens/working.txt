@@ -1,0 +1,9 @@
+● Update(src\components\Orchestra\AgentAlert.tsx)
+  ⎿  Updated src\components\Orchestra\AgentAlert.tsx with 12 additions
+
+✻ Pondering… (2m 41s · ↓ 3.2k tokens · esc to interrupt)
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ >                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ⏵⏵ bypass permissions on (shift+tab to cycle)

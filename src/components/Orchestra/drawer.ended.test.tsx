@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -33,6 +33,7 @@ vi.mock('../../lib/tauri/orchestra', () => ({
   orchestraEnd: vi.fn(() => Promise.resolve()),
   orchestraPrepare: vi.fn(() => Promise.reject(new Error('not in tests'))),
   listenOrchestra: vi.fn(() => Promise.resolve(() => {})),
+  orchestraAccountIdentities: vi.fn(() => Promise.resolve([])),
 }))
 
 vi.mock('../../lib/tauri/usage', () => ({
@@ -104,7 +105,7 @@ function agent(id: string, patch: Partial<OrchestraAgent> = {}): OrchestraAgent 
   }
 }
 
-function showDrawerOf(worker: OrchestraAgent) {
+function showDrawerOf(worker: OrchestraAgent, patch: Partial<OrchestraSession> = {}) {
   const session: OrchestraSession = {
     id: ID,
     projectId: null,
@@ -118,6 +119,7 @@ function showDrawerOf(worker: OrchestraAgent) {
     segments: [],
     selectedId: worker.id,
     error: null,
+    ...patch,
   }
   useOrchestraStore.setState({ sessions: { [ID]: session }, order: [ID], activeId: ID })
   return render(<OrchestraView />)
@@ -190,5 +192,42 @@ describe('drawer of an agent whose terminal ended (N10)', () => {
         'true',
       ),
     )
+  })
+})
+
+describe('agents the user ended', () => {
+  it('shows stopped agents as stopped, with the clocks frozen at the Stop', async () => {
+    const stoppedAt = Date.now() - 3_600_000
+    mocks.mirrors.add('pty-claude-1')
+    showDrawerOf(
+      agent('claude-1', {
+        state: 'idle',
+        exitReason: 'stopped',
+        startedAt: stoppedAt - 30_000,
+        finishedAt: stoppedAt,
+      }),
+      { startedAt: stoppedAt - 65_000, stoppedAt },
+    )
+    expect(await within(drawerTerminal()).findByText('stopped')).toBeInTheDocument()
+    expect(within(drawerTerminal()).queryByText('idle')).toBeNull()
+    // An hour later the session clock still says how long it ran: 1:05, not 1h01.
+    const clocks = screen.getAllByText('elapsed').map((label) => label.parentElement?.textContent)
+    expect(clocks.some((text) => text?.includes('1:05'))).toBe(true)
+    expect(clocks.some((text) => text?.includes('1h'))).toBe(false)
+  })
+
+  it('keeps a cancelled worker as cancelled instead of launching it', async () => {
+    showDrawerOf(
+      agent('claude-1', {
+        state: 'idle',
+        exitReason: 'cancelled',
+        ptyId: null,
+        after: ['claude-9'],
+        finishedAt: 5,
+      }),
+    )
+    expect(await within(drawerTerminal()).findByText('cancelled')).toBeInTheDocument()
+    expect(drawerTerminal().querySelector('[data-testid="agent-terminal"]')).toBeNull()
+    expect(mocks.spawnPty).not.toHaveBeenCalled()
   })
 })

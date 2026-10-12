@@ -37,6 +37,7 @@ import {
   agentColor,
   areaOf,
   busClock,
+  endedByUserKey,
   isOrchestrator,
   stateColor,
   workersOf,
@@ -54,6 +55,9 @@ function useTr(): Tr {
 
 const kindKey = (kind: ActivityKind) => `orchestra.timeline.kind.${kind}` as Key
 const stateKey = (state: AgentState) => `orchestra.timeline.state.${state}` as Key
+/** The view's word for a state; the shared one for an agent the user stopped or cancelled. */
+const stateText = (agent: OrchestraAgent, tr: Tr) =>
+  tr((endedByUserKey(agent) ?? stateKey(agent.state)) as Key)
 
 const KINDS: ActivityKind[] = [
   'thinking',
@@ -146,7 +150,10 @@ export function TimelineView() {
   const scribeLines = useScribeLines(messages)
 
   const hasSession = agents.length > 0
-  const now = useLiveNow(hasSession)
+  // A stopped session's timeline ends where it was stopped.
+  const stoppedAt = useSession((s) => s.stoppedAt ?? null)
+  const liveNow = useLiveNow(hasSession && stoppedAt === null)
+  const now = stoppedAt ?? liveNow
   const [zoom, setZoom] = useState<Zoom>({ mode: 'fit' })
   const [pinned, setPinned] = useState<number | null>(null)
   const [hover, setHover] = useState<{ t: number; x: number; y: number } | null>(null)
@@ -687,7 +694,7 @@ function LaneLabel({
           <CreativeMark area={agent.area} inline />
         </span>
         <span className={styles.labelArea} title={agent.task}>
-          {orchestrator ? tr(stateKey(agent.state)) : agent.area || agent.task}
+          {orchestrator ? stateText(agent, tr) : agent.area || agent.task}
         </span>
       </span>
     </button>
@@ -702,7 +709,7 @@ function LaneSummary({ agent, tr }: { agent: OrchestraAgent; tr: Tr }) {
     >
       <span className={styles.sumPct}>{agent.progress}%</span>
       <span className={styles.sumState} style={{ color: stateColor(agent.state) }}>
-        {tr(stateKey(agent.state))}
+        {stateText(agent, tr)}
       </span>
       <span className={styles.sumBar}>
         <i style={{ width: `${agent.progress}%`, background: color }} />

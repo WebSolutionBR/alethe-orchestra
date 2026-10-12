@@ -53,7 +53,7 @@ export function RightSidebar() {
   const showMonitor = useUiStore((state) => state.showMonitorSidebar)
   const openModal = useUiStore((state) => state.openModal_)
   const preferences = useProjectsStore((state) => state.preferences)
-  const setPreferences = useProjectsStore((state) => state.setPreferences)
+  const hideRightSidebar = useProjectsStore((state) => state.hideRightSidebar)
   const activeProjectId = useProjectsStore((state) => state.activeProjectId)
   const projects = useProjectsStore((state) => state.projects)
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? projects[0]
@@ -79,9 +79,11 @@ export function RightSidebar() {
       (mode === 'git' && gitEnabled) ||
       (mode === 'mcp' && mcpEnabled)
     if (modeStillEnabled) return
+    // Monitor always has live data, so a sidebar with every optional feature off still
+    // opens on something useful instead of an empty pane.
     if (todoEnabled) setMode()
-    else openMarkdown()
-  }, [gitEnabled, mcpEnabled, mode, openMarkdown, setMode, todoEnabled])
+    else showMonitor()
+  }, [gitEnabled, mcpEnabled, mode, setMode, showMonitor, todoEnabled])
 
   return (
     <aside className={styles.sidebar} aria-label={t('rightSidebar.navigation')}>
@@ -185,7 +187,7 @@ export function RightSidebar() {
         <button
           type="button"
           className={styles.toolbarUtility}
-          onClick={() => setPreferences({ rightSidebarVisible: false })}
+          onClick={() => hideRightSidebar('user.close-button')}
           title={t('todo.closeSidebar')}
           aria-label={t('todo.closeSidebar')}
         >
@@ -193,7 +195,9 @@ export function RightSidebar() {
         </button>
       </div>
       <div className={styles.tabContent}>
-        {mode === 'markdown' ? <MarkdownSidebarViewer /> : null}
+        {mode === 'markdown' ? (
+          <MarkdownSidebarViewer showFeaturesHint={!todoEnabled && !gitEnabled && !mcpEnabled} />
+        ) : null}
         {mode === 'todo' && todoEnabled ? <TodoSidebar /> : null}
         {mode === 'monitor' ? (
           <Suspense fallback={null}>
@@ -250,7 +254,7 @@ function GitSidebarContent({
   )
 }
 
-function MarkdownSidebarViewer() {
+function MarkdownSidebarViewer({ showFeaturesHint }: { showFeaturesHint: boolean }) {
   const t = useT()
   const markdown = useUiStore((state) => state.rightSidebarMarkdown)
   const markdownTabs = useUiStore((state) => state.rightSidebarMarkdownTabs)
@@ -260,7 +264,7 @@ function MarkdownSidebarViewer() {
   const pushToast = useUiStore((state) => state.pushToast)
   const activeProjectId = useProjectsStore((state) => state.activeProjectId)
   const projects = useProjectsStore((state) => state.projects)
-  const setPreferences = useProjectsStore((state) => state.setPreferences)
+  const hideRightSidebar = useProjectsStore((state) => state.hideRightSidebar)
   const dark = useProjectsStore(
     (state) => state.preferences.uiTheme !== 'light' && state.preferences.uiTheme !== 'min-light',
   )
@@ -415,6 +419,9 @@ function MarkdownSidebarViewer() {
         <FileText size={20} />
         <strong>{t('rightSidebar.markdownEmptyTitle')}</strong>
         <span>{t('rightSidebar.markdownEmptyDesc')}</span>
+        {showFeaturesHint ? (
+          <span className={styles.featuresHint}>{t('rightSidebar.optionalFeaturesHint')}</span>
+        ) : null}
         {dropActive ? (
           <div className={styles.markdownDropOverlay}>{t('rightSidebar.dropMarkdown')}</div>
         ) : null}
@@ -472,7 +479,7 @@ function MarkdownSidebarViewer() {
           <button
             type="button"
             className={`${styles.headerAction} ${styles.cleanRedundantAction}`}
-            onClick={() => setPreferences({ rightSidebarVisible: false })}
+            onClick={() => hideRightSidebar('user.close-button')}
             title={t('todo.closeSidebar')}
             aria-label={t('todo.closeSidebar')}
           >

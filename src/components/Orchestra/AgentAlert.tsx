@@ -4,9 +4,11 @@ import { getLocale, intlLocale, useT } from '../../lib/i18n'
 import { getMirror } from '../../lib/terminalMirror'
 import { type OrchestraAgent, useOrchestraStore } from '../../stores/orchestraStore'
 import styles from './AgentAlert.module.css'
+import { AgentAlertScreen, AgentAlertStalled } from './AgentAlertScreen'
+import { isScreenBlock } from './attention/blocking'
 import { dialogOnScreen, type DialogOption, type ScreenDialog } from './dialog'
 import { useSession, useSessionId } from './sessionContext'
-import { blockDescription, exitDescription, isFailed } from './shared'
+import { blockDescription, exitDescription, isBusy, isFailed } from './shared'
 
 type AgentAlertProps = {
   agent: OrchestraAgent
@@ -107,7 +109,14 @@ export function AgentAlert({ agent, onReply, onOpenTerminal, compact = false }: 
   }
 
   const block = agent.state === 'blocked' ? blockDescription(agent) : null
-  if (!block || !agent.blocked) return null
+  if (agent.state === 'blocked' && isScreenBlock(agent.blocked)) {
+    return <AgentAlertScreen agent={agent} onOpenTerminal={onOpenTerminal} compact={compact} />
+  }
+  if (!block || !agent.blocked) {
+    return agent.stalledSince && isBusy(agent.state) ? (
+      <AgentAlertStalled agent={agent} onOpenTerminal={onOpenTerminal} compact={compact} />
+    ) : null
+  }
 
   if (agent.blocked.reason === 'dependency') {
     const deps = agent.blocked.text

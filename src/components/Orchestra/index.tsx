@@ -33,6 +33,11 @@ import {
 } from '../../stores/orchestraStore'
 import { useProjectsStore } from '../../stores/projectsStore'
 import { ErrorBoundary } from '../ErrorBoundary'
+import accountStyles from './accounts/Accounts.module.css'
+import { AccountsPanel, AccountsRail, SessionAccountChip } from './accounts/AccountsPanel'
+import { useAccountsShortcut } from './accounts/hooks'
+import { LimitStrip } from './accounts/LimitStrip'
+import { AccountSwitchToast } from './accounts/SwitchToast'
 import { AgentAlert } from './AgentAlert'
 import alertStyles from './AgentAlert.module.css'
 import { AgentControls } from './AgentControls'
@@ -59,6 +64,7 @@ import { SessionTabs } from './SessionTabs'
 import {
   describeExit,
   elapsed,
+  endedByUserKey,
   isFailed,
   overallProgress,
   processEnded,
@@ -190,6 +196,15 @@ function OrchestraSession() {
     })),
   )
   const [reportOpen, setReportOpen] = useState(false)
+  // The accounts panel on the session's side rail (Alt+A); closing it returns the focus.
+  const [accountsOpen, setAccountsOpen] = useState(false)
+  const accountsButton = useRef<HTMLButtonElement>(null)
+  const closeAccounts = () => {
+    setAccountsOpen(false)
+    accountsButton.current?.focus()
+  }
+  const toggleAccounts = () => (accountsOpen ? closeAccounts() : setAccountsOpen(true))
+  useAccountsShortcut(toggleAccounts)
   const { setMode, select } = useSessionActions()
   const getSession = useSessionGetter()
   const sessionId = useSessionId()
@@ -278,6 +293,7 @@ function OrchestraSession() {
         <div className={styles.usage}>
           <UsageBar />
         </div>
+        <SessionAccountChip onOpen={() => setAccountsOpen(true)} />
         <div className={styles.meta}>
           <span className={styles.metaElapsed}>
             {t('orchestra.elapsed')} <b>{elapsed(startedAt, stoppedAt ?? now)}</b>
@@ -356,36 +372,39 @@ function OrchestraSession() {
       </header>
       <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} />
 
-      {error || orchestratorDown ? (
-        // The launch error names its agent and can be dismissed; a stopped orchestrator stays
-        // on screen for as long as it is down.
-        <div className={styles.errorStrip} role="alert">
-          <div className={alertStyles.stripRow}>
-            <span className={alertStyles.stripText}>
-              {error
-                ? t('common.errorPrefix', { message: error })
-                : orchestratorDown
-                  ? t('orchestra.agents.orchestratorDown', {
-                      reason: describeExit(t, orchestratorDown),
-                    })
-                  : null}
-            </span>
-            {error ? (
-              <button
-                type="button"
-                className={styles.iconBtn}
-                aria-label={t('orchestra.agents.dismiss')}
-                title={t('orchestra.agents.dismiss')}
-                onClick={() => useOrchestraStore.getState().dismissError(sessionId)}
-              >
-                <X size={13} />
-              </button>
-            ) : null}
+      <div className={accountStyles.strips}>
+        {error || orchestratorDown ? (
+          // The launch error names its agent and can be dismissed; a stopped orchestrator stays
+          // on screen for as long as it is down.
+          <div className={styles.errorStrip} role="alert">
+            <div className={alertStyles.stripRow}>
+              <span className={alertStyles.stripText}>
+                {error
+                  ? t('common.errorPrefix', { message: error })
+                  : orchestratorDown
+                    ? t('orchestra.agents.orchestratorDown', {
+                        reason: describeExit(t, orchestratorDown),
+                      })
+                    : null}
+              </span>
+              {error ? (
+                <button
+                  type="button"
+                  className={styles.iconBtn}
+                  aria-label={t('orchestra.agents.dismiss')}
+                  title={t('orchestra.agents.dismiss')}
+                  onClick={() => useOrchestraStore.getState().dismissError(sessionId)}
+                >
+                  <X size={13} />
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+        <LimitStrip now={now} onSwitch={() => setAccountsOpen(true)} />
+      </div>
 
-      <div className={styles.body}>
+      <div className={`${styles.body} ${accountStyles.host}`}>
         <main className={styles.main}>
           <ErrorBoundary key={mode} label="orchestra">
             <View />
@@ -394,6 +413,9 @@ function OrchestraSession() {
         {showDrawer && selected ? (
           <AgentDrawer key={selected.id} agent={selected} cwd={cwd} onClose={() => select(null)} />
         ) : null}
+        {accountsOpen ? <AccountsPanel onClose={closeAccounts} /> : null}
+        <AccountsRail open={accountsOpen} onToggle={toggleAccounts} buttonRef={accountsButton} />
+        <AccountSwitchToast />
       </div>
 
       <footer className={styles.footer}>
@@ -537,7 +559,7 @@ function AgentDrawer({
 
   const isOrch = agent.id === ORCHESTRATOR_ID
   const role = isOrch ? 'orchestrator' : 'worker'
-  const stateLabel = t(`orchestra.state.${agent.state}` as MessageKey)
+  const stateLabel = t(endedByUserKey(agent) ?? (`orchestra.state.${agent.state}` as MessageKey))
 
   return (
     <aside ref={asideRef} className={styles.drawer} style={{ width }} aria-label={agent.id}>
@@ -607,6 +629,8 @@ function AgentDrawer({
         {live && agent.ptyId ? (
           <AgentTerminal
             key={agent.ptyId}
+            sessionId={sessionId}
+            agentId={agent.id}
             ptyId={agent.ptyId}
             role={role}
             alive
@@ -624,6 +648,8 @@ function AgentDrawer({
         ) : agent.ptyId && hasTranscript ? (
           <AgentTerminal
             key={agent.ptyId}
+            sessionId={sessionId}
+            agentId={agent.id}
             ptyId={agent.ptyId}
             role={role}
             alive={false}

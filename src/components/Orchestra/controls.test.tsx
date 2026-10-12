@@ -60,6 +60,7 @@ import { useProjectsStore } from '../../stores/projectsStore'
 import { AgentAlert } from './AgentAlert'
 import { AgentControls } from './AgentControls'
 import { ReportDialog } from './ReportDialog'
+import { forgetRetired, retiredPtys, retirePty, viewedRetired } from './retiredTerminals'
 import { OrchestraSessionProvider } from './sessionContext'
 
 const ID = 'octrl001'
@@ -161,6 +162,44 @@ describe('agent controls', () => {
         'C:\\Users\\me\\claude-3.txt',
         'line one\nline two\n',
       ),
+    )
+  })
+  it('keeps the terminals from before a restart and steps back through them until Close', async () => {
+    const restarted = agent('claude-4', { ptyId: 'pty-claude-4-c' })
+    mocks.mirrors.add('pty-claude-4-a')
+    withSession([restarted])
+    retirePty(ID, 'claude-4', 'pty-claude-4-a')
+    retirePty(ID, 'claude-4', 'pty-claude-4-b')
+    inSession(<AgentControls agent={restarted} />)
+    const earlier = screen.getByRole('button', {
+      name: 'Show the terminal from before the restart',
+    })
+    expect(earlier).toHaveAttribute('aria-pressed', 'false')
+
+    // Newest first, then the oldest, then back to the current terminal.
+    fireEvent.click(earlier)
+    expect(viewedRetired(ID, 'claude-4')).toBe('pty-claude-4-b')
+    expect(screen.getByRole('button', { name: 'Showing earlier terminal 2 of 2' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Showing earlier terminal 2 of 2' }))
+    expect(viewedRetired(ID, 'claude-4')).toBe('pty-claude-4-a')
+
+    // Export takes the transcript on screen.
+    fireEvent.click(screen.getByRole('button', { name: 'Export transcript' }))
+    await waitFor(() =>
+      expect(mocks.saveTextFile).toHaveBeenCalledWith(expect.any(String), 'line one\nline two\n'),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Showing earlier terminal 1 of 2' }))
+    expect(viewedRetired(ID, 'claude-4')).toBeNull()
+
+    // Closing the session forgets them (the store disposes their mirrors with the rest).
+    forgetRetired(ID)
+    expect(retiredPtys(ID, 'claude-4')).toEqual([])
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /terminal from before the restart/ })).toBeNull(),
     )
   })
 })

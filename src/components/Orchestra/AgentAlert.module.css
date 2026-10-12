@@ -94,6 +94,31 @@
   border-color: var(--status-waiting);
 }
 
+.action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.action[aria-pressed='true'] {
+  border-color: var(--border-strong);
+  color: var(--fg-muted);
+}
+
+/* The last lines of a stuck screen, as the terminal shows them. */
+.screen {
+  -webkit-line-clamp: 6;
+}
+
+.compact .screen {
+  -webkit-line-clamp: 2;
+}
+
+.error {
+  margin: 0;
+  color: var(--status-offline);
+  overflow-wrap: anywhere;
+}
+
 /* Session-level pieces: the error strip row and the failed count in the status line. */
 .stripRow {
   display: flex;

@@ -2,7 +2,12 @@
  * The report of one orchestration: goal, duration and, per worker, its area, task, final state,
  * note, files and failure. Pure, so it can be tested and exported as Markdown or JSON.
  */
-import type { AgentExitReason, OrchestraAgent, OrchestraSession } from '../../stores/orchestraStore'
+import type {
+  AgentExitReason,
+  OrchestraAgent,
+  OrchestraSession,
+  Segment,
+} from '../../stores/orchestraStore'
 import { isFailed, isOrchestrator, workersOf } from './shared'
 
 /** Where an agent ended up, as the report states it. */
@@ -24,6 +29,20 @@ export type AgentReport = {
   durationMs: number
   exitCode: number | null
   exitReason: AgentExitReason | null
+  /** Time spent blocked (asking, stuck on a screen, held by its account), all blocks summed. */
+  blockedMs: number
+  /** Account it ran in (null: Claude Code's default one) and that account's name. */
+  account: string | null
+  accountName: string | null
+}
+
+/** A change of the session's account, with names resolved. */
+export type AccountSwitchReport = {
+  at: number
+  from: string | null
+  to: string | null
+  fromName: string | null
+  toName: string | null
 }
 
 export type SessionReport = {
@@ -39,6 +58,8 @@ export type SessionReport = {
   durationMs: number
   orchestrator: AgentReport | null
   workers: AgentReport[]
+  /** Changes of the session's account, oldest first. */
+  accountSwitches: AccountSwitchReport[]
   totals: {
     workers: number
     done: number
@@ -48,6 +69,8 @@ export type SessionReport = {
     files: number
     toolCalls: number
     messages: number
+    /** Blocked time of all agents, orchestrator included. */
+    blockedMs: number
   }
 }
 
@@ -60,8 +83,23 @@ export function finalState(agent: OrchestraAgent): FinalState {
   return 'working'
 }
 
-function agentReport(agent: OrchestraAgent, end: number): AgentReport {
+/** Time an agent spent in `blocked` timeline segments, an open one counting up to `end`. */
+export function blockedTime(segments: readonly Segment[], agentId: string, end: number): number {
+  return segments
+    .filter((s) => s.agentId === agentId && s.kind === 'blocked')
+    .reduce((sum, s) => sum + Math.max(0, Math.min(s.end ?? end, end) - s.start), 0)
+}
+
+type Names = (account: string | null) => string | null
+
+function agentReport(
+  agent: OrchestraAgent,
+  end: number,
+  segments: readonly Segment[],
+  names: Names,
+): AgentReport {
   const finishedAt = agent.finishedAt
+  const account = agent.launchedWith?.account ?? agent.account ?? null
   return {
     id: agent.id,
     area: agent.area,
@@ -77,17 +115,28 @@ function agentReport(agent: OrchestraAgent, end: number): AgentReport {
     durationMs: Math.max(0, (finishedAt ?? end) - agent.startedAt),
     exitCode: agent.exitCode ?? null,
     exitReason: agent.exitReason ?? null,
+    blockedMs: blockedTime(segments, agent.id, end),
+    account,
+    accountName: names(account),
   }
 }
 
 export function buildReport(
   session: OrchestraSession,
-  opts: { project?: string | null; now?: number } = {},
+  opts: {
+    project?: string | null
+    now?: number
+    /** Name of an account id (null: the default account); the id itself when not given. */
+    accountName?: Names
+  } = {},
 ): SessionReport {
   const now = opts.now ?? Date.now()
   const end = session.stoppedAt ?? now
-  const workers = workersOf(session.agents).map((agent) => agentReport(agent, end))
+  const names: Names = opts.accountName ?? ((account) => account)
+  const segments = session.segments ?? []
+  const workers = workersOf(session.agents).map((agent) => agentReport(agent, end, segments, names))
   const orchestrator = session.agents.find(isOrchestrator)
+  const orchestratorReport = orchestrator ? agentReport(orchestrator, end, segments, names) : null
   const count = (state: FinalState) => workers.filter((w) => w.state === state).length
   return {
     version: 1,
@@ -99,8 +148,15 @@ export function buildReport(
     stoppedAt: session.stoppedAt ?? null,
     generatedAt: now,
     durationMs: Math.max(0, end - session.startedAt),
-    orchestrator: orchestrator ? agentReport(orchestrator, end) : null,
+    orchestrator: orchestratorReport,
     workers,
+    accountSwitches: (session.accountSwitches ?? []).map((change) => ({
+      at: change.at,
+      from: change.from,
+      to: change.to,
+      fromName: names(change.from),
+      toName: names(change.to),
+    })),
     totals: {
       workers: workers.length,
       done: count('done'),
@@ -110,6 +166,8 @@ export function buildReport(
       files: new Set(session.agents.flatMap((a) => a.files)).size,
       toolCalls: session.agents.reduce((sum, a) => sum + a.toolCalls, 0),
       messages: session.messages.length,
+      blockedMs:
+        workers.reduce((sum, w) => sum + w.blockedMs, 0) + (orchestratorReport?.blockedMs ?? 0),
     },
   }
 }
@@ -137,6 +195,12 @@ export type ReportLabels = {
   failures: string
   filesByWorker: string
   noWorkers: string
+  /** Blocked time: section title, and the default account's name. */
+  blocked: string
+  accounts: string
+  defaultAccount: string
+  /** "Account switched from {from} to {to}" with the names filled in. */
+  accountSwitch: (from: string, to: string) => string
   states: Record<FinalState, string>
   /** How a failed agent ended (exit code, launch failure), per worker id. */
   failure: (worker: AgentReport) => string
@@ -206,6 +270,29 @@ export function reportMarkdown(
     for (const w of failed) {
       const note = w.note ? ` — ${cell(w.note)}` : ''
       lines.push(`- **${w.id}** (${cell(w.area)}): ${labels.failure(w)}${note}`)
+    }
+    lines.push('')
+  }
+  const everyone = [...(report.orchestrator ? [report.orchestrator] : []), ...report.workers]
+  const blocked = everyone.filter((a) => a.blockedMs >= 1000)
+  if (blocked.length > 0) {
+    lines.push(`## ${labels.blocked}`, '')
+    for (const a of blocked) lines.push(`- **${a.id}**: ${format.duration(a.blockedMs)}`)
+    lines.push('')
+  }
+  const accountName = (name: string | null, id: string | null) =>
+    cell(name ?? id ?? labels.defaultAccount)
+  const usedAccounts = new Set(everyone.map((a) => a.account))
+  if (usedAccounts.size > 1 || report.accountSwitches.length > 0 || [...usedAccounts][0]) {
+    lines.push(`## ${labels.accounts}`, '')
+    for (const a of everyone) lines.push(`- **${a.id}**: ${accountName(a.accountName, a.account)}`)
+    for (const change of report.accountSwitches) {
+      lines.push(
+        `- ${format.time(change.at)}: ${labels.accountSwitch(
+          accountName(change.fromName, change.from),
+          accountName(change.toName, change.to),
+        )}`,
+      )
     }
     lines.push('')
   }

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { clearTerminalSizes, rememberTerminalSize } from '../../../lib/terminalSizes'
 import type { BusMessage, OrchestraAgent, OrchestraSession } from '../../../stores/orchestraStore'
 import {
   agentFate,
@@ -374,5 +375,76 @@ describe('summary, fate and the not-resumed fallback', () => {
     expect(sameFolder('C:\\Repo\\', 'c:/repo')).toBe(true)
     expect(sameFolder('C:\\Repo', 'C:\\Repo2')).toBe(false)
     expect(sameFolder(null, 'C:\\Repo')).toBe(false)
+  })
+})
+
+describe('session launch and PTY sizes in the manifest', () => {
+  afterEach(() => clearTerminalSizes())
+
+  it('keeps the account policy and the account switches through JSON', () => {
+    const saved = manifestOf(
+      session({
+        launch: { policy: 'single', account: 'acc-a', model: 'opus', effort: 'max' },
+        accountSwitches: [{ at: 3000, from: null, to: 'acc-a' }],
+      }),
+      5000,
+    )
+    expect(saved.launch).toEqual({
+      policy: 'single',
+      account: 'acc-a',
+      model: 'opus',
+      effort: 'max',
+    })
+    expect(parseManifest(JSON.parse(JSON.stringify(saved)))).toEqual(saved)
+  })
+
+  it('keeps the pending wait for the limit reset through JSON and drops a malformed one', () => {
+    const saved = manifestOf(session({ limitWait: { account: 'acc-a', resetsAt: 9000 } }), 5000)
+    expect(saved.limitWait).toEqual({ account: 'acc-a', resetsAt: 9000 })
+    expect(parseManifest(JSON.parse(JSON.stringify(saved)))?.limitWait).toEqual({
+      account: 'acc-a',
+      resetsAt: 9000,
+    })
+    expect(manifestOf(session({ limitWait: null }), 5000)).not.toHaveProperty('limitWait')
+    // The automatic flag goes along, so the strip still says "(automatic)" after a Resume.
+    const auto = { account: null, resetsAt: 9000, auto: true, resumedAt: 8000, rearms: 2 }
+    expect(parseManifest({ ...manifest(), limitWait: auto })?.limitWait).toEqual(auto)
+    for (const limitWait of [
+      { account: 'acc-a', resetsAt: 'soon' },
+      { account: 3, resetsAt: 9 },
+    ]) {
+      expect(parseManifest({ ...manifest(), limitWait })).not.toHaveProperty('limitWait')
+    }
+    expect(
+      parseManifest({ ...manifest(), limitWait: { account: null, resetsAt: 9 } }),
+    ).toHaveProperty('limitWait', { account: null, resetsAt: 9 })
+  })
+
+  it('drops a malformed launch and leaves old manifests without one', () => {
+    const parsed = parseManifest({
+      ...manifest(),
+      launch: { policy: 'everyone', account: 'acc-a', model: null, effort: null },
+      accountSwitches: [{ at: 'soon', from: null, to: 'x' }],
+    })
+    expect(parsed).not.toBeNull()
+    expect(parsed).not.toHaveProperty('launch')
+    expect(parsed).not.toHaveProperty('accountSwitches')
+    expect(parseManifest(manifest())).not.toHaveProperty('launch')
+  })
+
+  it('records the size of each agent PTY and reads back only sane sizes', () => {
+    rememberTerminalSize('orchestra-oabc1234-claude-1-1', 97, 31)
+    const saved = manifestOf(session(), 5000)
+    expect(saved.ptySizes).toEqual({ 'claude-1': { cols: 97, rows: 31 } })
+    expect(parseManifest(JSON.parse(JSON.stringify(saved)))?.ptySizes).toEqual(saved.ptySizes)
+    const parsed = parseManifest({
+      ...manifest(),
+      ptySizes: {
+        orchestrator: { cols: 100000, rows: 30 },
+        'claude-1': { cols: 80.5, rows: 24 },
+        'claude-9': { cols: 80, rows: 24 },
+      },
+    })
+    expect(parsed).not.toHaveProperty('ptySizes')
   })
 })

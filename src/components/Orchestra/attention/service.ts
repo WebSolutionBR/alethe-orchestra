@@ -3,7 +3,7 @@
  * before finishing, a session whose workers are all done, and an orchestrator idle and waiting on
  * the user. Installed once by the store (main window only); it never touches a PTY.
  */
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow, UserAttentionType } from '@tauri-apps/api/window'
 
 import { getLocale, type MessageKey, translate } from '../../../lib/i18n'
 import { notifyAgentDone } from '../../../lib/notifications'
@@ -11,7 +11,9 @@ import type { OrchestraEvent } from '../../../lib/tauri/orchestra'
 import type { OrchestraAgent, OrchestraSession } from '../../../stores/orchestraStore'
 import { useProjectsStore } from '../../../stores/projectsStore'
 import { useUiStore } from '../../../stores/uiStore'
-import { readAlertsEnabled } from './prefs'
+import { blockDetail, blockReasonKey, isScreenBlock } from './blocking'
+import { dueEscalations, type Escalation } from './escalation'
+import { type EscalationPrefs, readAlertsEnabled, readEscalation } from './prefs'
 import {
   type AttentionEvent,
   attentionEvents,
@@ -19,7 +21,7 @@ import {
   isOrchestratorIdleNotice,
   ORCHESTRATOR,
 } from './rules'
-import { forgetSessions, setLastNotice, setWaiting } from './store'
+import { forgetSessions, setLastNotice, setWaiting, useAttentionStore } from './store'
 
 type Sessions = Record<string, OrchestraSession>
 type SourceState = { sessions: Sessions }
@@ -42,7 +44,18 @@ export type AttentionDeps = {
   /** Name of a session in a notice, to tell orchestrations apart. */
   label: (session: OrchestraSession) => string
   isMainWindow: () => boolean
+  /** Long-block reminders: when they start and how often they repeat. */
+  escalation: () => EscalationPrefs
+  /** Blocks the user silenced. */
+  muted: () => Record<string, true>
+  /** Asks the OS to flag the app (taskbar flash). */
+  flash: () => void
+  /** Runs `run` every `ms`; returns its stop. */
+  every: (ms: number, run: () => void) => () => void
 }
+
+/** How often long blocks are checked for a reminder. */
+export const ESCALATION_TICK_MS = 30_000
 
 /** Events closer than this go out as one notice. */
 export const BATCH_MS = 1200
@@ -99,6 +112,21 @@ function defaults<S extends SourceState>(source: AttentionSource<S>): AttentionD
       folderName(session.cwd) ||
       session.id,
     isMainWindow,
+    escalation: readEscalation,
+    muted: () => useAttentionStore.getState().muted,
+    flash: () => {
+      try {
+        void getCurrentWindow()
+          .requestUserAttention(UserAttentionType.Critical)
+          .catch(() => {})
+      } catch {
+        // No window to flag.
+      }
+    },
+    every: (ms, run) => {
+      const timer = setInterval(run, ms)
+      return () => clearInterval(timer)
+    },
   }
 }
 
@@ -135,11 +163,22 @@ export function describe(
   const agent = session.agents.find((a) => a.id === event.agentId)
   const name = agentName(agent, event.agentId ?? '')
   switch (event.kind) {
-    case 'blocked':
+    case 'blocked': {
+      const block = agent?.state === 'blocked' ? agent.blocked : null
+      if (block && isScreenBlock(block)) {
+        return {
+          title: tr('orchestra.attention.screenTitle', {
+            agent: name,
+            reason: tr(blockReasonKey(block.reason)),
+          }),
+          body: clip(blockDetail(block, tr) || tr('orchestra.agents.blocked.noText')),
+        }
+      }
       return {
         title: tr('orchestra.attention.blockedTitle', { agent: name }),
         body: clip(event.text || tr('orchestra.agents.blocked.noText')),
       }
+    }
     case 'failed': {
       const why = exitSummary(agent)
       return {
@@ -191,7 +230,9 @@ export function installAttention<S extends SourceState>(
       const { title, body } = describe(event, session)
       // The session's live region announces everything, on screen or not, alerts on or off.
       setLastNotice(event.sessionId, { text: `${title}. ${body}`, at: event.at })
-      if (!deps.alerts() || deps.watching(event.sessionId)) continue
+      // The orchestrator stuck on a screen stops the whole session: the user hears of it at once.
+      const urgent = event.kind === 'blocked' && event.agentId === ORCHESTRATOR
+      if (!deps.alerts() || (deps.watching(event.sessionId) && !urgent)) continue
       const topic = `${event.sessionId}:${event.agentId ?? '*'}:${event.kind}`
       const last = lastTopic.get(topic)
       if (last !== undefined && event.at - last < COOLDOWN_MS) continue
@@ -259,7 +300,37 @@ export function installAttention<S extends SourceState>(
     }
   })
 
+  const sent = new Map<string, number>()
+  const remind = () => {
+    const sessions = source.getState().sessions
+    const due = dueEscalations(sessions, Date.now(), deps.escalation(), sent, deps.muted())
+    if (due.length === 0 || !deps.alerts()) return
+    const notices = due.map((item: Escalation) => {
+      const session = sessions[item.sessionId]
+      const agent = session?.agents.find((a) => a.id === item.agentId)
+      const reason = tr(blockReasonKey(item.block.reason))
+      return {
+        title: tr('orchestra.attention.longBlockTitle', {
+          agent: agentName(agent, item.agentId),
+          minutes: item.minutes,
+        }),
+        body: clip(
+          `${reason}${Object.keys(sessions).length > 1 && session ? ` · ${deps.label(session)}` : ''}`,
+        ),
+      }
+    })
+    deps.flash()
+    if (notices.length === 1) void deps.notify(notices[0].title, notices[0].body)
+    else
+      void deps.notify(
+        tr('orchestra.attention.manyTitle', { count: notices.length }),
+        clip(notices.map((n) => n.title).join(' · ')),
+      )
+  }
+  const stopReminders = deps.every(ESCALATION_TICK_MS, remind)
+
   return () => {
+    stopReminders()
     unsubscribe()
     unlisten()
     if (timer !== null) clearTimeout(timer)

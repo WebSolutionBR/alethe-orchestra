@@ -139,7 +139,7 @@ export function UsageBar() {
         disabled={loading}
         title={t('orchestra.usage.refresh')}
         aria-label={t('orchestra.usage.refresh')}
-        onClick={() => void refresh(accounts)}
+        onClick={() => void refresh(accounts, true)}
       >
         <RefreshCw size={12} className={loading ? styles.spin : undefined} />
       </button>

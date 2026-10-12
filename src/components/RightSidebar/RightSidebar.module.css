@@ -180,6 +180,12 @@
   line-height: 1.45;
 }
 
+.emptyMarkdown .featuresHint {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+
 .contentLayout {
   flex: 1;
   min-height: 0;

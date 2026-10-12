@@ -278,13 +278,17 @@ export function bufferSearch(
   while (y < length && matches.length < MAX_SEARCH_MATCHES) {
     const firstRow = y
     const state = { text: '', cellAt: [] as number[], end: 0 }
+    // First cell of each row, counted from the logical line's first row. Rows are `cols` wide,
+    // except a piece of a wider captured history row that left a wide character for the next one.
+    const rowStarts: number[] = []
     do {
       const line = buffer.getLine(y)
-      if (line) appendRow(line, (y - firstRow) * cols, cell, state)
+      rowStarts.push(state.end)
+      if (line) appendRow(line, state.end, cell, state)
+      else state.end += cols
       y++
     } while (y < length && buffer.getLine(y)?.isWrapped)
-    // Sentinel: the cell right after the logical line, for matches that end on its last unit. A
-    // captured history row keeps the width it had, which may differ from today's.
+    // Sentinel: the cell right after the logical line, for matches that end on its last unit.
     state.cellAt.push(state.end)
     pattern.lastIndex = 0
     let match: RegExpExecArray | null
@@ -295,11 +299,12 @@ export function bufferSearch(
       }
       const startCell = state.cellAt[match.index]
       const endCell = state.cellAt[match.index + match[0].length]
-      const rowOffset = Math.floor(startCell / cols)
+      let rowOffset = rowStarts.length - 1
+      while (rowOffset > 0 && rowStarts[rowOffset] > startCell) rowOffset--
       matches.push({
         line: firstRow + rowOffset,
-        start: startCell - rowOffset * cols,
-        end: endCell - rowOffset * cols,
+        start: startCell - rowStarts[rowOffset],
+        end: endCell - rowStarts[rowOffset],
       })
       if (matches.length >= MAX_SEARCH_MATCHES) break
     }

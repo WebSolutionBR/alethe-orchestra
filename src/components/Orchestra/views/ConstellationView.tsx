@@ -29,6 +29,7 @@ import {
   agentColor,
   areaOf,
   busClock,
+  endedByUserKey,
   isBusy,
   messagesFor,
   overallProgress,
@@ -182,7 +183,7 @@ function decorate(text: string): ReactNode[] {
 }
 
 function stateKey(agent: OrchestraAgent): MessageKey {
-  return `orchestra.state.${agent.state}` as MessageKey
+  return endedByUserKey(agent) ?? (`orchestra.state.${agent.state}` as MessageKey)
 }
 
 function glyphFor(agent: OrchestraAgent): string {
@@ -238,8 +239,7 @@ export function ConstellationView() {
     [viewport.w, viewport.h, minW, minH],
   )
   const onViewportSize = useCallback(
-    (next: Size) =>
-      setViewport((prev) => (prev.w === next.w && prev.h === next.h ? prev : next)),
+    (next: Size) => setViewport((prev) => (prev.w === next.w && prev.h === next.h ? prev : next)),
     [],
   )
 
@@ -482,195 +482,195 @@ export function ConstellationView() {
             </>
           }
         >
-        <svg
-          className={styles.svg}
-          width={Math.max(1, size.w)}
-          height={Math.max(1, size.h)}
-          viewBox={`0 0 ${Math.max(1, size.w)} ${Math.max(1, size.h)}`}
-          aria-hidden="true"
-        >
-          <g>
-            {workers.map((worker) => {
-              const edge = layout.edges.get(worker.id)
-              if (!edge) return null
-              const cls = [
-                styles.edge,
-                worker.state === 'done' || worker.state === 'exited' ? styles.edgeDone : '',
-                selectedWorker === worker.id ? styles.edgeSel : '',
-                selectedWorker && selectedWorker !== worker.id ? styles.edgeDim : '',
-              ].join(' ')
-              return (
-                <line
-                  key={worker.id}
-                  className={cls}
-                  x1={edge.x0}
-                  y1={edge.y0}
-                  x2={edge.x1}
-                  y2={edge.y1}
-                />
-              )
-            })}
-          </g>
-          {orchestrator && measured ? (
-            <ScribeLink
-              x={layout.center.x}
-              y1={layout.center.y + orchSize.h / 2 + 1}
-              y2={layout.center.y + orchSize.h / 2 + SCRIBE_GAP - 1}
-              count={scribeLines.length}
-            />
-          ) : null}
-          <g ref={dotsRef} />
-        </svg>
-
-        {orchestrator ? (
-          <div
-            ref={orchRef}
-            className={[
-              styles.node,
-              styles.orch,
-              selectedId === ORCHESTRATOR_ID ? styles.orchSel : '',
-            ].join(' ')}
-            style={{
-              left: layout.center.x,
-              top: layout.center.y,
-              visibility: measured ? 'visible' : 'hidden',
-            }}
-            role="button"
-            tabIndex={0}
-            aria-pressed={selectedId === ORCHESTRATOR_ID}
-            aria-label={t('orchestra.constellation.nodeLabel', {
-              id: orchestrator.id,
-              area: t('orchestra.orchestrator'),
-              state: t(stateKey(orchestrator)),
-              progress: overall,
-            })}
-            onClick={(e) => {
-              e.stopPropagation()
-              toggle(ORCHESTRATOR_ID)
-            }}
-            onKeyDown={(e) => onNodeKey(e, ORCHESTRATOR_ID)}
+          <svg
+            className={styles.svg}
+            width={Math.max(1, size.w)}
+            height={Math.max(1, size.h)}
+            viewBox={`0 0 ${Math.max(1, size.w)} ${Math.max(1, size.h)}`}
+            aria-hidden="true"
           >
-            <div className={styles.inner}>
-              <div className={styles.row1}>
-                <span className={styles.ast}>✻</span>
-                <span className={styles.name}>{orchestrator.id}</span>
-                <span className={styles.who}>· {t('orchestra.constellation.you')}</span>
-                <span
-                  className={styles.spin}
-                  data-spin={isBusy(orchestrator.state) ? '' : undefined}
-                >
-                  {glyphFor(orchestrator)}
-                </span>
-              </div>
-              <div className={styles.row2}>
-                <span>
-                  {workers.length === 1
-                    ? t('orchestra.workerCountOne')
-                    : t('orchestra.workerCount', { count: workers.length })}
-                </span>
-                <span className={styles.who}>·</span>
-                <span className={styles.lead} title={orchestrator.note || undefined}>
-                  {orchestrator.note || t(stateKey(orchestrator))}
-                </span>
-                <span className={styles.pct}>{overall}%</span>
-              </div>
-            </div>
-            <div className={styles.bar}>
-              <i style={{ width: `${overall}%` }} />
-            </div>
-          </div>
-        ) : null}
+            <g>
+              {workers.map((worker) => {
+                const edge = layout.edges.get(worker.id)
+                if (!edge) return null
+                const cls = [
+                  styles.edge,
+                  worker.state === 'done' || worker.state === 'exited' ? styles.edgeDone : '',
+                  selectedWorker === worker.id ? styles.edgeSel : '',
+                  selectedWorker && selectedWorker !== worker.id ? styles.edgeDim : '',
+                ].join(' ')
+                return (
+                  <line
+                    key={worker.id}
+                    className={cls}
+                    x1={edge.x0}
+                    y1={edge.y0}
+                    x2={edge.x1}
+                    y2={edge.y1}
+                  />
+                )
+              })}
+            </g>
+            {orchestrator && measured ? (
+              <ScribeLink
+                x={layout.center.x}
+                y1={layout.center.y + orchSize.h / 2 + 1}
+                y2={layout.center.y + orchSize.h / 2 + SCRIBE_GAP - 1}
+                count={scribeLines.length}
+              />
+            ) : null}
+            <g ref={dotsRef} />
+          </svg>
 
-        {orchestrator && measured ? (
-          <ScribeNode
-            sessionId={sessionId}
-            lines={scribeLines}
-            x={layout.center.x}
-            y={layout.center.y + orchSize.h / 2 + SCRIBE_GAP + SCRIBE_H / 2}
-            width={SCRIBE_W}
-            height={SCRIBE_H}
-          />
-        ) : null}
-
-        {workers.map((worker, index) => {
-          const pos = layout.nodes.get(worker.id)
-          const cls = [
-            styles.node,
-            compact ? styles.compact : '',
-            worker.state === 'done' ? styles.done : '',
-            worker.state === 'exited' ? styles.exited : '',
-            worker.state === 'blocked' ? styles.blocked : '',
-            worker.state === 'waiting' ? styles.waiting : '',
-            selectedWorker === worker.id ? styles.sel : '',
-            selectedWorker && selectedWorker !== worker.id ? styles.dim : '',
-          ].join(' ')
-          return (
+          {orchestrator ? (
             <div
-              key={worker.id}
-              ref={(el) => {
-                if (el) nodeEls.current.set(worker.id, el)
-                else nodeEls.current.delete(worker.id)
-                if (index === 0) firstNodeRef.current = el
-              }}
-              className={cls}
+              ref={orchRef}
+              className={[
+                styles.node,
+                styles.orch,
+                selectedId === ORCHESTRATOR_ID ? styles.orchSel : '',
+              ].join(' ')}
               style={{
-                left: pos?.x ?? 0,
-                top: pos?.y ?? 0,
-                visibility: pos && measured ? 'visible' : 'hidden',
+                left: layout.center.x,
+                top: layout.center.y,
+                visibility: measured ? 'visible' : 'hidden',
               }}
               role="button"
               tabIndex={0}
-              aria-pressed={selectedWorker === worker.id}
+              aria-pressed={selectedId === ORCHESTRATOR_ID}
               aria-label={t('orchestra.constellation.nodeLabel', {
-                id: worker.id,
-                area: worker.area,
-                state: t(stateKey(worker)),
-                progress: worker.progress,
+                id: orchestrator.id,
+                area: t('orchestra.orchestrator'),
+                state: t(stateKey(orchestrator)),
+                progress: overall,
               })}
-              title={worker.task || undefined}
               onClick={(e) => {
                 e.stopPropagation()
-                toggle(worker.id)
+                toggle(ORCHESTRATOR_ID)
               }}
-              onKeyDown={(e) => onNodeKey(e, worker.id)}
+              onKeyDown={(e) => onNodeKey(e, ORCHESTRATOR_ID)}
             >
               <div className={styles.inner}>
                 <div className={styles.row1}>
                   <span className={styles.ast}>✻</span>
-                  <span className={styles.name}>{worker.id}</span>
-                  <span className={styles.spin} data-spin={isBusy(worker.state) ? '' : undefined}>
-                    {glyphFor(worker)}
+                  <span className={styles.name}>{orchestrator.id}</span>
+                  <span className={styles.who}>· {t('orchestra.constellation.you')}</span>
+                  <span
+                    className={styles.spin}
+                    data-spin={isBusy(orchestrator.state) ? '' : undefined}
+                  >
+                    {glyphFor(orchestrator)}
                   </span>
                 </div>
                 <div className={styles.row2}>
-                  <CreativeMark area={worker.area} />
-                  <span className={styles.task}>{worker.area}</span>
-                  <span
-                    className={styles.state}
-                    style={{ color: stateColor(worker.state) }}
-                    title={worker.note || undefined}
-                  >
-                    {t(stateKey(worker))}
+                  <span>
+                    {workers.length === 1
+                      ? t('orchestra.workerCountOne')
+                      : t('orchestra.workerCount', { count: workers.length })}
                   </span>
-                  <span className={styles.pct}>{worker.progress}%</span>
+                  <span className={styles.who}>·</span>
+                  <span className={styles.lead} title={orchestrator.note || undefined}>
+                    {orchestrator.note || t(stateKey(orchestrator))}
+                  </span>
+                  <span className={styles.pct}>{overall}%</span>
                 </div>
               </div>
               <div className={styles.bar}>
-                <i style={{ width: `${worker.progress}%` }} />
+                <i style={{ width: `${overall}%` }} />
               </div>
             </div>
-          )
-        })}
+          ) : null}
 
-        {workers.length === 0 && measured ? (
-          <div
-            className={styles.empty}
-            style={{ top: layout.center.y + orchSize.h / 2 + SCRIBE_GAP + SCRIBE_H + 24 }}
-          >
-            <strong>{t('orchestra.constellation.emptyTitle')}</strong>
-            <span>{t('orchestra.constellation.emptyBody')}</span>
-          </div>
-        ) : null}
+          {orchestrator && measured ? (
+            <ScribeNode
+              sessionId={sessionId}
+              lines={scribeLines}
+              x={layout.center.x}
+              y={layout.center.y + orchSize.h / 2 + SCRIBE_GAP + SCRIBE_H / 2}
+              width={SCRIBE_W}
+              height={SCRIBE_H}
+            />
+          ) : null}
+
+          {workers.map((worker, index) => {
+            const pos = layout.nodes.get(worker.id)
+            const cls = [
+              styles.node,
+              compact ? styles.compact : '',
+              worker.state === 'done' ? styles.done : '',
+              worker.state === 'exited' ? styles.exited : '',
+              worker.state === 'blocked' ? styles.blocked : '',
+              worker.state === 'waiting' ? styles.waiting : '',
+              selectedWorker === worker.id ? styles.sel : '',
+              selectedWorker && selectedWorker !== worker.id ? styles.dim : '',
+            ].join(' ')
+            return (
+              <div
+                key={worker.id}
+                ref={(el) => {
+                  if (el) nodeEls.current.set(worker.id, el)
+                  else nodeEls.current.delete(worker.id)
+                  if (index === 0) firstNodeRef.current = el
+                }}
+                className={cls}
+                style={{
+                  left: pos?.x ?? 0,
+                  top: pos?.y ?? 0,
+                  visibility: pos && measured ? 'visible' : 'hidden',
+                }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedWorker === worker.id}
+                aria-label={t('orchestra.constellation.nodeLabel', {
+                  id: worker.id,
+                  area: worker.area,
+                  state: t(stateKey(worker)),
+                  progress: worker.progress,
+                })}
+                title={worker.task || undefined}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggle(worker.id)
+                }}
+                onKeyDown={(e) => onNodeKey(e, worker.id)}
+              >
+                <div className={styles.inner}>
+                  <div className={styles.row1}>
+                    <span className={styles.ast}>✻</span>
+                    <span className={styles.name}>{worker.id}</span>
+                    <span className={styles.spin} data-spin={isBusy(worker.state) ? '' : undefined}>
+                      {glyphFor(worker)}
+                    </span>
+                  </div>
+                  <div className={styles.row2}>
+                    <CreativeMark area={worker.area} />
+                    <span className={styles.task}>{worker.area}</span>
+                    <span
+                      className={styles.state}
+                      style={{ color: stateColor(worker.state) }}
+                      title={worker.note || undefined}
+                    >
+                      {t(stateKey(worker))}
+                    </span>
+                    <span className={styles.pct}>{worker.progress}%</span>
+                  </div>
+                </div>
+                <div className={styles.bar}>
+                  <i style={{ width: `${worker.progress}%` }} />
+                </div>
+              </div>
+            )
+          })}
+
+          {workers.length === 0 && measured ? (
+            <div
+              className={styles.empty}
+              style={{ top: layout.center.y + orchSize.h / 2 + SCRIBE_GAP + SCRIBE_H + 24 }}
+            >
+              <strong>{t('orchestra.constellation.emptyTitle')}</strong>
+              <span>{t('orchestra.constellation.emptyBody')}</span>
+            </div>
+          ) : null}
         </ZoomCanvas>
       </section>
 
@@ -685,9 +685,7 @@ export function ConstellationView() {
             type="button"
             className={styles.busToggle}
             aria-expanded={busOpen}
-            title={
-              busOpen ? t('orchestra.canvas.busCollapse') : t('orchestra.canvas.busExpand')
-            }
+            title={busOpen ? t('orchestra.canvas.busCollapse') : t('orchestra.canvas.busExpand')}
             onClick={toggleBus}
           >
             <ChevronDown size={12} aria-hidden="true" />
@@ -709,12 +707,7 @@ export function ConstellationView() {
             </button>
           ) : null}
           {!busOpen && latest ? (
-            <button
-              type="button"
-              className={styles.peek}
-              title={latest.text}
-              onClick={toggleBus}
-            >
+            <button type="button" className={styles.peek} title={latest.text} onClick={toggleBus}>
               <span style={{ color: agentColor(latest.from) }}>{who(latest.from)}</span>
               <span className={styles.arrow}>→</span>
               <span style={{ color: agentColor(latest.to) }}>{who(latest.to)}</span>
@@ -731,59 +724,59 @@ export function ConstellationView() {
           <span>{t('orchestra.constellation.msgCount', { count: visibleMessages.length })}</span>
         </div>
         {busOpen ? (
-        <div
-          ref={logRef}
-          className={styles.log}
-          style={{ height: busBody.size }}
-          role="log"
-          aria-live="off"
-          onScroll={onLogScroll}
-        >
-          {visibleMessages.length === 0 ? (
-            <div className={styles.busEmpty}>
-              {selectedId
-                ? t('orchestra.constellation.busEmptyFilter', { id: selectedId })
-                : t('orchestra.constellation.busEmpty')}
-            </div>
-          ) : (
-            visibleMessages.map((message) => (
-              <div key={message.id} className={styles.line}>
-                <span className={styles.ts}>{busClock(message.at, startedAt)}</span>
-                <span className={styles.route}>
-                  <span
-                    style={{
-                      color:
-                        message.from === 'all'
-                          ? undefined
-                          : agentColor(message.from, areaOf(agents, message.from)),
-                    }}
-                  >
-                    {who(message.from)}
-                  </span>
-                  <span className={styles.arrow}>→</span>
-                  <span
-                    style={{
-                      color:
-                        message.to === 'all'
-                          ? undefined
-                          : agentColor(message.to, areaOf(agents, message.to)),
-                    }}
-                  >
-                    {who(message.to)}
-                  </span>
-                </span>
-                <span
-                  className={
-                    message.text.startsWith('done ·') ? `${styles.msg} ${styles.ok}` : styles.msg
-                  }
-                  title={message.text}
-                >
-                  {decorate(message.text)}
-                </span>
+          <div
+            ref={logRef}
+            className={styles.log}
+            style={{ height: busBody.size }}
+            role="log"
+            aria-live="off"
+            onScroll={onLogScroll}
+          >
+            {visibleMessages.length === 0 ? (
+              <div className={styles.busEmpty}>
+                {selectedId
+                  ? t('orchestra.constellation.busEmptyFilter', { id: selectedId })
+                  : t('orchestra.constellation.busEmpty')}
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              visibleMessages.map((message) => (
+                <div key={message.id} className={styles.line}>
+                  <span className={styles.ts}>{busClock(message.at, startedAt)}</span>
+                  <span className={styles.route}>
+                    <span
+                      style={{
+                        color:
+                          message.from === 'all'
+                            ? undefined
+                            : agentColor(message.from, areaOf(agents, message.from)),
+                      }}
+                    >
+                      {who(message.from)}
+                    </span>
+                    <span className={styles.arrow}>→</span>
+                    <span
+                      style={{
+                        color:
+                          message.to === 'all'
+                            ? undefined
+                            : agentColor(message.to, areaOf(agents, message.to)),
+                      }}
+                    >
+                      {who(message.to)}
+                    </span>
+                  </span>
+                  <span
+                    className={
+                      message.text.startsWith('done ·') ? `${styles.msg} ${styles.ok}` : styles.msg
+                    }
+                    title={message.text}
+                  >
+                    {decorate(message.text)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         ) : null}
       </section>
     </div>

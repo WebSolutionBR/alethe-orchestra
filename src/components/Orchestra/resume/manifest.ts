@@ -3,6 +3,8 @@
  * app closed under it. Pure: the store builds them, `persist.ts` writes them (debounced, atomic
  * on the backend) and `resumePlan` turns one back into a session plus the launches to make.
  */
+import { getMirror } from '../../../lib/terminalMirror/store'
+import { getTerminalSize, type TerminalSize } from '../../../lib/terminalSizes'
 import type {
   ActivityLine,
   AgentBlock,
@@ -11,11 +13,18 @@ import type {
   BusMessage,
   DeliveryFailure,
   DeliveryStatus,
+  LimitWait,
   OrchestraAgent,
   OrchestraSession,
   TaskRecord,
 } from '../../../stores/orchestraStore'
-import type { LaunchOptions } from '../usage/launch'
+import {
+  type AccountSwitch,
+  type LaunchOptions,
+  parseAccountSwitches,
+  parseSessionLaunch,
+  type SessionLaunch,
+} from '../usage/launch'
 
 export const MANIFEST_VERSION = 1
 /** Bus lines kept: enough to see what was going on when the app closed. */
@@ -61,6 +70,17 @@ export type OrchestraManifest = {
   mode: string
   agents: OrchestraAgent[]
   messages: BusMessage[]
+  /** How the session uses the Claude accounts; absent in manifests written before it existed. */
+  launch?: SessionLaunch
+  /** Account switches made from the panel, oldest first. */
+  accountSwitches?: AccountSwitch[]
+  /**
+   * Size of each agent's last PTY (by agent id) when the manifest was saved, so "View record"
+   * replays its recorded output at the width the program drew it.
+   */
+  ptySizes?: Record<string, TerminalSize>
+  /** The pending "wait for the limit reset", so a Resume keeps waiting for it. */
+  limitWait?: LimitWait
 }
 
 /** How a launch continues an interrupted run. */
@@ -92,6 +112,11 @@ export type ManifestSummary = {
 
 /** The manifest of a running session; `savedAt` 0 gives a stable text to compare. */
 export function manifestOf(session: OrchestraSession, savedAt: number): OrchestraManifest {
+  const ptySizes: Record<string, TerminalSize> = {}
+  for (const agent of session.agents) {
+    const size = agent.ptyId ? ptySizeOf(agent.ptyId) : null
+    if (size) ptySizes[agent.id] = size
+  }
   return {
     version: MANIFEST_VERSION,
     id: session.id,
@@ -107,7 +132,53 @@ export function manifestOf(session: OrchestraSession, savedAt: number): Orchestr
       lines: agent.lines.slice(-MANIFEST_LINES),
     })),
     messages: session.messages.slice(-MANIFEST_MESSAGES),
+    ...(session.launch ? { launch: session.launch } : {}),
+    ...(session.accountSwitches?.length ? { accountSwitches: session.accountSwitches } : {}),
+    ...(Object.keys(ptySizes).length ? { ptySizes } : {}),
+    ...(session.limitWait ? { limitWait: session.limitWait } : {}),
   }
+}
+
+/** The PTY's size: its mirror always has it; otherwise the last size a view gave it. */
+function ptySizeOf(ptyId: string): TerminalSize | null {
+  const mirror = getMirror(ptyId)
+  if (mirror) return { cols: mirror.cols, rows: mirror.rows }
+  return getTerminalSize(ptyId)
+}
+
+/** Largest PTY a manifest may ask a replay for; anything above is not a size a pane had. */
+const MAX_PTY_COLS = 1_000
+const MAX_PTY_ROWS = 500
+
+function parseLimitWait(raw: unknown): LimitWait | null {
+  if (!isRaw(raw)) return null
+  const { account, resetsAt, auto, resumedAt, rearms } = raw
+  if (typeof resetsAt !== 'number' || !Number.isFinite(resetsAt) || resetsAt <= 0) return null
+  if (account !== null && (typeof account !== 'string' || !account)) return null
+  const resumed = typeof resumedAt === 'number' && Number.isFinite(resumedAt) && resumedAt > 0
+  const rearmed = typeof rearms === 'number' && Number.isInteger(rearms) && rearms > 0
+  return {
+    account,
+    resetsAt,
+    ...(auto === true ? { auto } : {}),
+    ...(resumed ? { resumedAt } : {}),
+    ...(rearmed ? { rearms } : {}),
+  }
+}
+
+function parsePtySizes(raw: unknown, agents: OrchestraAgent[]): Record<string, TerminalSize> {
+  const sizes: Record<string, TerminalSize> = {}
+  if (!isRaw(raw)) return sizes
+  for (const agent of agents) {
+    const size = raw[agent.id]
+    if (!isRaw(size)) continue
+    const { cols, rows } = size
+    if (!Number.isInteger(cols) || !Number.isInteger(rows)) continue
+    if ((cols as number) < 2 || (cols as number) > MAX_PTY_COLS) continue
+    if ((rows as number) < 1 || (rows as number) > MAX_PTY_ROWS) continue
+    sizes[agent.id] = { cols: cols as number, rows: rows as number }
+  }
+  return sizes
 }
 
 // Every value of each union, as records so a value added to a type must be added here too.
@@ -137,12 +208,22 @@ const EXIT_REASONS = Object.keys({
   'launch-failed': 1,
   'launch-timeout': 1,
   stopped: 1,
+  cancelled: 1,
 } satisfies Record<AgentExitReason, 1>) as AgentExitReason[]
 const BLOCK_REASONS = Object.keys({
   permission: 1,
   question: 1,
   report: 1,
   dependency: 1,
+  trust: 1,
+  login: 1,
+  account: 1,
+  onboarding: 1,
+  mcp: 1,
+  'press-enter': 1,
+  proceed: 1,
+  'usage-limit': 1,
+  'unknown-screen': 1,
 } satisfies Record<AgentBlock['reason'], 1>) as AgentBlock['reason'][]
 const DELIVERIES = Object.keys({
   queued: 1,
@@ -195,7 +276,10 @@ function parseRecord(raw: unknown): TaskRecord | null {
 function parseBlock(raw: unknown): AgentBlock | null {
   if (!isRaw(raw)) return null
   const reason = oneOf(raw.reason, BLOCK_REASONS)
-  return reason ? { reason, text: text(raw.text), at: count(raw.at) } : null
+  if (!reason) return null
+  const block: AgentBlock = { reason, text: text(raw.text), at: count(raw.at) }
+  if (reason === 'usage-limit') block.resetAt = countOrNull(raw.resetAt)
+  return block
 }
 
 function parseLaunchedWith(raw: unknown): LaunchOptions | null {
@@ -267,6 +351,10 @@ export function parseManifest(raw: unknown): OrchestraManifest | null {
   for (const agent of list(raw.agents).map(parseAgent)) {
     if (agent && !agents.some((a) => a.id === agent.id)) agents.push(agent)
   }
+  const launch = parseSessionLaunch(raw.launch)
+  const accountSwitches = parseAccountSwitches(raw.accountSwitches)
+  const ptySizes = parsePtySizes(raw.ptySizes, agents)
+  const limitWait = parseLimitWait(raw.limitWait)
   return {
     version: MANIFEST_VERSION,
     id: raw.id,
@@ -282,12 +370,19 @@ export function parseManifest(raw: unknown): OrchestraManifest | null {
       .map(parseMessage)
       .filter((message): message is BusMessage => message !== null)
       .slice(-MANIFEST_MESSAGES),
+    ...(launch ? { launch } : {}),
+    ...(accountSwitches.length ? { accountSwitches } : {}),
+    ...(Object.keys(ptySizes).length ? { ptySizes } : {}),
+    ...(limitWait ? { limitWait } : {}),
   }
 }
 
 /** Waits for its dependencies (or is held because one failed): `releaseWaiting` decides. */
 const waitsForDependencies = (agent: OrchestraAgent) =>
   agent.state === 'waiting' || (agent.state === 'blocked' && agent.blocked?.reason === 'dependency')
+
+/** Cancelled by the user while it waited: it never ran and is not started by a resume. */
+const cancelled = (agent: OrchestraAgent) => agent.exitReason === 'cancelled'
 
 /** A worker that had failed before the close; its task may be someone else's by now. */
 const failedBefore = (agent: OrchestraAgent) =>
@@ -299,10 +394,13 @@ const failedBefore = (agent: OrchestraAgent) =>
  */
 const relaunches = (agent: OrchestraAgent) =>
   agent.id === ORCHESTRATOR ||
-  (agent.state !== 'done' && !failedBefore(agent) && !waitsForDependencies(agent))
+  (agent.state !== 'done' &&
+    !failedBefore(agent) &&
+    !cancelled(agent) &&
+    !waitsForDependencies(agent))
 
 /** What resuming does with an agent. */
-export type AgentFate = 'resume' | 'restart' | 'wait' | 'finished' | 'failed'
+export type AgentFate = 'resume' | 'restart' | 'wait' | 'finished' | 'failed' | 'cancelled'
 
 /**
  * `folderChanged`: the session resumes in another folder, where Claude Code cannot find the
@@ -315,6 +413,7 @@ export function agentFate(agent: OrchestraAgent, options: ResumeOptions = {}): A
     return agent.claudeSessionId && !options.folderChanged ? 'resume' : 'restart'
   }
   if (failedBefore(agent)) return 'failed'
+  if (cancelled(agent)) return 'cancelled'
   return agent.state === 'done' ? 'finished' : 'wait'
 }
 

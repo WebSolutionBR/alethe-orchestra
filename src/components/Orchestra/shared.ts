@@ -1,4 +1,4 @@
-import type { MessageKey, TFunction } from '../../lib/i18n'
+import { getLocale, intlLocale, type MessageKey, type TFunction } from '../../lib/i18n'
 import type {
   ActivityKind,
   AgentState,
@@ -6,6 +6,7 @@ import type {
   OrchestraAgent,
 } from '../../stores/orchestraStore'
 import { ORCHESTRATOR_ID } from '../../stores/orchestraStore'
+import { blockReasonKey } from './attention/blocking'
 import { isCreativeArea } from './creative/role'
 import { isScribeParty } from './scribe/identity'
 
@@ -17,6 +18,18 @@ export { processEnded } from '../../stores/orchestraStore'
 /** Ended before reporting done: its process exited or was killed, or it never launched. */
 export function isFailed(agent: Pick<OrchestraAgent, 'state'>): boolean {
   return agent.state === 'exited'
+}
+
+/**
+ * The shared label of an agent the user ended: 'stopped' (Stop on the session) or 'cancelled'
+ * (Cancel while it waited). Null for any other agent, which each view labels by its state.
+ */
+export function endedByUserKey(
+  agent: Pick<OrchestraAgent, 'state' | 'exitReason'>,
+): 'orchestra.state.stopped' | 'orchestra.state.cancelled' | null {
+  if (agent.exitReason === 'cancelled') return 'orchestra.state.cancelled'
+  if (agent.exitReason === 'stopped' && agent.state === 'idle') return 'orchestra.state.stopped'
+  return null
 }
 
 type Described = { key: MessageKey; params?: Record<string, string | number> }
@@ -36,6 +49,8 @@ export function exitDescription(agent: Pick<OrchestraAgent, 'exitCode' | 'exitRe
       return { key: 'orchestra.agents.exit.restarted' }
     case 'stopped':
       return { key: 'orchestra.agents.exit.stopped' }
+    case 'cancelled':
+      return { key: 'orchestra.state.cancelled' }
     default:
       return typeof agent.exitCode === 'number'
         ? { key: 'orchestra.agents.exit.exited', params: { code: agent.exitCode } }
@@ -65,6 +80,20 @@ export function blockDescription(agent: Pick<OrchestraAgent, 'blocked'>): Descri
       return { key: 'orchestra.agents.blocked.report' }
     case 'dependency':
       return { key: 'orchestra.agents.blocked.dependency', params: { deps: block.text } }
+    case 'usage-limit':
+      return block.resetAt
+        ? {
+            key: 'orchestra.agents.blocked.usageLimitUntil',
+            params: {
+              time: new Date(block.resetAt).toLocaleTimeString(intlLocale(getLocale()), {
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+            },
+          }
+        : { key: 'orchestra.agents.blocked.usageLimit' }
+    default:
+      return { key: blockReasonKey(block.reason) }
   }
 }
 

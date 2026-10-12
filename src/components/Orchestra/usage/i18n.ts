@@ -14,7 +14,14 @@ export const usageEn = {
   'orchestra.usage.syncMcpNone': 'MCP servers already in sync',
   'orchestra.usage.syncMcpFailed': 'MCP sync failed: {message}',
   'orchestra.launch.title': 'Agents run as',
-  'orchestra.launch.hint': 'Default for the orchestrator and for workers it spawns without flags',
+  'orchestra.launch.hint': 'Saved with the session; the accounts panel (Alt+A) can switch its account later',
+  'orchestra.launch.policy': 'Accounts',
+  'orchestra.launch.policy.single': 'One account',
+  'orchestra.launch.policy.spread': 'Spread across accounts',
+  'orchestra.launch.policy.singleHint':
+    'Every agent runs on the account below; the orchestrator cannot pick another one',
+  'orchestra.launch.policy.spreadHint':
+    'The orchestrator may start each worker on another account to stay under usage limits',
   'orchestra.launch.account': 'Account',
   'orchestra.launch.model': 'Model',
   'orchestra.launch.effort': 'Effort',
@@ -37,7 +44,14 @@ export const usagePtBR: Record<keyof typeof usageEn, string> = {
   'orchestra.usage.syncMcpNone': 'MCPs já sincronizados',
   'orchestra.usage.syncMcpFailed': 'Falha ao sincronizar MCPs: {message}',
   'orchestra.launch.title': 'Agentes rodam como',
-  'orchestra.launch.hint': 'Padrão do orquestrador e dos workers criados sem flags',
+  'orchestra.launch.hint': 'Fica gravado na sessão; o painel de contas (Alt+A) troca a conta depois',
+  'orchestra.launch.policy': 'Contas',
+  'orchestra.launch.policy.single': 'Uma conta',
+  'orchestra.launch.policy.spread': 'Distribuir entre contas',
+  'orchestra.launch.policy.singleHint':
+    'Todos os agentes rodam na conta ao lado; o orquestrador não escolhe outra',
+  'orchestra.launch.policy.spreadHint':
+    'O orquestrador pode abrir cada worker em outra conta para não estourar o limite de uso',
   'orchestra.launch.account': 'Conta',
   'orchestra.launch.model': 'Modelo',
   'orchestra.launch.effort': 'Effort',

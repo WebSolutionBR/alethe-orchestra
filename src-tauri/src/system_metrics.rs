@@ -123,7 +123,10 @@ fn collect_gpus() -> Vec<GpuInfo> {
             .map(|t| t as f64)
             .unwrap_or(0.0);
         // NVML reports power in milliwatts.
-        let power_watts = device.power_usage().map(|p| p as f64 / 1000.0).unwrap_or(0.0);
+        let power_watts = device
+            .power_usage()
+            .map(|p| p as f64 / 1000.0)
+            .unwrap_or(0.0);
         out.push(GpuInfo {
             name,
             utilization_percent,
@@ -150,9 +153,9 @@ fn collect() -> SystemMetrics {
 
     let cpu_percent = state.sys.global_cpu_usage() as f64;
     let ram_total_mb = state.sys.total_memory() as f64 / BYTES_PER_MB;
-    let ram_used_mb =
-        (state.sys.total_memory() as f64 - state.sys.available_memory() as f64).max(0.0)
-            / BYTES_PER_MB;
+    let ram_used_mb = (state.sys.total_memory() as f64 - state.sys.available_memory() as f64)
+        .max(0.0)
+        / BYTES_PER_MB;
 
     // System-wide disk throughput = sum of every process's read/written bytes
     // since the previous refresh, converted to a rate. Cross-platform and does

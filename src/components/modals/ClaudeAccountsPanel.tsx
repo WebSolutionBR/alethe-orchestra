@@ -3,9 +3,15 @@ import { nanoid } from 'nanoid'
 import { useCallback, useEffect, useState } from 'react'
 
 import { formatReset } from '../../lib/agentCanvasUtils'
-import { accountErrorKey, accountRefs, loginDaysLeft } from '../../lib/claudeAccounts'
+import {
+  accountConfigDir,
+  accountErrorKey,
+  accountRefs,
+  loginDaysLeft,
+} from '../../lib/claudeAccounts'
 import { useT } from '../../lib/i18n'
-import { getAllAccountsUsage, type ClaudeAccountUsage } from '../../lib/tauri'
+import { type ClaudeAccountUsage, getAllAccountsUsage } from '../../lib/tauri'
+import { accountTrustSeed } from '../../lib/tauri/accountPreflight'
 import type { ClaudeAccount } from '../../lib/types'
 import { getProjectDefaultCwd, useProjectsStore } from '../../stores/projectsStore'
 import { useUiStore } from '../../stores/uiStore'
@@ -49,6 +55,7 @@ export function ClaudeAccountsPanel({ hideIntro = false }: { hideIntro?: boolean
   const [loading, setLoading] = useState(false)
   const [newName, setNewName] = useState('')
   const [newProfile, setNewProfile] = useState('')
+  const [newEmail, setNewEmail] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -80,11 +87,28 @@ export function ClaudeAccountsPanel({ hideIntro = false }: { hideIntro?: boolean
       id: nanoid(8),
       name,
       chromeProfile: newProfile.trim() || undefined,
+      email: newEmail.trim() || undefined,
       createdAt: Date.now(),
     }
     setPreferences({ claudeAccounts: [...accounts, account] })
     setNewName('')
     setNewProfile('')
+    setNewEmail('')
+    // Its first agent must not stop on the onboarding or on a folder the user already works in.
+    const folders = projects
+      .map((p) => getProjectDefaultCwd(p))
+      .filter((cwd): cwd is string => !!cwd)
+    void accountConfigDir(account.id)
+      .then((dir) => accountTrustSeed([dir], folders, true))
+      .catch(() => [])
+  }
+
+  // The preflight and the sign-in read these: the e-mail the account must stay signed in as,
+  // and the Chrome profile its sign-in page opens in.
+  const updateAccount = (id: string, patch: Pick<ClaudeAccount, 'chromeProfile' | 'email'>) => {
+    setPreferences({
+      claudeAccounts: accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    })
   }
 
   const removeAccount = (id: string) => {
@@ -201,6 +225,35 @@ export function ClaudeAccountsPanel({ hideIntro = false }: { hideIntro?: boolean
                     </button>
                   </div>
                 </div>
+                <div className={styles.addRow}>
+                  <input
+                    key={`profile:${account.chromeProfile ?? ''}`}
+                    className={styles.input}
+                    defaultValue={account.chromeProfile ?? ''}
+                    placeholder={t('claudeAccounts.profilePlaceholder')}
+                    aria-label={t('claudeAccounts.profileOf', { name: account.name })}
+                    onBlur={(e) => {
+                      const value = e.target.value.trim() || undefined
+                      if (value !== account.chromeProfile) {
+                        updateAccount(account.id, { chromeProfile: value })
+                      }
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                  />
+                  <input
+                    key={`email:${account.email ?? ''}`}
+                    className={styles.input}
+                    type="email"
+                    defaultValue={account.email ?? ''}
+                    placeholder={t('claudeAccounts.emailPlaceholder')}
+                    aria-label={t('claudeAccounts.emailOf', { name: account.name })}
+                    onBlur={(e) => {
+                      const value = e.target.value.trim() || undefined
+                      if (value !== account.email) updateAccount(account.id, { email: value })
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                  />
+                </div>
                 {u?.usage ? (
                   <div className={styles.bars}>
                     <UsageBar
@@ -247,7 +300,21 @@ export function ClaudeAccountsPanel({ hideIntro = false }: { hideIntro?: boolean
           onChange={(e) => setNewProfile(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addAccount()}
         />
-        <button type="button" className={styles.addBtn} onClick={addAccount} disabled={!newName.trim()}>
+        <input
+          className={styles.input}
+          type="email"
+          value={newEmail}
+          placeholder={t('claudeAccounts.emailPlaceholder')}
+          aria-label={t('claudeAccounts.emailPlaceholder')}
+          onChange={(e) => setNewEmail(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && addAccount()}
+        />
+        <button
+          type="button"
+          className={styles.addBtn}
+          onClick={addAccount}
+          disabled={!newName.trim()}
+        >
           <Plus size={14} />
           {t('claudeAccounts.add')}
         </button>

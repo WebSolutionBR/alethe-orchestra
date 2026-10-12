@@ -1,0 +1,9 @@
+ What do you want to do?
+
+ You've hit your limit · resets 6:30pm (America/Sao_Paulo)
+
+ ❯ 1. Stop and wait for limit to reset
+   2. Switch to extra usage
+   3. Upgrade your plan
+
+ Enter to confirm · Esc to cancel

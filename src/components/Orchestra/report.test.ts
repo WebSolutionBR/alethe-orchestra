@@ -72,6 +72,10 @@ const labels: ReportLabels = {
   failures: 'Failures',
   filesByWorker: 'Files by worker',
   noWorkers: 'No workers.',
+  blocked: 'Time blocked',
+  accounts: 'Accounts',
+  defaultAccount: 'default account',
+  accountSwitch: (from, to) => `switched from ${from} to ${to}`,
   states: {
     done: 'done',
     failed: 'failed',
@@ -158,5 +162,68 @@ describe('report outputs', () => {
     const empty = buildReport(session([agent('orchestrator')]), { now: 2_000 })
     expect(reportMarkdown(empty, labels, format)).toContain('No workers.')
     expect(JSON.parse(reportJson(empty))).toMatchObject({ version: 1, totals: { workers: 0 } })
+  })
+})
+
+describe('blocked time and accounts', () => {
+  const blockedSession = session(
+    [
+      agent('orchestrator', {
+        state: 'idle',
+        launchedWith: { account: 'acc-a', model: null, effort: null },
+      }),
+      agent('claude-1', {
+        state: 'blocked',
+        blocked: { reason: 'login', text: 'login_expired', at: 50_000 },
+        launchedWith: { account: 'acc-b', model: null, effort: null },
+      }),
+    ],
+    {
+      segments: [
+        { agentId: 'claude-1', kind: 'thinking', start: 1_000, end: 10_000 },
+        { agentId: 'claude-1', kind: 'blocked', start: 10_000, end: 40_000 },
+        { agentId: 'claude-1', kind: 'thinking', start: 40_000, end: 50_000 },
+        { agentId: 'claude-1', kind: 'blocked', start: 50_000, end: null },
+        { agentId: 'orchestrator', kind: 'blocked', start: 2_000, end: 3_000 },
+      ],
+      accountSwitches: [{ at: 45_000, from: 'acc-a', to: null }],
+    },
+  )
+  const names = (id: string | null) =>
+    id === 'acc-a' ? 'Compras' : id === 'acc-b' ? 'Pricing' : null
+
+  it('sums closed and open blocked segments up to the report time', () => {
+    const report = buildReport(blockedSession, { now: 70_000, accountName: names })
+    expect(report.workers[0].blockedMs).toBe(30_000 + 20_000)
+    expect(report.orchestrator?.blockedMs).toBe(1_000)
+    expect(report.totals.blockedMs).toBe(51_000)
+    expect(report.workers[0]).toMatchObject({ account: 'acc-b', accountName: 'Pricing' })
+    expect(report.accountSwitches).toEqual([
+      { at: 45_000, from: 'acc-a', to: null, fromName: 'Compras', toName: null },
+    ])
+  })
+
+  it('lists blocked time, each agent account and the switches in the Markdown', () => {
+    const md = reportMarkdown(
+      buildReport(blockedSession, { now: 70_000, accountName: names }),
+      labels,
+      format,
+    )
+    expect(md).toContain('## Time blocked')
+    expect(md).toContain('- **claude-1**: 50s')
+    expect(md).toContain('- **orchestrator**: 1s')
+    expect(md).toContain('## Accounts')
+    expect(md).toContain('- **claude-1**: Pricing')
+    expect(md).toContain('- t45000: switched from Compras to default account')
+  })
+
+  it('leaves both sections out of a session that never blocked on the default account', () => {
+    const md = reportMarkdown(
+      buildReport(session([agent('orchestrator')]), { now: 5_000 }),
+      labels,
+      format,
+    )
+    expect(md).not.toContain('## Time blocked')
+    expect(md).not.toContain('## Accounts')
   })
 })

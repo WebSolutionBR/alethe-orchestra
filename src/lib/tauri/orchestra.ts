@@ -51,6 +51,8 @@ export type OrchestraEvent =
       account?: string | null
       model?: string | null
       effort?: string | null
+      /** Set when a one-account session dropped the `--account` it asked for. */
+      account_ignored?: string | null
     }
   /** `orch note`: an agent's record of a decision and its why (Markdown, up to 16 000 chars). */
   | { kind: 'note'; session: string; at: number; agent_id: string; text: string }
@@ -116,4 +118,31 @@ export function orchestraManifestRemove(sessionId: string): Promise<void> {
 
 export function listenOrchestra(handler: (event: OrchestraEvent) => void): Promise<UnlistenFn> {
   return listen<OrchestraEvent>('orchestra://event', (event) => handler(event.payload))
+}
+
+/**
+ * Tells the backend how a session uses accounts: with `single`, `orch spawn --account` is
+ * dropped and the orchestrator is told so (`label` names the session's account).
+ */
+export function orchestraAccountPolicy(
+  sessionId: string,
+  single: boolean,
+  label: string | null,
+): Promise<void> {
+  return invoke('orchestra_account_policy', { sessionId, single, label })
+}
+
+/** Who an account folder is really signed in as (`oauthAccount` of its `.claude.json`). */
+export type ClaudeAccountIdentity = {
+  id: string
+  email: string | null
+  account_uuid: string | null
+  organization_name: string | null
+}
+
+/** Real identity of each account; `config_dir` empty reads the default account. */
+export function orchestraAccountIdentities(
+  accounts: { id: string; config_dir: string }[],
+): Promise<ClaudeAccountIdentity[]> {
+  return invoke<ClaudeAccountIdentity[]>('orchestra_account_identities', { accounts })
 }

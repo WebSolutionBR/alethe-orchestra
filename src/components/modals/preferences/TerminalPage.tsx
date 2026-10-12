@@ -12,6 +12,7 @@ import { useUiStore } from '../../../stores/uiStore'
 import { AgentIcon } from '../../icons/AgentIcons'
 import styles from '../PreferencesModal.module.css'
 import { SettingsSection } from './primitives'
+import { EscalationSettings } from '../../Orchestra/attention/EscalationSettings'
 
 const AGENTS: { id: AgentType; label: string }[] = [
   { id: 'shell', label: 'Shell' },
@@ -242,6 +243,8 @@ export function TerminalPage({ enabledCount }: { enabledCount: number }) {
           </button>
         </div>
       </SettingsSection>
+
+      <EscalationSettings />
 
       {isMacOS() ? (
         <SettingsSection

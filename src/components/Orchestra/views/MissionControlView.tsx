@@ -36,6 +36,7 @@ import {
   areaOf,
   busClock,
   elapsed,
+  endedByUserKey,
   isBusy,
   isOrchestrator,
   messagesFor,
@@ -62,12 +63,13 @@ function Clock({ from, to }: { from: number; to: number | null }) {
   return <>{from ? elapsed(from, to ?? Date.now()) : '0:00'}</>
 }
 
-function StatePill({ state, id }: { state: OrchestraAgent['state']; id?: string }) {
+function StatePill({ agent, id }: { agent: OrchestraAgent; id?: string }) {
   const t = useT()
+  const state = agent.state
   return (
     <span id={id} className={styles.pill} data-state={state}>
       <span className={styles.glyph} data-busy={isBusy(state) || undefined} aria-hidden="true" />
-      {t(`orchestra.mission.state.${state}`)}
+      {t(endedByUserKey(agent) ?? `orchestra.mission.state.${state}`)}
     </span>
   )
 }
@@ -139,7 +141,7 @@ function WorkerCard({
         <CreativeMark area={agent.area} />
         <span className={styles.cardArea}>{agent.area}</span>
         <span className={styles.spacer} />
-        <StatePill state={agent.state} id={stateId} />
+        <StatePill agent={agent} id={stateId} />
       </header>
       <div className={styles.cardTask} title={agent.task}>
         {agent.task}
@@ -202,6 +204,7 @@ function OrchestratorCard({
   onReply: (id: string) => void
 }) {
   const t = useT()
+  const stoppedAt = useSession((s) => s.stoppedAt ?? null)
   const overall = overallProgress(agents)
   const toolCalls = agents.reduce((sum, a) => sum + a.toolCalls, 0)
   const files = useMemo(() => new Set(agents.flatMap((a) => a.files)).size, [agents])
@@ -252,7 +255,7 @@ function OrchestratorCard({
             {ORCHESTRATOR_ID}
           </button>
           <span className={styles.orchWho}>· {t('orchestra.mission.you')}</span>
-          {orchestrator && <StatePill state={orchestrator.state} id={stateId} />}
+          {orchestrator && <StatePill agent={orchestrator} id={stateId} />}
           {blocked > 0 && (
             <span className={styles.pending}>
               ! {t('orchestra.mission.blockedCount', { count: blocked })}
@@ -293,7 +296,7 @@ function OrchestratorCard({
         <div className={styles.stat}>
           <dt>{t('orchestra.mission.elapsed')}</dt>
           <dd>
-            <Clock from={startedAt} to={null} />
+            <Clock from={startedAt} to={stoppedAt} />
           </dd>
         </div>
         <div className={styles.stat}>

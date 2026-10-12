@@ -45,6 +45,7 @@ import {
   sanitizeWorkspaceSnapshot,
 } from '../lib/workspaceNavigation'
 import { migrate } from './projectsStore.migrations'
+import type { RightSidebarHideReason } from './projectsStore.rightSidebar'
 import { createGroupsSlice, createProjectsSlice } from './projectsStore.projectSlices'
 import {
   createPreferencesSlice,
@@ -322,6 +323,8 @@ export type ProjectsState = ProjectsFile & {
   setAgentEnabled: (agent: AgentType, enabled: boolean) => void
   setOnboardingDone: (done: boolean) => void
   setPreferences: (patch: Partial<Preferences>) => void
+  /** The only sanctioned way to hide the right sidebar: records the reason in app-events.log. */
+  hideRightSidebar: (reason: RightSidebarHideReason) => void
   setCliPath: (agent: AgentType, path: string | null) => void
 }
 

@@ -16,6 +16,15 @@ const MARKER_FILE: &str = "legacy-import.json";
 const ACCOUNTS_DIR: &str = "claude-accounts";
 /// Regenerable or bulky Claude Code state that is not worth duplicating.
 const SKIPPED_ACCOUNT_DIRS: &[&str] = &["cache", "backups", "paste-cache", "shell-snapshots"];
+/// Files that belong to the original account dir alone. The credentials above all: two dirs
+/// with the same refresh token fight over it, since each renewal rotates it and kills the other
+/// copy (05/10/2026: imported workers started on "Login expired"). An imported account signs in
+/// again with its own login instead. The lock and the pinned identity are per dir too.
+const SKIPPED_ACCOUNT_FILES: &[&str] = &[
+    ".credentials.json",
+    crate::account_lock::LOCK_FILE,
+    crate::account_preflight::IDENTITY_FILE,
+];
 
 #[derive(Serialize, Default, Clone)]
 pub struct LegacyMarker {
@@ -147,6 +156,9 @@ fn copy_newer(src: &Path, dst: &Path, top_level: bool, count: &mut u32) -> std::
             }
             copy_newer(&entry.path(), &target, false, count)?;
         } else if file_type.is_file() {
+            if top_level && SKIPPED_ACCOUNT_FILES.iter().any(|f| name == *f) {
+                continue;
+            }
             let src_modified = entry.metadata()?.modified().ok();
             let dst_modified = fs::metadata(&target).and_then(|m| m.modified()).ok();
             let stale = match (src_modified, dst_modified) {
@@ -201,6 +213,9 @@ pub async fn legacy_alethe_copy_accounts(
                 }
                 if let Err(e) = copy_newer(&src, &dst, true, &mut result.files_copied) {
                     result.error = Some(e.to_string());
+                } else {
+                    // An imported account must not stop its first agent on the onboarding.
+                    let _ = crate::trust_seed::seed_file(&dst.join(".claude.json"), &[], true);
                 }
                 result
             })
@@ -253,6 +268,7 @@ mod tests {
         fs::create_dir_all(src.join("cache")).unwrap();
         fs::create_dir_all(src.join("projects")).unwrap();
         fs::write(src.join(".credentials.json"), "old").unwrap();
+        fs::write(src.join(".claude.json"), "{}").unwrap();
         fs::write(src.join("cache").join("big.md"), "x").unwrap();
         fs::write(src.join("projects").join("a.jsonl"), "a").unwrap();
 
@@ -261,16 +277,33 @@ mod tests {
         assert_eq!(n, 2);
         assert!(!dst.join("cache").exists());
         assert!(dst.join("projects").join("a.jsonl").is_file());
+        // Credentials are never copied: the import and the original would share a refresh token.
+        assert!(!dst.join(".credentials.json").exists());
 
         // A destination file written after the source is not overwritten.
         std::thread::sleep(std::time::Duration::from_millis(20));
-        fs::write(dst.join(".credentials.json"), "new").unwrap();
+        fs::write(dst.join(".claude.json"), "{\"new\":1}").unwrap();
         let mut n2 = 0;
         copy_newer(&src, &dst, true, &mut n2).unwrap();
         assert_eq!(n2, 0);
-        assert_eq!(fs::read_to_string(dst.join(".credentials.json")).unwrap(), "new");
+        assert_eq!(
+            fs::read_to_string(dst.join(".claude.json")).unwrap(),
+            "{\"new\":1}"
+        );
+        // A re-sync over a signed-in destination leaves its own credentials alone.
+        fs::write(dst.join(".credentials.json"), "mine").unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(src.join(".credentials.json"), "newer-but-not-ours").unwrap();
+        copy_newer(&src, &dst, true, &mut n2).unwrap();
+        assert_eq!(
+            fs::read_to_string(dst.join(".credentials.json")).unwrap(),
+            "mine"
+        );
         // Source untouched.
-        assert_eq!(fs::read_to_string(src.join(".credentials.json")).unwrap(), "old");
+        assert_eq!(
+            fs::read_to_string(src.join(".credentials.json")).unwrap(),
+            "newer-but-not-ours"
+        );
         let _ = fs::remove_dir_all(&base);
     }
 }

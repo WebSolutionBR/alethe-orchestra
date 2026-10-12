@@ -103,10 +103,7 @@ export function TitleBar() {
   const activeProfileId = useProjectsStore((s) => s.activeProfileId)
   const preferences = useProjectsStore((s) => s.preferences)
   const setPreferences = useProjectsStore((s) => s.setPreferences)
-  const rightPanelEnabled =
-    preferences.enabledFeatures.todos ||
-    preferences.enabledFeatures.mcp ||
-    (preferences.enabledFeatures.git && preferences.gitControlPlacement === 'right')
+  const hideRightSidebar = useProjectsStore((s) => s.hideRightSidebar)
   const toggleWorkspaceTabPinned = useProjectsStore((s) => s.toggleWorkspaceTabPinned)
   const closeSavedWorkspaceTab = useProjectsStore((s) => s.closeSavedWorkspaceTab)
   const addWorkspaceTabToCurrent = useProjectsStore((s) => s.addWorkspaceTabToCurrent)
@@ -741,32 +738,32 @@ export function TitleBar() {
             </button>
           </div>
         </div>
-        {rightPanelEnabled ? (
-          <button
-            type="button"
-            className={`${styles.iconBtn} ${styles.rightSidebarBtn} ${preferences.rightSidebarVisible ? styles.iconBtnActive : ''}`}
-            onClick={() =>
-              setPreferences({ rightSidebarVisible: !preferences.rightSidebarVisible })
-            }
-            title={
-              preferences.rightSidebarVisible
-                ? t('ui.titlebar.closeRightSidebar')
-                : t('ui.titlebar.openRightSidebar')
-            }
-            aria-label={
-              preferences.rightSidebarVisible
-                ? t('ui.titlebar.closeRightSidebar')
-                : t('ui.titlebar.openRightSidebar')
-            }
-            aria-pressed={preferences.rightSidebarVisible}
-          >
-            {preferences.rightSidebarVisible ? (
-              <PanelRightClose size={14} />
-            ) : (
-              <PanelRightOpen size={14} />
-            )}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className={`${styles.iconBtn} ${styles.rightSidebarBtn} ${preferences.rightSidebarVisible ? styles.iconBtnActive : ''}`}
+          onClick={() =>
+            preferences.rightSidebarVisible
+              ? hideRightSidebar('user.titlebar-toggle')
+              : setPreferences({ rightSidebarVisible: true })
+          }
+          title={
+            preferences.rightSidebarVisible
+              ? t('ui.titlebar.closeRightSidebar')
+              : t('ui.titlebar.openRightSidebar')
+          }
+          aria-label={
+            preferences.rightSidebarVisible
+              ? t('ui.titlebar.closeRightSidebar')
+              : t('ui.titlebar.openRightSidebar')
+          }
+          aria-pressed={preferences.rightSidebarVisible}
+        >
+          {preferences.rightSidebarVisible ? (
+            <PanelRightClose size={14} />
+          ) : (
+            <PanelRightOpen size={14} />
+          )}
+        </button>
         <button
           type="button"
           className={styles.windowBtn}

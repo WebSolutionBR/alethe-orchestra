@@ -4,6 +4,13 @@ import { confirm } from '@tauri-apps/plugin-dialog'
 import { customAlphabet } from 'nanoid'
 import { create } from 'zustand'
 
+import {
+  isScreenBlock,
+  runPreflight,
+  type ScreenBlockReason,
+  screenNotice,
+} from '../components/Orchestra/attention/blocking'
+import { installScreenWatch } from '../components/Orchestra/attention/screenWatch'
 import { installAttention } from '../components/Orchestra/attention/service'
 import { creativePromptHint } from '../components/Orchestra/creative/role'
 import { chooseOption, dialogOnScreen, type DialogOption } from '../components/Orchestra/dialog'
@@ -28,6 +35,7 @@ import {
   sameFolder,
 } from '../components/Orchestra/resume/manifest'
 import { installManifests } from '../components/Orchestra/resume/persist'
+import { forgetRetired, MAX_RETIRED, retirePty } from '../components/Orchestra/retiredTerminals'
 import { sessionContextOf } from '../components/Orchestra/scribe/contextStore'
 import { SCRIBE_ID } from '../components/Orchestra/scribe/identity'
 import {
@@ -39,11 +47,19 @@ import { installScribe, prepareSessionContext } from '../components/Orchestra/sc
 import { spawnTerminalSize } from '../components/Orchestra/terminalGeometry'
 import {
   accountsPromptHint,
+  type AccountSwitch,
+  agentLaunch,
+  ignoredAccount,
   launchArgs,
   type LaunchOptions,
-  resolveLaunch,
+  moveOutcome,
+  restoredLaunch,
+  type SessionLaunch,
 } from '../components/Orchestra/usage/launch'
-import { launchDefaults } from '../components/Orchestra/usage/launchDefaults'
+import {
+  sessionLaunchDefaults,
+  sessionLaunchOf,
+} from '../components/Orchestra/usage/launchDefaults'
 import { accountConfigDirCached } from '../lib/claudeAccounts'
 import {
   killPty,
@@ -55,8 +71,10 @@ import {
   writePty,
 } from '../lib/tauri'
 import { syncAccountMcpServers } from '../lib/tauri/accountMcp'
+import { copyConversation } from '../lib/tauri/conversation'
 import {
   listenOrchestra,
+  orchestraAccountPolicy,
   orchestraEnd,
   type OrchestraEvent,
   orchestraFolderExists,
@@ -123,18 +141,30 @@ export type BusMessage = {
  * `stopped` when the user stopped the orchestration while it worked (not a failure).
  */
 export type AgentExitReason =
-  'exited' | 'killed' | 'suspended' | 'restarted' | 'launch-failed' | 'launch-timeout' | 'stopped'
+  | 'exited'
+  | 'killed'
+  | 'suspended'
+  | 'restarted'
+  | 'launch-failed'
+  | 'launch-timeout'
+  | 'stopped'
+  /** The user cancelled it while it waited for a dependency: kept in the session as cancelled. */
+  | 'cancelled'
 
 /**
  * What a blocked agent waits on: Claude Code asking for a permission or answer, its own
- * `orch report blocked`, or a dependency (`--after`) that failed or was cancelled.
+ * `orch report blocked`, or a dependency (`--after`) that failed or was cancelled. The rest are
+ * `ScreenBlockReason`s: a stuck screen the screen watcher read, or a launch the account
+ * preflight held back (`login`, `account`).
  */
-export type BlockReason = 'permission' | 'question' | 'report' | 'dependency'
+export type BlockReason = 'permission' | 'question' | 'report' | 'dependency' | ScreenBlockReason
 export type AgentBlock = {
   reason: BlockReason
   /** The question or permission asked, the reported note, or the ids of the failed dependencies. */
   text: string
   at: number
+  /** `usage-limit` only: when the limit resets (epoch ms); null when the screen does not say. */
+  resetAt?: number | null
 }
 
 /** A task the agent already finished; `done` is per task, so new work starts a fresh record. */
@@ -171,6 +201,11 @@ export type OrchestraAgent = {
   exitReason?: AgentExitReason | null
   /** Set while the agent is `blocked`: why, and the question it waits on. */
   blocked?: AgentBlock | null
+  /**
+   * Busy, but no terminal output and no `orch report` since this moment for longer than the
+   * stall limit: shown amber as "stalled?". Null while it shows signs of life.
+   */
+  stalledSince?: number | null
   /** The agent's Claude conversation, from its hooks; `claude --resume` continues it. */
   claudeSessionId?: string | null
   /** That conversation's JSONL transcript on disk, from its hooks. */
@@ -204,6 +239,34 @@ export type OrchestraSession = {
    * transcripts) until it is closed.
    */
   stoppedAt?: number | null
+  /**
+   * Account policy, account, model and effort its agents launch with, copied from the start
+   * form; the accounts panel changes the account. Absent only on older sessions: read it with
+   * `sessionLaunchOf`.
+   */
+  launch?: SessionLaunch
+  /** Account changes made from the accounts panel, oldest first. */
+  accountSwitches?: AccountSwitch[]
+  /**
+   * The pending "wait for the limit reset" (src/lib/limitResetWatch.ts); kept in the session so
+   * a reload or a Resume does not lose it.
+   */
+  limitWait?: LimitWait | null
+}
+
+/**
+ * A "wait for the reset" of the session account (`null`: the default one), epoch ms. `auto`:
+ * armed by itself when an agent hit the limit (the "wait and continue" preference), not by
+ * the owner's "Wait".
+ */
+export type LimitWait = {
+  account: string | null
+  resetsAt: number
+  auto?: boolean
+  /** When the staggered resume of this wait started; the wait stays until nobody is limited. */
+  resumedAt?: number
+  /** Times the limit came back right after a resume and the wait was armed again (1..3). */
+  rearms?: number
 }
 
 export type OrchestraState = {
@@ -248,8 +311,22 @@ export type OrchestraState = {
   restartAgent: (
     sessionId: string,
     agentId: string,
-    opts?: { resume?: boolean; notice?: string },
+    opts?: { resume?: boolean; notice?: string; moveAccount?: boolean },
   ) => Promise<void>
+  /**
+   * Changes the account a session's agents launch with (`null`: the default account) and
+   * records the switch. Workers spawned from now on start there; running agents keep theirs
+   * until `restartAgent` with `moveAccount` moves them.
+   */
+  setSessionAccount: (sessionId: string, account: string | null) => void
+  /** Sets or clears the session's pending "wait for the limit reset" (see `LimitWait`). */
+  setLimitWait: (sessionId: string, wait: LimitWait | null) => void
+  /**
+   * A notice from the app to an agent: a bus line, and `[orchestra] <text>` pasted into its
+   * terminal through the same queue as messages (it waits for a ready prompt and for any
+   * dialog or stuck screen to close). An agent whose process ended just misses it.
+   */
+  tellAgent: (sessionId: string, agentId: string, text: string) => void
   /**
    * Sends Esc to an agent's terminal: Claude Code stops what it is doing and waits. `notice`
    * is the bus line that records it.
@@ -266,6 +343,13 @@ export type OrchestraState = {
     choice: DialogOption,
     notice?: string,
   ) => Promise<boolean>
+  /**
+   * A stuck screen the screen watcher read (attention/screenWatch.ts), or null once the screen
+   * moved on. Never replaces a block that hooks or the agent itself reported.
+   */
+  screenBlock: (sessionId: string, agentId: string, block: AgentBlock | null) => void
+  /** Marks a busy agent "stalled?" since `since` (no output, no report), or clears it. */
+  setStalled: (sessionId: string, agentId: string, since: number | null) => void
   /**
    * Focuses a session (null shows the start screen). In the side-by-side view it replaces the
    * session of the focused pane; the split session's own pane takes the focus instead.
@@ -917,7 +1001,10 @@ export function processEnded(agent: Pick<OrchestraAgent, 'state' | 'exitReason'>
 function inDialog(agent: OrchestraAgent | undefined): boolean {
   return (
     agent?.state === 'blocked' &&
-    (agent.blocked?.reason === 'permission' || agent.blocked?.reason === 'question')
+    (agent.blocked?.reason === 'permission' ||
+      agent.blocked?.reason === 'question' ||
+      // A stuck screen (trust dialog, login, a menu) would take a paste as its answer.
+      isScreenBlock(agent.blocked))
   )
 }
 /** The app's single bus subscription: open while any session runs, events carry their session. */
@@ -933,6 +1020,25 @@ function safely(step: () => void): void {
   } catch (error) {
     console.warn('[orchestra] cleanup step failed', error)
   }
+}
+
+/** The name of an account id for messages; null is the default account. */
+export function accountLabel(account: string | null): string | null {
+  if (!account) return null
+  const accounts = useProjectsStore.getState().preferences.claudeAccounts ?? []
+  return accounts.find((a) => a.id === account)?.name ?? account
+}
+
+/** Tells the backend how the session uses accounts; a failure only loses the spawn notice. */
+async function shareAccountPolicy(sessionId: string, launch: SessionLaunch): Promise<void> {
+  await settle(() =>
+    orchestraAccountPolicy(sessionId, launch.policy === 'single', accountLabel(launch.account)),
+  )
+}
+
+/** `CLAUDE_CONFIG_DIR` of an account for `copyConversation`; '' is the default account. */
+function accountDirOf(account: string | null): string | null {
+  return account ? accountConfigDirCached(account) : ''
 }
 
 async function settle(step: () => Promise<unknown>): Promise<void> {
@@ -1177,15 +1283,15 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
    * orchestrator being restarted has none for a while) or a dialog open. An agent whose process
    * ended just misses it.
    */
-  const notifyAgent = async (sessionId: string, from: string, to: string, text: string) => {
+  const notifyAgent = (sessionId: string, from: string, to: string, text: string) =>
+    pasteNotice(sessionId, to, `[orchestra · from ${from}] ${text}`, text)
+
+  /** `notifyAgent` with the whole pasted line given (`[orchestra] ...` for app notices). */
+  const pasteNotice = async (sessionId: string, to: string, pasted: string, text: string) => {
     const ctx = runtimeOf(sessionId)
     const target = agentOf(sessionId, to)
     if (!ctx || !target || processEnded(target)) return
-    const entry: QueuedMessage = {
-      messageId: null,
-      pasted: `[orchestra · from ${from}] ${text}`,
-      task: taskFromInput(text),
-    }
+    const entry: QueuedMessage = { messageId: null, pasted, task: taskFromInput(text) }
     if (!target.ptyId || !ctx.track.ready.has(to) || inDialog(target)) hold(sessionId, to, entry)
     else await writeNotice(sessionId, target, entry)
   }
@@ -1418,6 +1524,36 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
   }
 
   /**
+   * Holds an agent on a block it cannot clear itself: a stuck screen the screen watcher read,
+   * or an account the preflight refused (then no PTY was opened). The orchestrator is told, so
+   * it neither waits on it forever nor spawns a duplicate.
+   */
+  const holdOnScreen = (sessionId: string, agentId: string, block: AgentBlock) => {
+    const agent = agentOf(sessionId, agentId)
+    if (!agent || processEnded(agent)) return
+    // Hooks know better: a permission, a question, a reported or dependency block stands.
+    if (agent.state === 'blocked' && !isScreenBlock(agent.blocked)) return
+    if (agent.state === 'blocked' && agent.blocked?.reason === block.reason) return
+    patchAgent(sessionId, agentId, () => ({ state: 'blocked', blocked: block, stalledSince: null }))
+    setActivity(sessionId, agentId, 'blocked', block.at)
+    const notice = screenNotice(block)
+    pushLine(sessionId, agentId, { at: block.at, text: `! ${notice}`, tone: 'error' })
+    if (agentId === ORCHESTRATOR_ID) return
+    recordMessage(sessionId, agentId, ORCHESTRATOR_ID, `blocked · ${notice}`, block.at)
+    void notifyAgent(
+      sessionId,
+      agentId,
+      ORCHESTRATOR_ID,
+      `blocked: ${agentId} ${notice}. The user was asked to clear it; do not spawn a replacement.`,
+    )
+  }
+
+  const holdForAccount = (sessionId: string, agentId: string, block: AgentBlock) => {
+    patchAgent(sessionId, agentId, () => ({ ptyId: null }))
+    holdOnScreen(sessionId, agentId, block)
+  }
+
+  /**
    * Starts an agent's process. `resume` continues an earlier run: `claude --resume` when the
    * agent's conversation is known, else a fresh start told why (see `firstMessage`).
    */
@@ -1460,14 +1596,14 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
       // The backend refuses a folder that is gone: the PTY would fall back to the home folder.
       const env = await orchestraPrepare(sessionId, agent.id, cwd)
       const isOrchestrator = agent.id === ORCHESTRATOR_ID
-      // Account / model / effort: the agent's own spawn flags win over the session defaults.
+      // Account / model / effort: the agent's own spawn flags win over the session's launch
+      // settings, except the account of a one-account session (see `agentLaunch`).
       // An unknown account id falls back to the default account rather than an empty config dir.
       // A resume runs where the conversation lives: the settings of its last run, not today's.
       const accounts = useProjectsStore.getState().preferences.claudeAccounts ?? []
+      const sessionLaunch = sessionLaunchOf(session)
       const options =
-        resume && agent.launchedWith
-          ? { ...agent.launchedWith }
-          : resolveLaunch(agent, launchDefaults())
+        resume && agent.launchedWith ? { ...agent.launchedWith } : agentLaunch(agent, sessionLaunch)
       if (options.account && !accounts.some((a) => a.id === options.account)) options.account = null
       const configDir = options.account ? accountConfigDirCached(options.account) : null
       if (options.account && configDir) {
@@ -1483,6 +1619,29 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         effort: options.effort,
       }
       patchAgent(sessionId, agent.id, () => ({ ...launchedWith, launchedWith }))
+      // Before any PTY: the folder is trusted in this account and the orchestrator's, the
+      // sign-in is valid (an expired token is renewed) and still the expected account. A
+      // failed check holds the agent as blocked with a way to sign in, instead of a terminal
+      // sitting on "Login expired".
+      const orchestratorAccount = isOrchestrator
+        ? undefined
+        : session.agents.find((a) => a.id === ORCHESTRATOR_ID)?.launchedWith?.account
+      const held = await runPreflight({
+        configDir,
+        expectedEmail: accounts.find((a) => a.id === launchedWith.account)?.email ?? null,
+        cwd,
+        alsoSeed:
+          orchestratorAccount === undefined
+            ? []
+            : [orchestratorAccount ? (accountConfigDirCached(orchestratorAccount) ?? '') : ''],
+      })
+      if (!live()) return
+      if (held) {
+        clearTimeout(watchdog)
+        track.timers.delete(watchdog)
+        holdForAccount(sessionId, agent.id, held)
+        return
+      }
       // The Obsidian context consulted when the session started (see start()).
       const context = sessionContextOf(sessionId)
       const args = [
@@ -1492,7 +1651,7 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         isOrchestrator
           ? [
               orchestratorPrompt(env.cli_path, context),
-              accountsPromptHint(accounts),
+              accountsPromptHint(accounts, sessionLaunch.policy),
               creativePromptHint({ goal: session.goal }),
             ]
               .filter(Boolean)
@@ -1595,6 +1754,13 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
     const agent = agentOf(sessionId, agentId)
     if (!agent) return
     const at = Date.now()
+    // The failed process's transcript only says the conversation was not found: drop its mirror
+    // now instead of keeping it until the session is closed.
+    const failedPty = agent.ptyId
+    if (failedPty) {
+      safely(() => disposeMirror(failedPty))
+      sessionPtys.get(sessionId)?.delete(failedPty)
+    }
     const why = `could not resume its conversation${code === null ? '' : ` (exit code ${code})`}`
     pushLine(sessionId, agentId, { at, text: `✗ ${why}; starting its task over`, tone: 'error' })
     if (agentId !== ORCHESTRATOR_ID) {
@@ -1666,6 +1832,12 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
     switch (event.kind) {
       case 'spawn': {
         if (agentOf(sessionId, event.id)) return
+        const session = get().sessions[sessionId]
+        // The backend already dropped it and told the orchestrator; launch() enforces it anyway.
+        const dropped =
+          event.account_ignored ?? (session && ignoredAccount(event, sessionLaunchOf(session)))
+        if (dropped)
+          console.info(`[orchestra] ${sessionId} ${event.id}: --account ignored`, dropped)
         const agent = newAgent(
           event.id,
           event.area || event.id,
@@ -1888,11 +2060,14 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
 
     start: async (cwd, goal, autonomous, projectId = null) => {
       const id = newSessionId()
+      // The start form's values become the session's own; later form changes do not touch it.
+      const sessionLaunch = sessionLaunchDefaults()
       // Registered before the first await so a concurrent stopAll() sees it and the bus stays.
       const runtime: SessionRuntime = { exitUnlisteners: new Map(), messageSeq: 0 }
       runtimes.set(id, runtime)
       try {
         await orchestraReset(id)
+        await shareAccountPolicy(id, sessionLaunch)
         if (runtimes.get(id) === runtime) await openBus()
       } catch (error) {
         if (runtimes.get(id) === runtime) runtimes.delete(id)
@@ -1931,6 +2106,8 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
             segments: [],
             selectedId: null,
             error: null,
+            launch: sessionLaunch,
+            accountSwitches: [],
           },
         },
         order: [...s.order, id],
@@ -1974,6 +2151,7 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
       // including those of agents that were restarted.
       for (const id of sessionPtys.get(sessionId) ?? []) safely(() => disposeMirror(id))
       sessionPtys.delete(sessionId)
+      safely(() => forgetRetired(sessionId))
       safely(() => clearSessionDrafts(sessionId))
     },
 
@@ -1995,7 +2173,7 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         patchSession(sessionId, (s) => ({
           stoppedAt: at,
           agents: s.agents.map((a) =>
-            a.state === 'done' || a.state === 'exited'
+            a.state === 'done' || a.state === 'exited' || a.exitReason === 'cancelled'
               ? a
               : {
                   ...a,
@@ -2033,9 +2211,53 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         const old = agent.ptyId
         if (old) {
           await settle(() => killPty(old))
-          safely(() => disposeMirror(old))
+          // Its transcript stays readable next to the new terminal until the session is closed;
+          // only the last few are kept, so older mirrors are freed (Export transcript has them).
+          safely(() => {
+            const dropped = retirePty(sessionId, agentId, old)
+            for (const id of dropped) disposeMirror(id)
+            if (dropped.length) {
+              recordMessage(
+                sessionId,
+                'orchestra',
+                agentId,
+                `older terminal discarded: only the last ${MAX_RETIRED} of ${agentId} are kept`,
+              )
+            }
+          })
         }
         failDeliveriesTo(sessionId, agentId, 'exited')
+        // Moving to the session's account: its conversation is copied there and continued;
+        // with none to copy (or a copy that found nothing) it starts over in the new account.
+        let carried: boolean | null = null
+        if (opts.moveAccount) {
+          const target = sessionLaunchOf(session).account
+          const outcome = moveOutcome(agent, target)
+          if (outcome !== 'same') {
+            const fromDir = accountDirOf(agent.launchedWith?.account ?? agent.account ?? null)
+            const toDir = accountDirOf(target)
+            carried =
+              outcome === 'carry' && session.cwd && fromDir !== null && toDir !== null
+                ? await copyConversation({
+                    fromDir,
+                    toDir,
+                    cwd: session.cwd,
+                    sessionId: agent.claudeSessionId ?? '',
+                  }).then(
+                    (result) => result.copied || result.reason === 'same_dir',
+                    (error: unknown) => {
+                      console.warn('[orchestra] conversation copy failed', error)
+                      return false
+                    },
+                  )
+                : false
+            const before = agent.launchedWith
+            patchAgent(sessionId, agentId, () => ({
+              account: target,
+              launchedWith: carried && before ? { ...before, account: target } : null,
+            }))
+          }
+        }
         patchAgent(sessionId, agentId, () => ({
           state: 'starting',
           ptyId: null,
@@ -2055,7 +2277,7 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         if (agentId === ORCHESTRATOR_ID) {
           // Never the goal from scratch: its own conversation when Claude Code told us its id
           // (Restart or Resume alike), and in any case where every worker stands.
-          const conversation = agent.claudeSessionId ?? null
+          const conversation = carried === false ? null : (agent.claudeSessionId ?? null)
           const agents = get().sessions[sessionId]?.agents ?? []
           await launch(sessionId, fresh, {
             claudeSessionId: conversation,
@@ -2065,7 +2287,8 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         }
         // Resume continues its own conversation when Claude Code told us its id; otherwise (or
         // for a plain restart) it starts its task over.
-        const conversation = opts.resume ? agent.claudeSessionId : null
+        const conversation =
+          (opts.resume && carried !== false) || carried ? agent.claudeSessionId : null
         await launch(
           sessionId,
           fresh,
@@ -2076,6 +2299,50 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
       } finally {
         restarting.delete(key)
       }
+    },
+
+    setSessionAccount: (sessionId, account) => {
+      const session = get().sessions[sessionId]
+      if (!session || session.stoppedAt) return
+      const current = sessionLaunchOf(session)
+      if (current.account === account) return
+      const launch = { ...current, account }
+      const at = Date.now()
+      patchSession(sessionId, (s) => ({
+        launch,
+        accountSwitches: [...(s.accountSwitches ?? []), { at, from: current.account, to: account }],
+        // A wait for the reset belongs to the account it was armed for.
+        ...(s.limitWait && s.limitWait.account !== account ? { limitWait: null } : {}),
+      }))
+      void shareAccountPolicy(sessionId, launch)
+      const from = accountLabel(current.account) ?? 'default'
+      const to = accountLabel(account) ?? 'default'
+      recordMessage(sessionId, 'you', ORCHESTRATOR_ID, `session account: ${from} → ${to}`, at)
+      // The bus line never reaches its terminal: the orchestrator is told on its own.
+      void pasteNotice(
+        sessionId,
+        ORCHESTRATOR_ID,
+        `[orchestra] session account is now ${to} (was ${from}); workers spawned from now on start there`,
+        '',
+      )
+    },
+
+    setLimitWait: (sessionId, wait) =>
+      patchSession(sessionId, (s) => {
+        const before = s.limitWait ?? null
+        const same =
+          before?.account === wait?.account &&
+          before?.resetsAt === wait?.resetsAt &&
+          Boolean(before?.auto) === Boolean(wait?.auto) &&
+          before?.resumedAt === wait?.resumedAt &&
+          before?.rearms === wait?.rearms
+        return same ? null : { limitWait: wait }
+      }),
+
+    tellAgent: (sessionId, agentId, text) => {
+      recordMessage(sessionId, 'orchestra', agentId, text)
+      // A notice is not a task: the agent's current task stays as it is.
+      void pasteNotice(sessionId, agentId, `[orchestra] ${text}`, '')
     },
 
     interruptAgent: async (sessionId, agentId, notice) => {
@@ -2178,6 +2445,23 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
       await route(sessionId, messageId, message.from, message.to, message.text)
     },
 
+    screenBlock: (sessionId, agentId, block) => {
+      if (block) {
+        holdOnScreen(sessionId, agentId, block)
+        return
+      }
+      const agent = agentOf(sessionId, agentId)
+      if (!agent || agent.state !== 'blocked' || !isScreenBlock(agent.blocked)) return
+      const at = Date.now()
+      patchAgent(sessionId, agentId, () => ({ state: 'thinking', blocked: null }))
+      setActivity(sessionId, agentId, 'thinking', at)
+    },
+
+    setStalled: (sessionId, agentId, since) =>
+      patchAgent(sessionId, agentId, (a) =>
+        (a.stalledSince ?? null) === since ? {} : { stalledSince: since },
+      ),
+
     startNow: (sessionId, agentId, notice) => {
       const agent = agentOf(sessionId, agentId)
       const held = agent?.state === 'blocked' && agent.blocked?.reason === 'dependency'
@@ -2195,9 +2479,14 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
       ctx.track.cancelled.add(agentId)
       ctx.track.launches.delete(agentId)
       failDeliveriesTo(sessionId, agentId, 'cancelled')
-      patchSession(sessionId, (s) => ({
-        agents: s.agents.filter((a) => a.id !== agentId),
-        selectedId: s.selectedId === agentId ? null : s.selectedId,
+      // Kept in the session (cards, report, resume record) as cancelled, never launched.
+      const at = Date.now()
+      patchAgent(sessionId, agentId, (a) => ({
+        state: 'idle',
+        exitReason: 'cancelled',
+        blocked: null,
+        startedAt: a.startedAt || at,
+        finishedAt: at,
       }))
       if (notice) void post(sessionId, 'you', ORCHESTRATOR_ID, notice)
       // Whoever waited for the cancelled worker is held now, with the reason.
@@ -2229,12 +2518,19 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
         { ...manifest, cwd },
         { folderChanged: !sameFolder(cwd, manifest.cwd) },
       )
+      // Saved with the session; older manifests run on the orchestrator's last account.
+      const resumedLaunch = restoredLaunch(
+        manifest.launch,
+        plan.agents.find((a) => a.id === ORCHESTRATOR_ID)?.launchedWith?.account,
+        sessionLaunchDefaults(),
+      )
       // Registered before the first await, like start(), so a concurrent stopAll() sees it.
       const runtime: SessionRuntime = { exitUnlisteners: new Map(), messageSeq: 0 }
       runtimes.set(id, runtime)
       try {
         // New spawns continue after the session's highest claude-N instead of reusing one.
         await orchestraResume(id, plan.nextWorker)
+        await shareAccountPolicy(id, resumedLaunch)
         if (runtimes.get(id) === runtime) await openBus()
       } catch (error) {
         if (runtimes.get(id) === runtime) runtimes.delete(id)
@@ -2264,6 +2560,9 @@ export const useOrchestraStore = create<OrchestraState>((set, get) => {
             segments: [],
             selectedId: null,
             error: null,
+            launch: resumedLaunch,
+            accountSwitches: manifest.accountSwitches ?? [],
+            limitWait: manifest.limitWait ?? null,
           },
         },
         order: [...s.order, id],
@@ -2310,6 +2609,16 @@ installAttention({
     }
   },
   shown: shownSessionIds,
+})
+
+// Stuck screens and stalled agents, read from the terminal mirrors.
+installScreenWatch({
+  getState: useOrchestraStore.getState,
+  subscribe: useOrchestraStore.subscribe,
+  screenBlock: (sessionId, agentId, block) =>
+    useOrchestraStore.getState().screenBlock(sessionId, agentId, block),
+  setStalled: (sessionId, agentId, since) =>
+    useOrchestraStore.getState().setStalled(sessionId, agentId, since),
 })
 
 // Each running session keeps a manifest in app data: closing the app does not lose it.

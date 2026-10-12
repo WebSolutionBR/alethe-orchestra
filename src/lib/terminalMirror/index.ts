@@ -12,6 +12,7 @@ export {
 } from './colors'
 export { encodeKey, encodeWheel } from './keys'
 export { MAX_SEARCH_MATCHES } from './lines'
+export { transcriptOfRecording } from './recorded'
 export {
   disposeMirror,
   ensureMirror,

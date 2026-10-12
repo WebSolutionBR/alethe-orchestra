@@ -70,6 +70,12 @@ export const agentsEn = {
   'orchestra.controls.confirmRestart':
     '{id} is still running. Its terminal is closed and it starts again.',
   'orchestra.controls.confirmRestartTitle': 'Restart {id}?',
+  'orchestra.controls.earlier': 'Show the terminal from before the restart',
+  'orchestra.controls.earlierShown': 'Showing earlier terminal {index} of {total}',
+  'orchestra.controls.earlierTitle':
+    '{id} was restarted: show its earlier transcript ({count}), read-only. Only the last 2 are kept; Export transcript saves the rest',
+  'orchestra.controls.earlierOlderTitle': 'Show an older transcript of {id}',
+  'orchestra.controls.earlierBackTitle': 'Back to the current terminal of {id}',
   'orchestra.controls.export': 'Export transcript',
   'orchestra.controls.exportTitle': 'Save the whole transcript of {id} as a text file',
   'orchestra.controls.exported': 'Saved to {path}',
@@ -195,6 +201,12 @@ export const agentsPtBR: Record<keyof typeof agentsEn, string> = {
   'orchestra.controls.confirmRestart':
     'O {id} ainda está rodando. O terminal dele é fechado e ele começa de novo.',
   'orchestra.controls.confirmRestartTitle': 'Reiniciar o {id}?',
+  'orchestra.controls.earlier': 'Mostrar o terminal de antes do reinício',
+  'orchestra.controls.earlierShown': 'Mostrando o terminal anterior {index} de {total}',
+  'orchestra.controls.earlierTitle':
+    'O {id} foi reiniciado: ver a transcrição anterior ({count}), só leitura. Só as 2 últimas ficam; o Exportar transcrição guarda o resto',
+  'orchestra.controls.earlierOlderTitle': 'Ver uma transcrição mais antiga do {id}',
+  'orchestra.controls.earlierBackTitle': 'Voltar ao terminal atual do {id}',
   'orchestra.controls.export': 'Exportar transcrição',
   'orchestra.controls.exportTitle': 'Salvar a transcrição inteira do {id} num arquivo de texto',
   'orchestra.controls.exported': 'Salvo em {path}',

@@ -12,6 +12,108 @@ Notable user-facing changes to **Alethe** are documented here. The format is bas
 
 ### Added
 
+- **"Wait" for the usage limit really resumes, and survives a reload.** When the reset comes,
+  each agent stopped by the limit gets Esc (closes the CLI's limit menu without picking "extra
+  usage"), its screen block is cleared and "continue" goes in: the orchestrator first, then the
+  workers closest to done, 20 s apart. The wait lives in the session and in the Resume manifest,
+  the orchestrator is told in its terminal (`[orchestra] account X hit its usage limit; the
+  workers resume on their own at HH:MM`) and, with "On hitting the limit: wait for the reset and
+  continue" on, the first agent stopped by the limit arms it by itself (marked `auto`).
+  The wait stays until no agent is limited any more, so a reload in the middle of the
+  staggered resume still resumes the rest; an agent limited again within 10 min of its resume
+  re-arms it for 5 min from then, at most 3 times, before the owner is asked.
+- **The orchestrator hears about a session account switch** in its own terminal
+  (`[orchestra] session account is now X`), not only on the interface bus.
+- **Restart history keeps the last 2 terminals per agent.** Older mirrors are freed with a bus
+  line, and the History tooltip says Export transcript keeps the rest.
+
+- **Agents no longer sit blocked in silence.** Before an agent's terminal opens, the Orchestra
+  trusts the session folder in its account and the orchestrator's (merged into `.claude.json`,
+  written atomically and read back, retried while the CLI rewrites it), renews an expired token
+  and checks the account is still signed in as its expected e-mail. A lapsed sign-in or a
+  switched account holds the agent as "blocked: login expired / account changed" with *Sign in*
+  instead of a terminal stuck on "Login expired". The terminal screen is read for the trust
+  dialog, login, onboarding, MCP approval, "Press Enter to continue", "Do you want to proceed?"
+  and the usage limit; a still screen nothing matches becomes "blocked: unknown screen" with its
+  last lines, and a busy agent with no output and no report turns amber "stalled?". Each block
+  offers its one-click way out (*Trust and continue*, *Sign in*, *Open terminal*), notifies
+  Windows and the orchestrator, and is announced again after 10 min (then every 30 min, with
+  *Silence*), configurable in Preferences. The report lists the time each agent spent blocked.
+- **Sign in per account in the right Chrome profile.** *Sign in* runs `claude auth login` in the
+  account's own folder and opens the authorization page in the account's Chrome profile, so it
+  can no longer authorize whatever account the default browser is signed in to. The result is
+  checked against the account's `.claude.json`. Preferences > Claude accounts now edits each
+  account's Chrome profile and expected e-mail.
+  A missing Chrome or Chrome profile is reported at once instead of after a 10-minute wait. In
+  a one-account session, one *Sign in* or *Trust and continue* restarts every agent blocked
+  for the same reason on that account, and while a sign-in runs the other cards show
+  "Signing in (claude-N)…". The trust seed holds the account's lock and merges again when
+  Claude Code rewrote `.claude.json` between its read and its write.
+- **Account folders have a single owner.** Importing or re-syncing accounts never copies
+  credentials, and a lock file inside each account folder keeps a token renewal, a sign-in and
+  a launch preflight from writing its credentials at the same time.
+- **Safer account switching in the Orchestra accounts panel.** Each card names its error and the
+  action for it (an expired sign-in puts *Sign in* first; a `429` says when the next read is).
+  *Use in this session* asks first when the target account has an error, is at 90% or more of
+  the 5h or weekly window, or shares its Claude account with another one, and a 10 s toast
+  "Session account: A → B [Undo]" switches back. The sign-in errors (another account, busy,
+  timeout) get their own messages, and the panel has the switch "On hitting the limit: wait for
+  the reset and continue" (on by default in *One account*).
+- **Early warning at 90% of the 5-hour limit.** Once per window, when an orchestration's account
+  crosses 90%, its workers are told to finish the edit in progress, leave the code compiling and
+  record their state, and the orchestrator to record who owns what, so the limit no longer stops
+  everyone mid-edit.
+- **One shared usage cache for every window.** The Monitor, the home usage strip, the accounts
+  panel and the Orchestra used to query the Claude usage endpoint on their own, which earned `429`
+  answers. Reads now go through a backend cache (60 s per account). On a `429` or `5xx` the app
+  backs off (honouring `Retry-After`, otherwise doubling up to 15 min) and keeps showing the last
+  good value with when it was read, instead of an empty bar. *Refresh* still waits out a running
+  backoff.
+- **Restarting an agent on another account keeps its conversation.** The conversation file is
+  copied (never the credentials) into the new account so `claude --resume` finds it there.
+- **"Wait for the reset"** for agents stopped by the usage limit: once the account's window
+  resets, the Orchestra sends `continue` to the agents of that session still stopped by the limit.
+- **One account per orchestration (the default).** The start screen now asks how the session
+  uses Claude accounts: *One account* runs every agent on the account you chose, and an
+  `orch spawn --account` from the orchestrator is ignored (it is told so, and the app log records
+  it); *Spread across accounts* keeps the previous behaviour. The choice is remembered, saved with
+  the session and restored by *Resume*. In one-account mode the orchestrator prompt no longer lists
+  the accounts nor asks to spread work across them.
+- **Accounts panel inside the Orchestra.** A button on the session's side rail (Alt+A) opens a
+  panel with each account's 5h and weekly usage, reset times, the e-mail it is really signed in
+  as, how many agents run on it and which one is the session account. *Use in this session*
+  switches the session account: new workers start there, and agents already running are offered
+  *Restart on <account>* (one or all, always after a confirmation that says whether the
+  conversation is carried over or the task starts over). *Sign in* re-authorizes the account in
+  its own Chrome profile. The rail and the session header ("One account: <name>") turn amber or
+  red near the 5h limit, and a strip offers *Switch session account* or *Wait* when the session
+  account hits its limit.
+- **Accounts signed in to the wrong Claude account are flagged.** The panel warns when two linked
+  accounts share the same Claude account (they share one quota) and when an account's real e-mail
+  differs from the expected one.
+- **Agents stuck on a screen now show as blocked instead of "thinking".** The Orchestra reads each
+  agent's terminal: the folder trust dialog, "Login expired", the first-run onboarding, a new MCP
+  server to approve, "Press Enter to continue", "Do you want to proceed?" and the usage limit
+  (with its reset time) become *blocked: <reason>*; a screen that stays still and matches nothing
+  becomes *blocked: unknown screen* with its last lines. Each block offers its one-click way out
+  (*Trust and continue*, *Sign in*, *Open terminal*), raises a Windows notice and tells the
+  orchestrator. A busy agent with no output and no `orch report` for a while turns amber
+  *stalled?*.
+- **Long blocks are announced again.** After 10 minutes blocked an agent is announced even with
+  its session on screen (with a taskbar flash), then every 30 minutes, until it ends or you press
+  *Silence*. A stuck orchestrator is announced at once. Both times and the *stalled?* limit are in
+  Preferences → Terminal. The report lists the time each agent spent blocked, the account each
+  agent ran on and the session's account switches.
+- **Account check before every launch.** Before an agent's terminal opens (spawn, restart,
+  *Resume*), the session folder is trusted in its account and in the orchestrator's, an expired
+  token is renewed, and an account whose login lapsed or that is signed in as someone else than
+  expected is held as *blocked: login expired / account changed* with a *Sign in* button, instead
+  of a terminal sitting on "Please run /login". New accounts get the trust of your project folders
+  and the onboarding done when they are created, and accept an expected e-mail.
+- **Sign in per account in the right Chrome profile.** *Sign in* runs `claude auth login` for that
+  account and opens the authorization page in the account's Chrome profile, so it never authorizes
+  whichever account the default browser happens to be signed in to. The result is checked against
+  the account's `.claude.json`.
 - **Orchestra view.** A new top-level view (sidebar toolbar orbit icon or main menu → *Orchestra*)
   runs an **orchestrator** Claude Code session that you drive, which splits a goal into tasks and
   delegates them to **worker** Claude sessions (`claude-1`…`claude-N`) in the same folder. Pick a
@@ -132,6 +234,23 @@ Notable user-facing changes to **Alethe** are documented here. The format is bas
 
 ### Changed
 
+- **Importing or re-syncing accounts from the original Alethe never copies credentials.** Two
+  folders with the same refresh token kill each other's login at the next renewal, which left
+  imported workers on "Login expired". An imported account signs in again with *Sign in*. Every
+  write of an account's credentials (renewal, sign-in) now takes a lock file inside the account
+  folder, so only one writer touches it at a time.
+- **Stopped and cancelled agents say so.** After *Stop*, agents read "stopped" instead of "idle"
+  and every clock (session and agent) stays at the moment of the Stop. *Cancel* on a worker that
+  waits for a dependency keeps it in the session as "cancelled" (it is not relaunched by *Resume*)
+  instead of removing it.
+- **Restart keeps the earlier transcript.** The terminal an agent had before a *Restart* stays
+  readable until the session is closed: the history button in its header steps back through the
+  earlier transcripts (read-only, exportable) and back to the current one.
+- **"View record" shows each agent's terminal.** The resume manifest now stores each PTY's size,
+  and the record replays the saved output at that width, so it reads as it did on screen.
+- The orchestrator and the creative agent are told to run `orch spawn` / `orch send` directly
+  instead of `orch.cmd`, which only went through cmd.exe for nothing.
+
 - **The Obsidian scribe writes knowledge notes in your own pattern, not logs.** It no longer
   appends event blocks to the vault: what happens in each session (requests, decisions, reports,
   messages, files touched, checks, `orch note`) is kept as local material in the app data folder,
@@ -216,6 +335,26 @@ Notable user-facing changes to **Alethe** are documented here. The format is bas
 
 ### Fixed
 
+- **Opening the Orchestra accounts panel no longer resizes the agent terminals.** The panel now
+  opens over the session's main area instead of taking width from it, so the PTYs keep their size.
+- **The usage-limit strip keeps a reset time while the usage API answers `429`.** It falls back to
+  the latest reset read from the screen of the agents stopped by the limit; with neither, it shows
+  "?" and offers only the account switch.
+- **Captured full-screen history at a narrower width.** Rows captured wider than the pane are now
+  wrapped instead of cut, and search marks the right row and column in them.
+- **Rows kept twice after a resize.** A frame comparison scheduled between a resize and the
+  program's redraw no longer copies the stale screen into the history.
+- **Leftover escape text in the classic terminal.** Restoring it from the mirror while the output
+  ended in the middle of an escape sequence no longer prints the rest of the sequence as text.
+- **Mirror kept after a failed resume.** When `claude --resume` cannot find the conversation, the
+  failed process's mirror is released at once instead of when the session is closed.
+- **The right sidebar (Monitor, Markdown, Todo, Git, MCP) no longer disappears on its own.** It is
+  shown whenever its preference is on, on every screen including all six Orchestra views, with
+  any number of panes and with every optional feature turned off (it then opens on Monitor and
+  explains where to turn Todo, Git and MCP on). It can no longer be squeezed or dragged to 0 px:
+  the workspace shrinks first and the sidebar keeps its minimum width. The title bar toggle is
+  always available, the close button still closes it, and every hide is recorded with its reason
+  in `app-events.log`, along with any layout that leaves it squeezed or off-window.
 - **Closing Alethe tells the truth about running orchestrations.** The close dialog says how many
   are running and which of them can be resumed on the next start (one whose record could not be
   saved is named apart), instead of promising that every conversation can be resumed.

@@ -109,6 +109,9 @@ function install(h: ReturnType<typeof harness>, deps: Record<string, unknown> = 
     watching: () => false,
     alerts: () => true,
     isMainWindow: () => true,
+    // Long-block reminders have their own tests below; here they would fire on fake time.
+    every: () => () => {},
+    flash: () => {},
     ...deps,
   })
   return notify
@@ -307,5 +310,71 @@ describe('installAttention', () => {
     vi.advanceTimersByTime(BATCH_MS)
     expect(notify).not.toHaveBeenCalled()
     expect(useAttentionStore.getState().last.s1).toBeUndefined()
+  })
+})
+
+describe('long-block reminders', () => {
+  const MIN = 60_000
+  const prefs = { thresholdMin: 10, repeatMin: 30, stallMin: 15 }
+
+  it('remind after the threshold, even on screen, then every repeat, until silenced', () => {
+    const start = Date.now()
+    const h = harness({
+      s1: sessionOf('s1', [
+        agent('orchestrator'),
+        agent('claude-1', { state: 'blocked', blocked: ask('Allow Edit?', start) }),
+      ]),
+    })
+    let tick: () => void = () => {}
+    const flash = vi.fn()
+    let muted: Record<string, true> = {}
+    const notify = install(h, {
+      watching: () => true,
+      escalation: () => prefs,
+      muted: () => muted,
+      flash,
+      every: (_ms: number, run: () => void) => {
+        tick = run
+        return () => {}
+      },
+    })
+    vi.setSystemTime(start + 9 * MIN)
+    tick()
+    expect(notify).not.toHaveBeenCalled()
+    vi.setSystemTime(start + 10 * MIN)
+    tick()
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenLastCalledWith(
+      'claude-1 (backend) has been blocked for 10 min',
+      'Asks for permission',
+    )
+    expect(flash).toHaveBeenCalledTimes(1)
+    vi.setSystemTime(start + 39 * MIN)
+    tick()
+    expect(notify).toHaveBeenCalledTimes(1)
+    vi.setSystemTime(start + 40 * MIN)
+    tick()
+    expect(notify).toHaveBeenCalledTimes(2)
+    muted = { [`s1:claude-1:${start}`]: true }
+    vi.setSystemTime(start + 80 * MIN)
+    tick()
+    expect(notify).toHaveBeenCalledTimes(2)
+  })
+
+  it('announce a stuck orchestrator even with its session on screen', () => {
+    const h = harness({ s1: sessionOf('s1', [agent('orchestrator'), agent('claude-1')]) })
+    const notify = install(h, { watching: () => true })
+    h.set({
+      s1: sessionOf('s1', [
+        agent('orchestrator', {
+          state: 'blocked',
+          blocked: { reason: 'trust', text: 'Accessing workspace:', at: 5 },
+        }),
+        agent('claude-1'),
+      ]),
+    })
+    vi.advanceTimersByTime(BATCH_MS)
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify.mock.calls[0][0]).toBe('Orchestrator is blocked: Folder trust dialog')
   })
 })

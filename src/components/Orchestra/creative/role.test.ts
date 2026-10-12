@@ -84,7 +84,7 @@ describe('creativeWorkerTask', () => {
       expect(task).toContain(topic)
     }
     expect(task).toContain('never edit a file')
-    expect(task).toContain('orch.cmd send orchestrator')
+    expect(task).toContain('orch send orchestrator')
     expect(task).toContain('Implement only what the orchestrator')
   })
 
@@ -108,7 +108,7 @@ describe('creativePromptHint', () => {
 
   it('asks the orchestrator to keep the creative worker, with the placeholder task', () => {
     const hint = creativePromptHint()
-    expect(hint).toContain(`orch.cmd spawn ${CREATIVE_AREA}`)
+    expect(hint).toContain(`orch spawn ${CREATIVE_AREA}`)
     expect(hint).toContain('does not count toward the worker limit')
     expect(hint).toContain(`with ${GOAL_PLACEHOLDER} replaced by the user goal`)
     expect(hint).toContain('implements only what you approve')

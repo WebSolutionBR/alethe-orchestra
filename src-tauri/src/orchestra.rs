@@ -219,6 +219,9 @@ function Write-Result([string]$line, $result) {
   if ($result -and $result.clipped) {
     [Console]::Error.WriteLine("orch: the text was cut to $($result.limit) characters")
   }
+  if ($result -and $result.account_ignored) {
+    [Console]::Error.WriteLine("orch: $($result.account_ignored)")
+  }
   $line
 }
 
@@ -614,6 +617,7 @@ pub fn orchestra_end(session_id: String) {
         return;
     }
     COUNTERS.forget(&session_id);
+    crate::orchestra_accounts::forget(&session_id);
     remove_session_files(&work_dir(), &session_id);
 }
 
@@ -997,9 +1001,16 @@ fn route(url: &str, body: &str, counters: &Counters) -> Routed {
                 _ => Vec::new(),
             };
             let id = format!("claude-{}", counters.next(&session));
+            // A one-account session drops `--account`; the reply tells the orchestrator why.
+            let (account, account_ignored) =
+                crate::orchestra_accounts::spawn_account(&session, opt_field(&payload, "account"));
+            let mut reply = json!({ "id": id });
+            if let Some(notice) = &account_ignored {
+                reply["account_ignored"] = json!(notice);
+            }
             Routed {
                 status: 200,
-                body: ok_body(json!({ "id": id }), clipped, MAX_TEXT),
+                body: ok_body(reply, clipped, MAX_TEXT),
                 event: Some(json!({
                     "kind": "spawn",
                     "session": session,
@@ -1007,7 +1018,8 @@ fn route(url: &str, body: &str, counters: &Counters) -> Routed {
                     "area": area,
                     "task": task,
                     "after": after,
-                    "account": opt_field(&payload, "account"),
+                    "account": account,
+                    "account_ignored": account_ignored,
                     "model": opt_field(&payload, "model"),
                     "effort": opt_field(&payload, "effort"),
                 })),
@@ -1049,6 +1061,10 @@ pub fn handle(app: &AppHandle, url: &str, body: &str) -> (u16, String) {
         error(500, "internal orchestra error")
     });
     if let Some(event) = routed.event {
+        if let Some(notice) = event.get("account_ignored").and_then(Value::as_str) {
+            let _ =
+                crate::diagnostics::append_spawn_log(app, &format!("[orchestra] spawn: {notice}"));
+        }
         emit(app, event);
     }
     (routed.status, routed.body)
@@ -1288,6 +1304,28 @@ mod tests {
         assert_eq!(event["account"], "work");
         assert_eq!(event["model"], "opus");
         assert!(event["effort"].is_null());
+    }
+
+    #[test]
+    fn one_account_sessions_drop_the_spawn_account_and_say_so() {
+        crate::orchestra_accounts::orchestra_account_policy(
+            "osingle1".into(),
+            true,
+            Some("Compras".into()),
+        );
+        let body = json!({ "session": "osingle1", "from": "orchestrator", "task": "build",
+            "account": "other", "model": "opus" });
+        let routed = route("/orchestra/spawn", &body.to_string(), &Counters::new());
+        let reply: Value = serde_json::from_str(&routed.body).unwrap();
+        assert!(reply["account_ignored"]
+            .as_str()
+            .unwrap()
+            .contains("one account (Compras); --account other was ignored"));
+        let event = routed.event.unwrap();
+        assert!(event["account"].is_null());
+        assert_eq!(event["model"], "opus");
+        assert!(event["account_ignored"].is_string());
+        crate::orchestra_accounts::forget("osingle1");
     }
 
     #[test]

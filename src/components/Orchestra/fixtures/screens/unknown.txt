@@ -1,0 +1,6 @@
+ Checking for updates…
+
+ A new version of Claude Code is being installed (2.1.290). Do not close this
+ window.
+
+ ████████████████████░░░░░░░░░░░░░░░░ 56%

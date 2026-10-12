@@ -5,12 +5,16 @@
  */
 import type { OrchestraEvent } from '../../../lib/tauri/orchestra'
 import type { AgentState, OrchestraAgent, OrchestraSession } from '../../../stores/orchestraStore'
+import { SCREEN_REASONS } from './blocking'
 
 /** Same as the store's `ORCHESTRATOR_ID` (kept local: the store imports this module). */
 export const ORCHESTRATOR = 'orchestrator'
 
-/** Blocks that wait on the user; `dependency` waits on another agent instead. */
-const ASKS = new Set(['permission', 'question', 'report'])
+/**
+ * Blocks that wait on the user; `dependency` waits on another agent instead. Stuck screens and
+ * refused accounts (see blocking.ts) only the user can clear too.
+ */
+const ASKS = new Set<string>(['permission', 'question', 'report', ...SCREEN_REASONS])
 
 export type AttentionKind = 'blocked' | 'failed' | 'allDone' | 'waiting'
 

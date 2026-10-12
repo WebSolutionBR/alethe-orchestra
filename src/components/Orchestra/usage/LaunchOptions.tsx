@@ -1,7 +1,7 @@
 import { useShallow } from 'zustand/react/shallow'
 
 import { useT } from '../../../lib/i18n'
-import { EFFORT_CHOICES, MODEL_CHOICES, shortModel } from './launch'
+import { type AccountPolicy, EFFORT_CHOICES, MODEL_CHOICES, shortModel } from './launch'
 import { useLaunchDefaults } from './launchDefaults'
 import styles from './Usage.module.css'
 import { useClaudeAccounts } from './UsageBar'
@@ -10,8 +10,9 @@ import { useClaudeAccounts } from './UsageBar'
 export function LaunchOptionsPicker() {
   const t = useT()
   const accounts = useClaudeAccounts()
-  const { account, model, effort, setDefaults } = useLaunchDefaults(
+  const { policy, account, model, effort, setDefaults } = useLaunchDefaults(
     useShallow((s) => ({
+      policy: s.policy,
       account: s.account,
       model: s.model,
       effort: s.effort,
@@ -24,6 +25,16 @@ export function LaunchOptionsPicker() {
 
   return (
     <div className={styles.launch}>
+      <label className={styles.select} title={t(`orchestra.launch.policy.${policy}Hint`)}>
+        {t('orchestra.launch.policy')}
+        <select
+          value={policy}
+          onChange={(e) => setDefaults({ policy: e.target.value as AccountPolicy })}
+        >
+          <option value="single">{t('orchestra.launch.policy.single')}</option>
+          <option value="spread">{t('orchestra.launch.policy.spread')}</option>
+        </select>
+      </label>
       <label className={styles.select}>
         {t('orchestra.launch.account')}
         <select

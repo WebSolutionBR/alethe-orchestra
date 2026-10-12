@@ -1,6 +1,7 @@
 import { creativePtBR } from '../../../components/Orchestra/creative/i18n'
 import { agentsPtBR } from '../../../components/Orchestra/i18n/agents'
 import { flowPtBR } from '../../../components/Orchestra/i18n/flow'
+import { accountsPtBR } from '../../../components/Orchestra/accounts/i18n'
 import { usagePtBR } from '../../../components/Orchestra/usage/i18n'
 import { projectPtBR } from '../../../components/Orchestra/i18n/project'
 import { scribePtBR } from '../../../components/Orchestra/i18n/scribe'
@@ -135,6 +136,9 @@ export const ptBR: Record<MessageKey, string> = {
   'claudeAccounts.remove': 'Remover',
   'claudeAccounts.namePlaceholder': 'Nome da conta',
   'claudeAccounts.profilePlaceholder': 'Perfil do Chrome (opcional)',
+  'claudeAccounts.emailPlaceholder': 'E-mail esperado (opcional)',
+  'claudeAccounts.profileOf': 'Perfil do Chrome de {name}',
+  'claudeAccounts.emailOf': 'E-mail esperado de {name}',
   'claudeAccounts.signedOut': 'Não logada — abra um terminal Claude com esta conta para logar.',
   'claudeAccounts.usageError': 'Uso indisponível.',
   'claudeAccounts.loginExpired':
@@ -830,6 +834,8 @@ export const ptBR: Record<MessageKey, string> = {
   'rightSidebar.markdownTab': 'Markdown',
   'rightSidebar.monitorTab': 'Monitor',
   'rightSidebar.monitorOpenWindow': 'Abrir em uma janela',
+  'rightSidebar.optionalFeaturesHint':
+    'Tarefas, Git e MCP também aparecem nesta barra quando você liga cada um em Preferências > Recursos.',
   'rightSidebar.markdownEmptyTitle': 'Nenhum Markdown selecionado',
   'rightSidebar.markdownEmptyDesc':
     'Abra um arquivo Markdown na sidebar de projetos para visualizá-lo aqui.',
@@ -2189,6 +2195,8 @@ export const ptBR: Record<MessageKey, string> = {
   'orchestra.state.blocked': 'bloqueado',
   'orchestra.state.done': 'concluído',
   'orchestra.state.idle': 'ocioso',
+  'orchestra.state.stopped': 'parado',
+  'orchestra.state.cancelled': 'cancelado',
   'orchestra.state.exited': 'falhou',
   'orchestra.drawer.close': 'Fechar painel',
   'orchestra.drawer.resize': 'Redimensionar painel',
@@ -2222,6 +2230,7 @@ export const ptBR: Record<MessageKey, string> = {
   ...missionPtBR,
   ...flowPtBR,
   ...usagePtBR,
+  ...accountsPtBR,
   ...terminalsPtBR,
   ...timelinePtBR,
   ...hivePtBR,

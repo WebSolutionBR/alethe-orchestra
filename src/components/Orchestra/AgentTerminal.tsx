@@ -7,6 +7,7 @@ import { useProjectsStore } from '../../stores/projectsStore'
 import { LiveTerminal } from '../LiveTerminal'
 import { XTermView } from '../XTermView'
 import styles from './AgentTerminal.module.css'
+import { useViewedRetired } from './retiredTerminals'
 import { rememberViewSize, type TerminalRole } from './terminalGeometry'
 import { AGENT_TERMINAL_ATTR } from './terminalHooks'
 import { TERMINAL_MODE_SHORTCUT, useTerminalMode, useTerminalModeStore } from './terminalMode'
@@ -92,6 +93,12 @@ type AgentTerminalProps = {
   cwd: string | null
   /** Takes the keyboard when it mounts (an opened drawer); grid cells leave it where it is. */
   autoFocus?: boolean
+  /**
+   * The agent this terminal belongs to: when the user picked one of its terminals from before a
+   * Restart (AgentControls), that transcript is shown instead, read-only.
+   */
+  sessionId?: string | null
+  agentId?: string
 }
 
 /**
@@ -105,13 +112,31 @@ export const AgentTerminal = memo(function AgentTerminal({
   alive,
   cwd,
   autoFocus = false,
+  sessionId = null,
+  agentId = '',
 }: AgentTerminalProps) {
   const mode = useTerminalMode()
+  const earlier = useViewedRetired(sessionId, agentId)
   const terminalTheme = useProjectsStore(
     (s) => s.preferences.terminalTheme ?? s.preferences.uiTheme,
   )
   useRememberViewSize(ptyId, role, alive)
   const host = { className: styles.host, [AGENT_TERMINAL_ATTR]: ptyId }
+
+  if (earlier) {
+    // A terminal from before a Restart: its process is gone, so only the transcript remains.
+    return (
+      <div {...host} data-retired-pty={earlier}>
+        <LiveTerminal
+          key={`retired-${earlier}`}
+          ptyId={earlier}
+          ownsSize={false}
+          readOnly
+          className={styles.view}
+        />
+      </div>
+    )
+  }
 
   if (!alive) {
     // The live view itself says the process ended; the header already shows the state.

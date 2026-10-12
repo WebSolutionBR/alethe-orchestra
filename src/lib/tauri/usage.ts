@@ -13,8 +13,12 @@ export type ClaudeUsage = {
   seven_day_opus: ClaudeUsageWindow
 }
 
-export async function getClaudeUsage(): Promise<ClaudeUsage> {
-  return invoke<ClaudeUsage>('get_claude_usage')
+/**
+ * Usage of the default account. Reads go through a backend cache shared by every window
+ * (60 s per account); `force` is a refresh button and still waits out a 429 backoff.
+ */
+export async function getClaudeUsage(force?: boolean): Promise<ClaudeUsage> {
+  return invoke<ClaudeUsage>('get_claude_usage', { force: force ?? null })
 }
 
 /** One Claude account to poll: stable id + its Claude Code config dir. */
@@ -30,18 +34,25 @@ export type ClaudeAccountUsage = {
   error: string | null
   /** When the account's sign-in lapses (epoch ms); a new login is needed after it. */
   login_expires_at?: number | null
+  /** When `usage` was read from the API (epoch ms). */
+  fetched_at?: number | null
+  /** Set while `usage` is an older value because the API refused a newer read (429 / 5xx). */
+  stale_since?: number | null
+  /** While backing off from a refusal: the earliest next read (epoch ms). */
+  retry_at?: number | null
 }
 
 /** Usage for one account identified by its Claude Code config dir. */
-export async function getClaudeUsageFor(configDir: string): Promise<ClaudeUsage> {
-  return invoke<ClaudeUsage>('get_claude_usage_for', { configDir })
+export async function getClaudeUsageFor(configDir: string, force?: boolean): Promise<ClaudeUsage> {
+  return invoke<ClaudeUsage>('get_claude_usage_for', { configDir, force: force ?? null })
 }
 
 /** Usage for many accounts at once (on demand). One bad account never fails the batch. */
 export async function getAllAccountsUsage(
   accounts: ClaudeAccountRef[],
+  force?: boolean,
 ): Promise<ClaudeAccountUsage[]> {
-  return invoke<ClaudeAccountUsage[]>('get_all_accounts_usage', { accounts })
+  return invoke<ClaudeAccountUsage[]>('get_all_accounts_usage', { accounts, force: force ?? null })
 }
 
 export type CodexUsageWindow = {

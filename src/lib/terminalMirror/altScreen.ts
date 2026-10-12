@@ -1,4 +1,6 @@
-import type { IBufferLine } from '@xterm/xterm'
+import type { IBufferCell, IBufferLine } from '@xterm/xterm'
+
+import { contentEnd } from './lines'
 
 /** One screen row as captured: its trimmed text (to compare frames) and a detached copy. */
 export type FrameRow = { text: string; line: IBufferLine }
@@ -113,8 +115,69 @@ export class AltScreenHistory {
   private beforeResizeFrame: FrameRow[] | null = null
   private debt = 0
   private droppedRows = 0
+  /**
+   * The rows as they are shown at today's width: a row captured wider than the screen is cut into
+   * soft-wrapped pieces, as a terminal would wrap it. `starts[i]` is the first display row of row i
+   * (`starts[length]` = display rows in total) and `pieces[i]` its cut points (null = one piece).
+   */
+  private width = 0
+  private cell: IBufferCell | null = null
+  private starts: number[] = [0]
+  private pieces: (number[] | null)[] = []
+  private viewCache = new Map<number, IBufferLine>()
+  private droppedDisplay = 0
 
   constructor(private readonly cap: number) {}
+
+  /**
+   * The width the rows are shown at (the screen's columns), with a scratch cell to read them. Cuts
+   * every row again; called on creation and on each resize.
+   */
+  setWidth(cols: number, cell: IBufferCell): void {
+    this.cell = cell
+    if (cols === this.width) return
+    this.width = cols
+    this.starts = [0]
+    this.pieces = []
+    this.viewCache.clear()
+    for (const row of this.rows) this.layOut(row)
+  }
+
+  /** Rows as shown at today's width (see setWidth). */
+  get displayLength(): number {
+    return this.starts[this.starts.length - 1]
+  }
+
+  /** Display rows dropped from the front. Monotonic, counted at the width they were dropped at. */
+  get droppedDisplayRows(): number {
+    return this.droppedDisplay
+  }
+
+  /** First display row of history row `index` (`index` = length gives the total). */
+  displayIndex(index: number): number {
+    return this.starts[Math.max(0, Math.min(this.rows.length, index))]
+  }
+
+  /** One display row: a whole history row, or one piece of a row wider than the screen. */
+  displayLine(index: number): IBufferLine | undefined {
+    if (index < 0 || index >= this.displayLength) return undefined
+    const cached = this.viewCache.get(index)
+    if (cached) return cached
+    let low = 0
+    let high = this.rows.length - 1
+    while (low < high) {
+      const mid = (low + high + 1) >> 1
+      if (this.starts[mid] <= index) low = mid
+      else high = mid - 1
+    }
+    const row = this.rows[low]
+    const cuts = this.pieces[low]
+    if (!cuts) return row
+    const piece = index - this.starts[low]
+    const view = pieceOf(row, cuts[piece], cuts[piece + 1], piece > 0)
+    this.viewCache.set(index, view)
+    return view
+  }
 
   get length(): number {
     return this.rows.length
@@ -290,13 +353,26 @@ export class AltScreenHistory {
       if (!filled(row.text) && !filled(this.texts[this.texts.length - 1] ?? '')) continue
       this.rows.push(row.line)
       this.texts.push(row.text)
+      this.layOut(row.line)
     }
     const excess = this.rows.length - this.cap
     if (excess > 0) {
       this.rows.splice(0, excess)
       this.texts.splice(0, excess)
       this.droppedRows += excess
+      const shift = this.starts[excess]
+      this.starts = this.starts.slice(excess).map((start) => start - shift)
+      this.pieces.splice(0, excess)
+      this.viewCache.clear()
+      this.droppedDisplay += shift
     }
+  }
+
+  /** Adds a row to the display table (see setWidth). */
+  private layOut(line: IBufferLine): void {
+    const cuts = this.width > 0 && this.cell ? cutPoints(line, this.width, this.cell) : null
+    this.pieces.push(cuts)
+    this.starts.push(this.displayLength + (cuts ? cuts.length - 1 : 1))
   }
 }
 
@@ -316,4 +392,41 @@ function anchorFrom(frame: FrameRow[], start: number): string | null {
 function lastFilled(frame: FrameRow[], end: number): number {
   for (let i = Math.min(end, frame.length) - 1; i >= 0; i--) if (filled(frame[i].text)) return i
   return -1
+}
+
+/**
+ * Where a row captured wider than `cols` is cut to show it at that width, ending with its content
+ * end; null when it fits. A wide character that would straddle the edge moves to the next piece,
+ * as a terminal wraps it.
+ */
+function cutPoints(line: IBufferLine, cols: number, cell: IBufferCell): number[] | null {
+  if (line.length <= cols) return null
+  const end = contentEnd(line, cell)
+  if (end <= cols) return null
+  const cuts = [0]
+  let from = 0
+  while (end - from > cols) {
+    let next = from + cols
+    if (line.getCell(next - 1, cell)?.getWidth() === 2 && next - 1 > from) next--
+    cuts.push(next)
+    from = next
+  }
+  cuts.push(end)
+  return cuts
+}
+
+/** Cells [from, to) of a row as a line of their own; later pieces continue it as a soft wrap. */
+function pieceOf(line: IBufferLine, from: number, to: number, wrapped: boolean): IBufferLine {
+  const length = to - from
+  return {
+    isWrapped: wrapped,
+    length,
+    getCell: (x, cell) => (x < 0 || x >= length ? undefined : line.getCell(from + x, cell)),
+    translateToString: (trimRight, startColumn = 0, endColumn = length) =>
+      line.translateToString(
+        trimRight,
+        from + Math.max(0, Math.min(length, startColumn)),
+        from + Math.max(0, Math.min(length, endColumn)),
+      ),
+  }
 }

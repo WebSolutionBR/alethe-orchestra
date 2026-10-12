@@ -17,6 +17,7 @@ import {
   writeNow,
 } from './internals'
 import { bufferLines, bufferSearch, bufferText, type LineSource } from './lines'
+import { pendingEscape } from './pendingEscape'
 import { seedReplay } from './seed'
 import { serializeTerminal } from './serialize'
 import type {
@@ -59,7 +60,7 @@ type AltSession = {
   end: number | null
 }
 
-/** History rows spliced into the normal buffer before its line `at`. */
+/** History display rows (see AltScreenHistory.setWidth) spliced into the normal buffer before `at`. */
 type Insertion = { at: number; from: number; size: number }
 
 type FrameHandle = { cancel: () => void }
@@ -100,6 +101,10 @@ export class Mirror implements TerminalMirror {
   /** Live chunks held back while a seed replay is being fetched. */
   private seedQueue: string[] | null = null
   private seedStarted = false
+  /** Start of an escape sequence the stream ended in (see pendingEscape). */
+  private pendingSequence = ''
+  /** Resized on the alternate screen and the program has not written since (see resize). */
+  private awaitingRedraw = false
 
   constructor(ptyId: string, opts: MirrorOptions) {
     this.ptyId = ptyId
@@ -120,6 +125,7 @@ export class Mirror implements TerminalMirror {
     this.term.loadAddon(new Unicode11Addon())
     this.term.unicode.activeVersion = '11'
     this.cell = this.term.buffer.normal.getNullCell()
+    this.altHistory.setWidth(this.term.cols, this.cell)
     this.trimWatch = watchNormalTrim(this.term, (amount) => {
       this.trimmedLines += amount
     })
@@ -176,7 +182,7 @@ export class Mirror implements TerminalMirror {
    */
   get length(): number {
     const active = this.term.buffer.active
-    if (active.type === 'alternate') return this.altHistory.length + active.length
+    if (active.type === 'alternate') return this.altHistory.displayLength + active.length
     return this.insertions(active).reduce((total, insert) => total + insert.size, active.length)
   }
 
@@ -209,7 +215,7 @@ export class Mirror implements TerminalMirror {
   }
 
   get trimmed(): number {
-    return this.trimmedLines + this.altHistory.dropped
+    return this.trimmedLines + this.altHistory.droppedDisplayRows
   }
 
   /** True once any byte reached the buffer (seeds and serializations need something to work on). */
@@ -245,9 +251,13 @@ export class Mirror implements TerminalMirror {
       // The screen as the program last drew it, matched against its redraw at the new size.
       this.captureFrame()
       this.altHistory.resizing()
+      // Until the program writes again the screen is the old frame cut to the new size: a capture
+      // already scheduled must not take it for a frame (it would be kept twice).
+      this.awaitingRedraw = true
     }
     // xterm reflows the normal buffer; onResize schedules the change notification.
     this.term.resize(nextCols, nextRows)
+    this.altHistory.setWidth(this.term.cols, this.cell)
   }
 
   /** Output of the PTY, in stream order. */
@@ -291,7 +301,9 @@ export class Mirror implements TerminalMirror {
 
   serialize(): string | null {
     if (this.disposed || this.bytesWritten === 0) return null
-    return serializeTerminal(this.term)
+    // The parser sits inside a sequence: the restored terminal starts it too, so the rest of it,
+    // in the next chunk, is parsed there instead of shown as text.
+    return serializeTerminal(this.term) + this.pendingSequence
   }
 
   dispose(): void {
@@ -312,6 +324,8 @@ export class Mirror implements TerminalMirror {
     if (!data) return
     this.bytesWritten += data.length
     if (this.hasExited) this.hasExited = false
+    this.awaitingRedraw = false
+    this.pendingSequence = pendingEscape(this.pendingSequence, data)
     writeNow(this.term, data)
     // Frames normally get compared when ConPTY shows the cursor again (frameEnded); this catches
     // programs and streams that never do.
@@ -322,7 +336,7 @@ export class Mirror implements TerminalMirror {
   /** A row of the active buffer in the shared line space (see `length`). */
   private toLineSpace(row: number): number {
     const active = this.term.buffer.active
-    if (active.type === 'alternate') return this.altHistory.length + row
+    if (active.type === 'alternate') return this.altHistory.displayLength + row
     let offset = 0
     for (const insert of this.insertions(active)) if (insert.at <= row) offset += insert.size
     return row + offset
@@ -333,11 +347,11 @@ export class Mirror implements TerminalMirror {
     const active = this.term.buffer.active
     const history = this.altHistory
     if (active.type === 'alternate') {
-      if (history.length === 0) return active
-      const rows = history.length
+      const rows = history.displayLength
+      if (rows === 0) return active
       return {
         length: rows + active.length,
-        getLine: (y) => (y < rows ? history.line(y) : active.getLine(y - rows)),
+        getLine: (y) => (y < rows ? history.displayLine(y) : active.getLine(y - rows)),
       }
     }
     const inserts = this.insertions(active)
@@ -349,7 +363,7 @@ export class Mirror implements TerminalMirror {
         for (const insert of inserts) {
           const begin = insert.at + offset
           if (y < begin) break
-          if (y < begin + insert.size) return history.line(insert.from + y - begin)
+          if (y < begin + insert.size) return history.displayLine(insert.from + y - begin)
           offset += insert.size
         }
         return active.getLine(y - offset)
@@ -363,9 +377,10 @@ export class Mirror implements TerminalMirror {
     const inserts: Insertion[] = []
     for (const session of this.altSessions) {
       if (session.end === null) continue
-      const from = Math.max(session.start, dropped) - dropped
-      const size = session.end - dropped - from
-      if (size <= 0) continue
+      const first = Math.max(session.start, dropped) - dropped
+      if (session.end - dropped <= first) continue
+      const from = this.altHistory.displayIndex(first)
+      const size = this.altHistory.displayIndex(session.end - dropped) - from
       // A marker trimmed away with the top of the scrollback leaves its session at the top.
       const line =
         session.marker && session.marker.line >= 0
@@ -432,7 +447,7 @@ export class Mirror implements TerminalMirror {
   /** Compares the alternate screen with the last frame and keeps the rows that scrolled out. */
   private captureFrame(): void {
     const active = this.term.buffer.active
-    if (this.disposed || active.type !== 'alternate') return
+    if (this.disposed || this.awaitingRedraw || active.type !== 'alternate') return
     const previous = this.altHistory.lastFrame
     const frame: FrameRow[] = []
     let changed = previous === null || previous.length !== this.term.rows

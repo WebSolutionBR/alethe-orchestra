@@ -99,6 +99,11 @@ export type ClaudeAccount = {
   name: string
   /** Optional label of the Chrome profile that holds this account's web login. */
   chromeProfile?: string
+  /**
+   * E-mail this account is expected to be signed in as. Compared with the real sign-in
+   * (`oauthAccount` of its `.claude.json`) to catch a folder logged into another account.
+   */
+  email?: string
   createdAt?: number
 }
 

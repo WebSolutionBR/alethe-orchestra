@@ -1,6 +1,7 @@
 import { creativeEn } from '../../../components/Orchestra/creative/i18n'
 import { agentsEn } from '../../../components/Orchestra/i18n/agents'
 import { flowEn } from '../../../components/Orchestra/i18n/flow'
+import { accountsEn } from '../../../components/Orchestra/accounts/i18n'
 import { usageEn } from '../../../components/Orchestra/usage/i18n'
 import { projectEn } from '../../../components/Orchestra/i18n/project'
 import { scribeEn } from '../../../components/Orchestra/i18n/scribe'
@@ -137,6 +138,9 @@ export const en = {
   'claudeAccounts.remove': 'Remove',
   'claudeAccounts.namePlaceholder': 'Account name',
   'claudeAccounts.profilePlaceholder': 'Chrome profile (optional)',
+  'claudeAccounts.emailPlaceholder': 'Expected e-mail (optional)',
+  'claudeAccounts.profileOf': 'Chrome profile of {name}',
+  'claudeAccounts.emailOf': 'Expected e-mail of {name}',
   'claudeAccounts.signedOut':
     'Not signed in — open a Claude terminal with this account to sign in.',
   'claudeAccounts.usageError': 'Usage unavailable.',
@@ -822,6 +826,8 @@ export const en = {
   'rightSidebar.markdownTab': 'Markdown',
   'rightSidebar.monitorTab': 'Monitor',
   'rightSidebar.monitorOpenWindow': 'Open in a window',
+  'rightSidebar.optionalFeaturesHint':
+    'Todo, Git and MCP also show up in this sidebar once you turn them on in Preferences > Features.',
   'rightSidebar.markdownEmptyTitle': 'No Markdown selected',
   'rightSidebar.markdownEmptyDesc':
     'Open a Markdown file from the project sidebar to preview it here.',
@@ -2174,6 +2180,8 @@ export const en = {
   'orchestra.state.blocked': 'blocked',
   'orchestra.state.done': 'done',
   'orchestra.state.idle': 'idle',
+  'orchestra.state.stopped': 'stopped',
+  'orchestra.state.cancelled': 'cancelled',
   'orchestra.state.exited': 'failed',
   'orchestra.drawer.close': 'Close panel',
   'orchestra.drawer.resize': 'Resize panel',
@@ -2207,6 +2215,7 @@ export const en = {
   ...missionEn,
   ...flowEn,
   ...usageEn,
+  ...accountsEn,
   ...terminalsEn,
   ...timelineEn,
   ...hiveEn,

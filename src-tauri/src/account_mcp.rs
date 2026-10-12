@@ -37,7 +37,10 @@ fn read_json(path: &Path) -> Result<Value, String> {
 
 /// Copies every server in `source` missing from `target["mcpServers"]`.
 /// Returns the names that were added, in source order.
-fn merge_mcp_servers(source: &Map<String, Value>, target: &mut Value) -> Result<Vec<String>, String> {
+fn merge_mcp_servers(
+    source: &Map<String, Value>,
+    target: &mut Value,
+) -> Result<Vec<String>, String> {
     let root = target
         .as_object_mut()
         .ok_or_else(|| "account .claude.json is not an object".to_string())?;
@@ -81,7 +84,9 @@ fn sync_one(source: &Map<String, Value>, config_dir: &Path) -> Result<Vec<String
 /// Adds the default config's user-scope MCP servers to every given account.
 /// One failing account never fails the batch.
 #[tauri::command]
-pub fn sync_account_mcp_servers(accounts: Vec<McpSyncTarget>) -> Result<Vec<McpSyncResult>, String> {
+pub fn sync_account_mcp_servers(
+    accounts: Vec<McpSyncTarget>,
+) -> Result<Vec<McpSyncResult>, String> {
     let source_path = default_config_path().ok_or_else(|| "no_home_dir".to_string())?;
     let source = read_json(&source_path)?;
     let servers = source
@@ -91,10 +96,20 @@ pub fn sync_account_mcp_servers(accounts: Vec<McpSyncTarget>) -> Result<Vec<McpS
         .unwrap_or_default();
     Ok(accounts
         .into_iter()
-        .map(|account| match sync_one(&servers, Path::new(&account.config_dir)) {
-            Ok(added) => McpSyncResult { id: account.id, added, error: None },
-            Err(error) => McpSyncResult { id: account.id, added: Vec::new(), error: Some(error) },
-        })
+        .map(
+            |account| match sync_one(&servers, Path::new(&account.config_dir)) {
+                Ok(added) => McpSyncResult {
+                    id: account.id,
+                    added,
+                    error: None,
+                },
+                Err(error) => McpSyncResult {
+                    id: account.id,
+                    added: Vec::new(),
+                    error: Some(error),
+                },
+            },
+        )
         .collect())
 }
 
@@ -112,7 +127,8 @@ mod tests {
 
     #[test]
     fn adds_missing_servers_and_keeps_existing_ones() {
-        let mut target = json!({ "mcpServers": { "obsidian": { "command": "custom" } }, "userID": "x" });
+        let mut target =
+            json!({ "mcpServers": { "obsidian": { "command": "custom" } }, "userID": "x" });
         let added = merge_mcp_servers(&source(), &mut target).unwrap();
         assert_eq!(added, vec!["speak-ai".to_string()]);
         assert_eq!(target["mcpServers"]["obsidian"]["command"], "custom");

@@ -36,6 +36,7 @@ import {
   areaOf,
   busClock,
   elapsed,
+  endedByUserKey,
   isBusy,
   isOrchestrator,
   messagesFor,
@@ -739,7 +740,7 @@ function HexCell({
   const orch = isOrchestrator(agent)
   const busy = isBusy(agent.state)
   const color = cellColor(agent)
-  const stateLabel = t(`orchestra.hive.state.${agent.state}` as HiveKey)
+  const stateLabel = t((endedByUserKey(agent) ?? `orchestra.hive.state.${agent.state}`) as HiveKey)
   const progress = orch && hasWorkers ? overall : Math.round(agent.progress)
   const nameChars = agent.id.length + 2
   const x0 = (-nameChars * CHAR_W) / 2
@@ -959,7 +960,7 @@ function HiveSide({ agent, agents, messages, startedAt, t, splitter }: HiveSideP
           {!orch && <span className={styles.chip}>{agent.area}</span>}
           <span className={styles.sideState}>
             <i />
-            {t(`orchestra.hive.state.${agent.state}` as HiveKey)}
+            {t((endedByUserKey(agent) ?? `orchestra.hive.state.${agent.state}`) as HiveKey)}
           </span>
         </div>
         <div className={styles.sideProgress}>

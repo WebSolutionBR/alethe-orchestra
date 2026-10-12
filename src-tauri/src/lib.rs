@@ -1,4 +1,8 @@
+mod account_lock;
 mod account_mcp;
+mod account_preflight;
+mod claude_login;
+pub use claude_login::login_browser_shim;
 mod activity_stats;
 mod agent_cost;
 mod agent_events;
@@ -16,6 +20,7 @@ mod codex_app_server;
 mod codex_sessions;
 mod codex_usage;
 mod contract_check;
+mod conversation_copy;
 mod crash_watch;
 mod diagnostics;
 mod discord_presence;
@@ -43,6 +48,7 @@ mod opencode_bridge;
 mod opencode_gsd_plugin;
 mod opencode_sessions;
 mod orchestra;
+mod orchestra_accounts;
 mod paths;
 mod planning;
 mod planning_gate;
@@ -65,6 +71,7 @@ mod stats;
 mod supervisor;
 mod system_metrics;
 mod telemetry;
+mod trust_seed;
 mod validation;
 mod window_style;
 #[cfg(windows)]
@@ -257,6 +264,8 @@ pub fn run() {
             orchestra::orchestra_reset,
             orchestra::orchestra_end,
             orchestra::orchestra_resume,
+            orchestra_accounts::orchestra_account_policy,
+            orchestra_accounts::orchestra_account_identities,
             orchestra::orchestra_write_task,
             orchestra::orchestra_manifest_save,
             orchestra::orchestra_manifest_list,
@@ -266,6 +275,9 @@ pub fn run() {
             legacy_import::legacy_alethe_read_projects,
             legacy_import::legacy_alethe_copy_accounts,
             legacy_import::legacy_alethe_mark,
+            account_preflight::account_preflight,
+            trust_seed::account_trust_seed,
+            claude_login::claude_account_login,
             obsidian::obsidian_detect_vaults,
             obsidian::obsidian_status,
             obsidian::obsidian_append,
@@ -413,6 +425,7 @@ pub fn run() {
             claude_usage::get_claude_usage,
             claude_usage::get_claude_usage_for,
             claude_usage::get_all_accounts_usage,
+            conversation_copy::copy_conversation,
             account_mcp::sync_account_mcp_servers,
             codex_usage::get_codex_usage,
             antigravity_usage::get_antigravity_usage,
